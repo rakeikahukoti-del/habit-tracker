@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Momentum",
+    "slug": "mobile-habit-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "habittracker",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F3EA"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
