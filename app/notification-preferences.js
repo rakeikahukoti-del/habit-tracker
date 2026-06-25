@@ -73,6 +73,8 @@ export default function NotificationPreferencesScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Pressable
+          accessibilityLabel="Back to Settings"
+          accessibilityRole="button"
           hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={() => router.replace("/settings")}
           style={styles.backButton}

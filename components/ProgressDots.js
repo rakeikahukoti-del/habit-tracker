@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../context/ThemeContext";
+import { fontWeight } from "../constants/typography";
 import { getTodayKey } from "../utils/habitStats";
 
 export default function ProgressDots({ days, compact = false }) {
@@ -52,12 +53,12 @@ function createStyles(colors) {
   title: {
     color: colors.text,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: fontWeight.medium,
   },
   count: {
     color: colors.primary,
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   container: {
     alignItems: "center",
@@ -92,7 +93,7 @@ function createStyles(colors) {
   label: {
     color: colors.softText,
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: fontWeight.medium,
   },
   labelCompleted: {
     color: colors.primaryDark,

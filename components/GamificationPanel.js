@@ -65,29 +65,17 @@ export default function GamificationPanel({ gamification }) {
               ]}
             >
               <View style={styles.badgeTop}>
-                <View
+                <Text style={[styles.badgeLabel, getBadgeTextStyle(badge.tier)]}>
+                  {badge.label}
+                </Text>
+                <Text
                   style={[
-                    styles.badgeIcon,
-                    getBadgeIconStyle(badge.tier),
+                    styles.badgeRarity,
+                    getRarityStyle(badge.rarity),
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.badgeIconText,
-                      getBadgeTextStyle(badge.tier),
-                    ]}
-                  >
-                    {getBadgeIcon(badge.tier)}
-                  </Text>
-                </View>
-                <View style={styles.badgeText}>
-                  <Text style={[styles.badgeTier, getBadgeTextStyle(badge.tier)]}>
-                    {badge.tier}
-                  </Text>
-                  <Text style={[styles.badgeLabel, getBadgeTextStyle(badge.tier)]}>
-                    {badge.label}
-                  </Text>
-                </View>
+                  {badge.rarity}
+                </Text>
               </View>
               <Text
                 style={[styles.badgeDescription, getBadgeTextStyle(badge.tier)]}
@@ -95,13 +83,8 @@ export default function GamificationPanel({ gamification }) {
               >
                 {badge.description}
               </Text>
-              <Text
-                style={[
-                  styles.badgeRarity,
-                  getRarityStyle(badge.rarity),
-                ]}
-              >
-                {badge.rarity}
+              <Text style={[styles.badgeTier, getBadgeTextStyle(badge.tier)]}>
+                {badge.tier}
               </Text>
             </Pressable>
           ))
@@ -116,7 +99,7 @@ export default function GamificationPanel({ gamification }) {
           style={styles.showBadgesButton}
         >
           <Text style={styles.showBadgesText}>
-            {showAllBadges ? "Show fewer badges ↑" : "Show all badges ↓"}
+            {showAllBadges ? "Show fewer badges" : "Show all badges"}
           </Text>
         </Pressable>
       ) : null}
@@ -141,11 +124,6 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
     <Modal transparent animationType="fade" visible={visible}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
-          <View style={[styles.modalIcon, getBadgeIconStyle(badge.tier)]}>
-            <Text style={[styles.modalIconText, getBadgeTextStyle(badge.tier)]}>
-              {getBadgeIcon(badge.tier)}
-            </Text>
-          </View>
           <Text style={styles.modalEyebrow}>
             {earned ? "Earned badge" : "Locked badge"}
           </Text>
@@ -169,44 +147,11 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
   );
 }
 
-function getBadgeIcon(tier) {
-  if (tier === "Master") {
-    return "◆";
-  }
-
-  if (tier === "Diamond") {
-    return "◇";
-  }
-
-  if (tier === "Platinum") {
-    return "✦";
-  }
-
-  if (tier === "Gold") {
-    return "★";
-  }
-
-  if (tier === "Silver") {
-    return "●";
-  }
-
-  return "◉";
-}
-
 function getBadgeTierStyle(tier) {
   const tierColors = badgeTierColors[tier] || badgeTierColors.Bronze;
 
   return {
     backgroundColor: tierColors.background,
-    borderColor: tierColors.border,
-  };
-}
-
-function getBadgeIconStyle(tier) {
-  const tierColors = badgeTierColors[tier] || badgeTierColors.Bronze;
-
-  return {
-    backgroundColor: tierColors.iconBackground,
     borderColor: tierColors.border,
   };
 }
@@ -285,60 +230,48 @@ function createStyles(colors) {
     badges: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: spacing.lg,
     },
     badge: {
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       borderWidth: 1,
       flexBasis: "100%",
-      gap: 6,
+      gap: spacing.sm,
       maxWidth: "100%",
       minWidth: 0,
-      padding: 9,
+      padding: spacing.lg,
     },
     badgeTop: {
-      alignItems: "center",
+      alignItems: "flex-start",
       flexDirection: "row",
-      gap: 9,
-    },
-    badgeIcon: {
-      alignItems: "center",
-      borderRadius: 999,
-      borderWidth: 1,
-      height: 32,
-      justifyContent: "center",
-      width: 32,
-    },
-    badgeIconText: {
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
-    },
-    badgeText: {
-      flex: 1,
-      minWidth: 0,
+      gap: spacing.sm,
+      justifyContent: "space-between",
     },
     badgeTier: {
-      fontSize: 9,
+      fontSize: fontSize.tiny,
       fontWeight: fontWeight.bold,
+      opacity: 0.74,
       textTransform: "uppercase",
     },
     badgeLabel: {
-      fontSize: fontSize.tiny,
+      flex: 1,
+      fontSize: fontSize.body,
       fontWeight: fontWeight.bold,
-      lineHeight: 15,
+      lineHeight: lineHeight.body,
+      minWidth: 0,
     },
     badgeDescription: {
-      fontSize: 10,
+      fontSize: fontSize.caption,
       fontWeight: fontWeight.regular,
-      lineHeight: 14,
+      lineHeight: lineHeight.caption,
     },
     badgeRarity: {
       alignSelf: "flex-start",
       borderRadius: 999,
       overflow: "hidden",
-      paddingHorizontal: 7,
-      paddingVertical: 2,
-      fontSize: 8,
+      paddingHorizontal: 9,
+      paddingVertical: 3,
+      fontSize: fontSize.tiny,
       fontWeight: fontWeight.bold,
       textTransform: "uppercase",
     },
@@ -377,22 +310,6 @@ function createStyles(colors) {
       maxWidth: 380,
       padding: 20,
       width: "100%",
-    },
-    modalIcon: {
-      alignItems: "center",
-      backgroundColor: colors.inputBackground,
-      borderColor: colors.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      height: 58,
-      justifyContent: "center",
-      marginBottom: 12,
-      width: 58,
-    },
-    modalIconText: {
-      color: colors.primary,
-      fontSize: 26,
-      fontWeight: fontWeight.bold,
     },
     modalEyebrow: {
       color: colors.primary,

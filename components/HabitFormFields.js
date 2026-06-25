@@ -73,6 +73,9 @@ export default function HabitFormFields({
       <View style={styles.emojiRow}>
         {emojiOptions.map((item) => (
           <Pressable
+            accessibilityLabel={`Habit emoji ${item}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: emoji === item }}
             key={item}
             onPress={() => setEmoji(item)}
             style={[styles.emojiButton, emoji === item && styles.optionSelected]}
@@ -86,6 +89,9 @@ export default function HabitFormFields({
       <View style={styles.optionGrid}>
         {categoryOptions.map((item) => (
           <Pressable
+            accessibilityLabel={`Category ${item}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: category === item }}
             key={item}
             onPress={() => setCategory(item)}
             style={[
@@ -109,6 +115,9 @@ export default function HabitFormFields({
       <View style={styles.colorRow}>
         {habitColorOptions.map((item) => (
           <Pressable
+            accessibilityLabel={`Habit color ${item}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: color === item }}
             key={item}
             onPress={() => setColor(item)}
             style={[
@@ -124,6 +133,9 @@ export default function HabitFormFields({
       <View style={styles.segmented}>
         {frequencyOptions.map((item) => (
           <Pressable
+            accessibilityLabel={`Frequency ${item}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: frequency === item }}
             key={item}
             onPress={() => setFrequency(item)}
             style={[
@@ -150,6 +162,9 @@ export default function HabitFormFields({
 
             return (
               <Pressable
+                accessibilityLabel={`Custom day ${day}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 key={day}
                 onPress={() => toggleCustomDay(day)}
                 style={[styles.dayButton, selected && styles.daySelected]}

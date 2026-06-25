@@ -167,29 +167,16 @@ export async function uncompleteHabitForToday(id) {
   return updatedHabit;
 }
 
-export async function moveHabit(id, direction) {
+export async function saveHabitOrder(orderedHabitIds) {
   const habits = await getHabits();
-  const currentIndex = habits.findIndex((habit) => habit.id === id);
-
-  if (currentIndex === -1) {
-    return habits;
-  }
-
-  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-
-  if (targetIndex < 0 || targetIndex >= habits.length) {
-    return habits;
-  }
-
-  const reorderedHabits = [...habits];
-  const [habitToMove] = reorderedHabits.splice(currentIndex, 1);
-  reorderedHabits.splice(targetIndex, 0, habitToMove);
-
-  const orderedHabits = reorderedHabits.map((habit, index) =>
+  const orderLookup = new Map(
+    orderedHabitIds.map((habitId, index) => [habitId, index])
+  );
+  const orderedHabits = habits.map((habit, index) =>
     normalizeHabit(
       {
         ...habit,
-        order: index,
+        order: orderLookup.has(habit.id) ? orderLookup.get(habit.id) : index,
       },
       index
     )
@@ -197,7 +184,9 @@ export async function moveHabit(id, direction) {
 
   await saveHabits(orderedHabits);
 
-  return orderedHabits;
+  return orderedHabits.sort(
+    (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
+  );
 }
 
 export async function deleteHabit(id) {
@@ -211,6 +200,7 @@ export async function deleteHabit(id) {
   const nextHabits = habits.filter((habit) => habit.id !== id);
 
   await saveHabits(nextHabits);
+  await rebuildGamificationFromHabits(nextHabits, { includeMessage: false });
 }
 
 export async function resetAllHabits() {

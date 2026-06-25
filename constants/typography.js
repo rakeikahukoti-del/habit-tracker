@@ -20,9 +20,9 @@ export const lineHeight = {
 };
 
 export const fontWeight = {
-  regular: "700",
-  medium: "800",
-  bold: "900",
+  regular: "400",
+  medium: "600",
+  bold: "700",
 };
 
 export const spacing = {

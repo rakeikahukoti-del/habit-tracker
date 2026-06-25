@@ -325,9 +325,33 @@ export default function HabitCard({
       >
       <View style={styles.topRow}>
           <Pressable
+            accessibilityActions={[
+              { name: "activate", label: "Open details" },
+              {
+                name: "toggleComplete",
+                label: completedToday ? "Undo today" : "Complete today",
+              },
+              { name: "longpress", label: "Reorder habit" },
+            ]}
+            accessibilityHint="Swipe right to complete, swipe left to undo, or double tap to open details."
+            accessibilityLabel={`${habit.name}, ${habit.category || "General"}, ${currentStreak} day streak`}
+            accessibilityRole="button"
             delayLongPress={260}
             onLongPress={() => {
               if (enableLongPressReorder) {
+                onReorderPress?.(habit);
+              }
+            }}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === "activate") {
+                handleOpenHabit();
+              }
+
+              if (event.nativeEvent.actionName === "toggleComplete") {
+                onToggleComplete(habit, { source: "accessibility" });
+              }
+
+              if (event.nativeEvent.actionName === "longpress") {
                 onReorderPress?.(habit);
               }
             }}
@@ -339,8 +363,8 @@ export default function HabitCard({
               style={[
                 styles.iconBadge,
                 {
-                  backgroundColor: withAlpha(accentColor, 0.14),
-                  borderColor: withAlpha(accentColor, 0.3),
+                  backgroundColor: withAlpha(accentColor, 0.08),
+                  borderColor: withAlpha(accentColor, 0.22),
                 },
               ]}
             >
@@ -367,14 +391,12 @@ export default function HabitCard({
               accessibilityLabel={`${currentStreak} day streak`}
               style={styles.streakBadge}
             >
-              <Text style={styles.streakIcon}>
-                {currentStreak > 0 ? "🔥" : ""}
-              </Text>
+              <Text style={styles.streakIcon}>🔥</Text>
               <Text
                 style={styles.streakText}
                 numberOfLines={1}
               >
-                {currentStreak} day streak
+                {currentStreak}
               </Text>
             </View>
           </View>
@@ -443,40 +465,40 @@ function createStyles(colors, isCompact) {
   swipeIcon: {
     color: "#173024",
     fontSize: 19,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   swipeText: {
     color: colors.inverseText,
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   card: {
     backgroundColor: colors.card,
     borderColor: colors.habitCardBorder || colors.border,
-    borderRadius: 18,
-    borderWidth: 2,
+    borderRadius: radius.xl,
+    borderWidth: 1,
     maxWidth: "100%",
-    padding: isCompact ? 14 : spacing.lg,
+    padding: isCompact ? spacing.md : spacing.lg,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.055,
+    shadowRadius: 14,
+    elevation: 1,
     width: "100%",
   },
   cardLayer: {
     zIndex: 2,
   },
   cardCompleted: {
-    borderWidth: 2.5,
-    elevation: 4,
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    borderWidth: 2,
+    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
   },
   topRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.md,
     justifyContent: "space-between",
     maxWidth: "100%",
   },
@@ -485,7 +507,7 @@ function createStyles(colors, isCompact) {
     flex: 1,
     flexDirection: "row",
     flexShrink: 1,
-    gap: 10,
+    gap: spacing.md,
     justifyContent: "space-between",
     minHeight: 52,
     minWidth: 0,
@@ -501,13 +523,13 @@ function createStyles(colors, isCompact) {
   iconBadge: {
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: radius.md,
-    height: isCompact ? 44 : 48,
+    borderRadius: radius.lg,
+    height: isCompact ? 42 : 46,
     justifyContent: "center",
-    width: isCompact ? 44 : 48,
+    width: isCompact ? 42 : 46,
   },
   icon: {
-    fontSize: isCompact ? 22 : 24,
+    fontSize: isCompact ? 21 : 23,
   },
   titleGroup: {
     flex: 1,
@@ -518,10 +540,11 @@ function createStyles(colors, isCompact) {
     color: colors.text,
     fontSize: isCompact ? fontSize.bodyLarge : fontSize.cardTitle,
     fontWeight: fontWeight.bold,
+    letterSpacing: 0,
   },
   category: {
     color: colors.muted,
-    fontSize: fontSize.label,
+    fontSize: fontSize.caption,
     fontWeight: fontWeight.regular,
     marginTop: spacing.xs,
   },
@@ -539,26 +562,21 @@ function createStyles(colors, isCompact) {
   },
   streakBadge: {
     alignItems: "center",
-    backgroundColor: colors.inputBackground,
-    borderColor: colors.border,
-    borderRadius: radius.round,
-    borderWidth: 1,
     flexDirection: "row",
     flexShrink: 0,
     gap: 4,
     justifyContent: "center",
-    maxWidth: isCompact ? 98 : 126,
-    minHeight: 34,
-    paddingHorizontal: 9,
+    maxWidth: 54,
+    minHeight: 30,
   },
   streakIcon: {
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: 13,
+    lineHeight: 16,
   },
   streakText: {
-    color: colors.primary,
+    color: colors.muted,
     flexShrink: 1,
-    fontSize: isCompact ? 10 : 11,
+    fontSize: fontSize.label,
     fontWeight: fontWeight.bold,
   },
   });

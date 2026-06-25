@@ -1,5 +1,6 @@
 import { router, usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 
 const navItems = [
@@ -12,8 +13,9 @@ const navItems = [
 
 export default function BottomNav() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, insets.bottom);
 
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>
@@ -26,7 +28,8 @@ export default function BottomNav() {
             <View key={item.key} style={styles.slot}>
               <Pressable
                 accessibilityLabel={`${item.label}${active ? ", selected" : ""}`}
-                accessibilityRole="button"
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
                 hitSlop={{ bottom: 12, left: 10, right: 10, top: 12 }}
                 onPress={() => {
                   if (!active) {
@@ -141,12 +144,12 @@ function isActiveRoute(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function createStyles(colors) {
+function createStyles(colors, bottomInset) {
   return StyleSheet.create({
     wrapper: {
       alignSelf: "center",
       maxWidth: 760,
-      paddingBottom: 10,
+      paddingBottom: Math.max(10, bottomInset),
       paddingHorizontal: 12,
       paddingTop: 4,
       width: "100%",

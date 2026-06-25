@@ -322,21 +322,14 @@ function BadgeCard({ badge, earned, onPress, styles }) {
       ]}
     >
       <View style={styles.badgeCardTop}>
-        <View style={styles.badgeIdentity}>
-          <View style={[styles.badgeIcon, getBadgeIconStyle(badge.tier)]}>
-            <Text style={[styles.badgeIconText, textStyle]}>
-              {earned ? getBadgeIcon(badge.tier) : "○"}
-            </Text>
-          </View>
-          <Text style={[styles.badgeTier, textStyle]}>
-            {earned ? badge.tier : "Locked"}
-          </Text>
-        </View>
+        <Text style={[styles.badgeName, textStyle]}>{badge.label}</Text>
         <Text style={[styles.badgeRarity, rarityStyle]}>{badge.rarity}</Text>
       </View>
-      <Text style={[styles.badgeName, textStyle]}>{badge.label}</Text>
       <Text style={[styles.badgeDescription, textStyle]} numberOfLines={2}>
         {badge.description}
+      </Text>
+      <Text style={[styles.badgeTier, textStyle]}>
+        {earned ? badge.tier : "Locked"}
       </Text>
     </Pressable>
   );
@@ -754,7 +747,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     badgeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: spacing.md,
     },
     showBadgesButton: {
       alignItems: "center",
@@ -769,50 +762,29 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     showBadgesText: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
     },
     badgeCard: {
       borderWidth: 1,
-      borderRadius: 18,
+      borderRadius: radius.lg,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
-      gap: 5,
+      gap: spacing.sm,
       maxWidth: "100%",
-      minHeight: 98,
+      minHeight: 106,
       minWidth: 0,
-      padding: 10,
+      padding: spacing.md,
     },
     badgeCardTop: {
-      alignItems: "center",
+      alignItems: "flex-start",
       flexDirection: "row",
-      gap: 8,
+      gap: spacing.sm,
       justifyContent: "space-between",
     },
-    badgeIdentity: {
-      alignItems: "center",
-      flex: 1,
-      flexDirection: "row",
-      gap: 8,
-      minWidth: 0,
-    },
-    badgeIcon: {
-      alignItems: "center",
-      backgroundColor: badgeTierColors.Bronze.iconBackground,
-      borderColor: badgeTierColors.Bronze.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      height: 32,
-      justifyContent: "center",
-      width: 32,
-    },
-    badgeIconText: {
-      fontSize: 14,
-      fontWeight: "900",
-    },
     badgeTier: {
-      flex: 1,
-      fontSize: 9,
-      fontWeight: "900",
+      fontSize: fontSize.tiny,
+      fontWeight: fontWeight.bold,
+      opacity: 0.74,
       minWidth: 0,
       textTransform: "uppercase",
     },
@@ -822,18 +794,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       paddingHorizontal: 8,
       paddingVertical: 3,
       fontSize: 8,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
       textTransform: "uppercase",
     },
     badgeName: {
-      fontSize: 12,
-      fontWeight: "900",
-      lineHeight: 16,
+      flex: 1,
+      fontSize: fontSize.body,
+      fontWeight: fontWeight.bold,
+      lineHeight: lineHeight.body,
+      minWidth: 0,
     },
     badgeDescription: {
-      fontSize: 10,
-      fontWeight: "800",
-      lineHeight: 14,
+      fontSize: fontSize.caption,
+      fontWeight: fontWeight.regular,
+      lineHeight: lineHeight.caption,
     },
     badgeLocked: {
       backgroundColor: colors.inputBackground,
@@ -845,7 +819,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     emptyText: {
       color: colors.muted,
       fontSize: 13,
-      fontWeight: "800",
+      fontWeight: fontWeight.medium,
       lineHeight: 19,
     },
     achievementRow: {
@@ -889,19 +863,19 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     badgeModalIconText: {
       color: colors.primary,
       fontSize: 26,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
     },
     badgeModalEyebrow: {
       color: colors.primary,
       fontSize: 11,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
       marginBottom: 6,
       textTransform: "uppercase",
     },
     badgeModalTitle: {
       color: colors.text,
       fontSize: 20,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
       textAlign: "center",
     },
     badgeModalDescription: {
@@ -926,7 +900,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderWidth: 1,
       color: colors.text,
       fontSize: 11,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
       overflow: "hidden",
       paddingHorizontal: 10,
       paddingVertical: 5,
@@ -952,7 +926,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     badgeModalButtonText: {
       color: colors.inverseText,
       fontSize: 14,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
     },
     achievementIcon: {
       alignItems: "center",
@@ -965,7 +939,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     achievementIconText: {
       color: colors.primary,
       fontSize: 19,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
     },
     achievementModalIcon: {
       alignItems: "center",
@@ -981,7 +955,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     achievementModalIconText: {
       color: colors.primary,
       fontSize: 26,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
     },
     achievementText: {
       flex: 1,
@@ -990,19 +964,19 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     achievementTitle: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
     },
     achievementDescription: {
       color: colors.muted,
       fontSize: 12,
-      fontWeight: "800",
+      fontWeight: fontWeight.medium,
       lineHeight: 17,
       marginTop: 3,
     },
     achievementType: {
       color: colors.primary,
       fontSize: 10,
-      fontWeight: "900",
+      fontWeight: fontWeight.bold,
       textTransform: "uppercase",
     },
   });

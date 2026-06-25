@@ -34,6 +34,8 @@ export default function LegalScreen({ title, body }) {
         showsVerticalScrollIndicator={false}
       >
         <Pressable
+          accessibilityLabel="Back to Settings"
+          accessibilityRole="button"
           hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={goBackSafely}
           style={styles.backButton}

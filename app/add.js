@@ -119,6 +119,7 @@ export default function AddHabitScreen() {
           <View style={styles.topBar}>
             <Pressable
               accessibilityLabel="Cancel creating habit"
+              accessibilityRole="button"
               hitSlop={10}
               onPress={handleCancel}
               style={styles.cancelButton}
@@ -158,6 +159,8 @@ export default function AddHabitScreen() {
         </ScrollView>
 
         <Pressable
+          accessibilityLabel="Save habit"
+          accessibilityRole="button"
           disabled={saving}
           onPress={handleSave}
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}

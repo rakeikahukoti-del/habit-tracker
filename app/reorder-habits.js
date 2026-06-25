@@ -1,10 +1,15 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
+  Animated,
+  LayoutAnimation,
+  PanResponder,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -21,7 +26,13 @@ import {
   spacing,
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
-import { getHabits, moveHabit } from "../storage/habitsStorage";
+import { getHabits, saveHabitOrder } from "../storage/habitsStorage";
+
+const ROW_DRAG_HEIGHT = 76;
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function ReorderHabitsScreen() {
   const { colors } = useTheme();
@@ -32,6 +43,14 @@ export default function ReorderHabitsScreen() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [draggingId, setDraggingId] = useState(null);
+  const activeDragY = useRef(new Animated.Value(0)).current;
+  const habitsRef = useRef([]);
+  const dragState = useRef({
+    id: null,
+    lastIndex: 0,
+    startIndex: 0,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -44,6 +63,7 @@ export default function ReorderHabitsScreen() {
 
           if (isActive) {
             setHabits(savedHabits);
+            habitsRef.current = savedHabits;
           }
         } catch {
           if (isActive) {
@@ -64,13 +84,81 @@ export default function ReorderHabitsScreen() {
     }, [])
   );
 
-  async function handleMoveHabit(id, direction) {
+  function handleDragStart(habit, index) {
+    activeDragY.stopAnimation();
+    activeDragY.setValue(0);
+    dragState.current = {
+      id: habit.id,
+      lastIndex: index,
+      startIndex: index,
+    };
+    setDraggingId(habit.id);
+  }
+
+  function handleDragMove(gestureState) {
+    const currentDrag = dragState.current;
+
+    if (!currentDrag.id) {
+      return;
+    }
+
+    const offset = Math.round(gestureState.dy / ROW_DRAG_HEIGHT);
+    const targetIndex = clamp(
+      currentDrag.startIndex + offset,
+      0,
+      habitsRef.current.length - 1
+    );
+    const visualOffset =
+      gestureState.dy -
+      (targetIndex - currentDrag.startIndex) * ROW_DRAG_HEIGHT;
+
+    activeDragY.setValue(visualOffset);
+
+    if (targetIndex === currentDrag.lastIndex) {
+      return;
+    }
+
+    const nextHabits = moveArrayItem(
+      habitsRef.current,
+      currentDrag.lastIndex,
+      targetIndex
+    );
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    dragState.current = {
+      ...currentDrag,
+      lastIndex: targetIndex,
+    };
+    habitsRef.current = nextHabits;
+    setHabits(nextHabits);
+  }
+
+  async function handleDragEnd() {
+    const currentDrag = dragState.current;
+
+    if (!currentDrag.id) {
+      return;
+    }
+
     try {
       setError("");
-      const reorderedHabits = await moveHabit(id, direction);
+      await animateToRest(activeDragY);
+      const reorderedHabits = await saveHabitOrder(
+        habitsRef.current.map((habit) => habit.id)
+      );
+
+      habitsRef.current = reorderedHabits;
       setHabits(reorderedHabits);
     } catch {
       setError("Could not reorder habits. Please try again.");
+    } finally {
+      dragState.current = {
+        id: null,
+        lastIndex: 0,
+        startIndex: 0,
+      };
+      activeDragY.setValue(0);
+      setDraggingId(null);
     }
   }
 
@@ -78,9 +166,12 @@ export default function ReorderHabitsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.container}
+        scrollEnabled={!draggingId}
         showsVerticalScrollIndicator={false}
       >
         <Pressable
+          accessibilityLabel="Back to Habit Preferences"
+          accessibilityRole="button"
           hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={() => router.replace("/habit-preferences")}
           style={styles.backButton}
@@ -91,7 +182,7 @@ export default function ReorderHabitsScreen() {
         <Text style={styles.eyebrow}>Habits</Text>
         <Text style={styles.title}>Reorder habits</Text>
         <Text style={styles.subtitle}>
-          Use arrows to set the Home order.
+          Hold and drag a habit to set the Home order.
         </Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -111,10 +202,12 @@ export default function ReorderHabitsScreen() {
               <HabitOrderRow
                 habit={habit}
                 index={index}
-                isFirst={index === 0}
-                isLast={index === habits.length - 1}
+                isDragging={draggingId === habit.id}
                 key={habit.id}
-                onMove={handleMoveHabit}
+                dragY={activeDragY}
+                onDragEnd={handleDragEnd}
+                onDragMove={handleDragMove}
+                onDragStart={handleDragStart}
                 styles={styles}
               />
             ))
@@ -125,69 +218,78 @@ export default function ReorderHabitsScreen() {
   );
 }
 
-function HabitOrderRow({ habit, index, isFirst, isLast, onMove, styles }) {
+function HabitOrderRow({
+  habit,
+  dragY,
+  index,
+  isDragging,
+  onDragEnd,
+  onDragMove,
+  onDragStart,
+  styles,
+}) {
   const accentColor = habit.color || DEFAULT_HABIT_COLOR;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: () => isDragging,
+        onPanResponderMove: (_, gestureState) => onDragMove(gestureState),
+        onPanResponderRelease: onDragEnd,
+        onPanResponderTerminate: onDragEnd,
+      }),
+    [isDragging, onDragEnd, onDragMove]
+  );
 
   return (
-    <View style={[styles.habitRow, index === 0 && styles.firstHabitRow]}>
-      <View
-        style={[
-          styles.iconBadge,
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={[
+        styles.habitRowWrap,
+        index === 0 && styles.firstHabitRow,
+        isDragging && [
+          styles.habitRowDragging,
           {
-            backgroundColor: withAlpha(accentColor, 0.14),
-            borderColor: withAlpha(accentColor, 0.36),
+            transform: [{ translateY: dragY }, { scale: 1.015 }],
           },
-        ]}
+        ],
+      ]}
+    >
+      <Pressable
+        accessibilityLabel={`Hold and drag ${habit.name}`}
+        accessibilityRole="button"
+        delayLongPress={180}
+        onLongPress={() => onDragStart(habit, index)}
+        style={styles.habitRow}
       >
-        <Text style={styles.iconText}>{habit.emoji || "✨"}</Text>
-      </View>
+        <View
+          style={[
+            styles.iconBadge,
+            {
+              backgroundColor: withAlpha(accentColor, 0.1),
+              borderColor: withAlpha(accentColor, 0.28),
+            },
+          ]}
+        >
+          <Text style={styles.iconText}>{habit.emoji || "✨"}</Text>
+        </View>
 
-      <View style={styles.habitText}>
-        <Text numberOfLines={1} style={styles.habitName}>
-          {habit.name}
-        </Text>
-        <Text numberOfLines={1} style={styles.habitCategory}>
-          {habit.category || "General"}
-        </Text>
-      </View>
+        <View style={styles.habitText}>
+          <Text numberOfLines={1} style={styles.habitName}>
+            {habit.name}
+          </Text>
+          <Text numberOfLines={1} style={styles.habitCategory}>
+            {habit.category || "General"}
+          </Text>
+        </View>
 
-      <View style={styles.moveControls}>
         <View
           accessibilityLabel="Drag handle"
           style={styles.dragHandle}
         >
-          <Text style={styles.dragHandleText}>≡</Text>
+          <Text style={styles.dragHandleText}>☰</Text>
         </View>
-        <MoveButton
-          disabled={isFirst}
-          label="Move habit up"
-          onPress={() => onMove(habit.id, "up")}
-          styles={styles}
-          symbol="↑"
-        />
-        <MoveButton
-          disabled={isLast}
-          label="Move habit down"
-          onPress={() => onMove(habit.id, "down")}
-          styles={styles}
-          symbol="↓"
-        />
-      </View>
-    </View>
-  );
-}
-
-function MoveButton({ disabled, label, onPress, styles, symbol }) {
-  return (
-    <Pressable
-      accessibilityLabel={label}
-      disabled={disabled}
-      hitSlop={{ bottom: 6, left: 6, right: 6, top: 6 }}
-      onPress={onPress}
-      style={[styles.moveButton, disabled && styles.disabledButton]}
-    >
-      <Text style={styles.moveButtonText}>{symbol}</Text>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -256,12 +358,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderColor: colors.border,
       borderRadius: radius.xl,
       borderWidth: 1,
-      overflow: "hidden",
+      overflow: "visible",
+    },
+    habitRowWrap: {
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      backgroundColor: colors.card,
     },
     habitRow: {
       alignItems: "center",
-      borderTopColor: colors.border,
-      borderTopWidth: 1,
       flexDirection: "row",
       gap: spacing.md,
       minHeight: 70,
@@ -269,6 +374,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     firstHabitRow: {
       borderTopWidth: 0,
+    },
+    habitRowDragging: {
+      backgroundColor: colors.inputBackground,
+      elevation: 8,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.18,
+      shadowRadius: 18,
+      zIndex: 20,
     },
     iconBadge: {
       alignItems: "center",
@@ -298,46 +412,21 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       lineHeight: lineHeight.caption,
       marginTop: spacing.xs,
     },
-    moveControls: {
-      alignItems: "center",
-      flexDirection: "row",
-      flexShrink: 0,
-      gap: spacing.sm,
-    },
     dragHandle: {
       alignItems: "center",
       backgroundColor: colors.inputBackground,
       borderColor: colors.border,
-      borderRadius: radius.sm,
+      borderRadius: radius.round,
       borderWidth: 1,
       height: 42,
       justifyContent: "center",
-      width: 32,
+      width: 42,
     },
     dragHandleText: {
       color: colors.muted,
       fontSize: fontSize.section,
       fontWeight: fontWeight.bold,
       lineHeight: 22,
-    },
-    moveButton: {
-      alignItems: "center",
-      backgroundColor: colors.inputBackground,
-      borderColor: colors.border,
-      borderRadius: radius.sm,
-      borderWidth: 1,
-      height: 42,
-      justifyContent: "center",
-      width: 42,
-    },
-    moveButtonText: {
-      color: colors.primary,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
-      lineHeight: 22,
-    },
-    disabledButton: {
-      opacity: 0.35,
     },
     emptyState: {
       alignItems: "center",
@@ -358,6 +447,31 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       padding: spacing.xl,
       textAlign: "center",
     },
+  });
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function moveArrayItem(items, fromIndex, toIndex) {
+  const nextItems = [...items];
+  const [item] = nextItems.splice(fromIndex, 1);
+
+  nextItems.splice(toIndex, 0, item);
+
+  return nextItems;
+}
+
+function animateToRest(animatedValue) {
+  return new Promise((resolve) => {
+    Animated.spring(animatedValue, {
+      damping: 18,
+      mass: 0.7,
+      stiffness: 180,
+      toValue: 0,
+      useNativeDriver: true,
+    }).start(resolve);
   });
 }
 

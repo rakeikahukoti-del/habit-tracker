@@ -633,7 +633,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   profileIconText: {
     color: colors.primary,
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   profileText: {
     flex: 1,
@@ -641,7 +641,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   profileTitle: {
     color: colors.text,
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   profileSubtitle: {
     color: colors.muted,
@@ -674,14 +674,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   quoteLabel: {
     color: colors.primary,
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginBottom: 5,
     textTransform: "uppercase",
   },
   quoteText: {
     color: colors.text,
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: fontWeight.medium,
     lineHeight: 20,
   },
   settingRow: {
@@ -738,7 +738,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   primaryButtonText: {
     color: colors.inverseText,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   secondaryButton: {
     alignItems: "center",
@@ -753,7 +753,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   secondaryButtonText: {
     color: colors.primary,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   dangerButton: {
     alignItems: "center",
@@ -766,7 +766,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   dangerButtonText: {
     color: colors.danger,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   disabledButton: {
     opacity: 0.55,
@@ -799,7 +799,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   themeGroupLabel: {
     color: colors.muted,
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginTop: 4,
     textTransform: "uppercase",
   },
@@ -842,7 +842,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   themeOptionText: {
     color: colors.text,
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   themeOptionTextSelected: {
     color: colors.primary,
@@ -853,7 +853,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   themeLockText: {
     color: colors.softText,
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginTop: 6,
   },
   modalBackdrop: {
@@ -906,7 +906,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   modalCancelText: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   modalPrimaryButton: {
     alignItems: "center",
@@ -919,7 +919,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   modalPrimaryText: {
     color: colors.inverseText,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   });
 }

@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Haptics from "expo-haptics";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -48,7 +47,6 @@ import {
 import {
   completeHabitForToday,
   getHabits,
-  moveHabit,
   uncompleteHabitForToday,
 } from "../storage/habitsStorage";
 import {
@@ -257,63 +255,68 @@ export default function HomeScreen() {
     }
   }
 
-  function handleReorderPress(habit) {
-    Alert.alert("Reorder habit", habit.name, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Move Up",
-        onPress: () => handleMoveHabit(habit.id, "up"),
-      },
-      {
-        text: "Move Down",
-        onPress: () => handleMoveHabit(habit.id, "down"),
-      },
-    ]);
+  function handleReorderPress() {
+    router.push("/reorder-habits");
   }
 
-  async function handleMoveHabit(id, direction) {
-    try {
-      setError("");
-      const reorderedHabits = await moveHabit(id, direction);
-      setHabits(reorderedHabits);
-    } catch {
-      setError("Could not reorder habits. Please try again.");
+  const homeSummary = useMemo(() => {
+    const completedTodayCount = habits.filter((habit) =>
+      wasCompletedToday(habit)
+    ).length;
+    const completionPercentage =
+      habits.length === 0
+        ? 0
+        : Math.round((completedTodayCount / habits.length) * 100);
+    const levelInfo = getGamificationLevelInfo(gamification);
+
+    return {
+      completedTodayCount,
+      completionLabel:
+        habits.length === 0 ? "0%" : `${completionPercentage}%`,
+      completionPercentage,
+      habitsSectionMessage: getTodayHabitsMessage(completionPercentage),
+      levelInfo,
+      longestCurrentStreak: habits.reduce(
+        (longest, habit) =>
+          Math.max(longest, getCurrentStreak(habit.completedDates)),
+        0
+      ),
+      motivation: getProgressMessage(completionPercentage, habits.length),
+      rank: getRankForLevel(levelInfo.level),
+      todayXp: getTodayXp(habits),
+    };
+  }, [gamification, habits]);
+  const visibleHabits = useMemo(() => {
+    const orderedHabits = [...habits].sort(
+      (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
+    );
+
+    if (!moveCompletedToBottom) {
+      return orderedHabits;
     }
-  }
 
-  const completedTodayCount = habits.filter((habit) =>
-    wasCompletedToday(habit)
-  ).length;
-  const completionLabel =
-    habits.length === 0 ? "0%" : `${Math.round((completedTodayCount / habits.length) * 100)}%`;
-  const completionPercentage =
-    habits.length === 0
-      ? 0
-      : Math.round((completedTodayCount / habits.length) * 100);
-  const todayXp = getTodayXp(habits);
-  const levelInfo = getGamificationLevelInfo(gamification);
-  const rank = getRankForLevel(levelInfo.level);
-  const longestCurrentStreak = habits.reduce(
-    (longest, habit) =>
-      Math.max(longest, getCurrentStreak(habit.completedDates)),
-    0
-  );
-  const motivation = getProgressMessage(completionPercentage, habits.length);
-  const habitsSectionMessage = getTodayHabitsMessage(completionPercentage);
-  const visibleHabits = moveCompletedToBottom
-    ? [...habits].sort((firstHabit, secondHabit) => {
-        const firstCompleted = wasCompletedToday(firstHabit);
-        const secondCompleted = wasCompletedToday(secondHabit);
+    return orderedHabits.sort((firstHabit, secondHabit) => {
+      const firstCompleted = wasCompletedToday(firstHabit);
+      const secondCompleted = wasCompletedToday(secondHabit);
 
-        if (firstCompleted === secondCompleted) {
-          return firstHabit.order - secondHabit.order;
-        }
+      if (firstCompleted === secondCompleted) {
+        return firstHabit.order - secondHabit.order;
+      }
 
-        return firstCompleted ? 1 : -1;
-      })
-    : [...habits].sort(
-        (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
-      );
+      return firstCompleted ? 1 : -1;
+    });
+  }, [habits, moveCompletedToBottom]);
+  const {
+    completedTodayCount,
+    completionLabel,
+    completionPercentage,
+    habitsSectionMessage,
+    levelInfo,
+    longestCurrentStreak,
+    motivation,
+    rank,
+    todayXp,
+  } = homeSummary;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -502,8 +505,11 @@ export default function HomeScreen() {
               />
             </View>
           )}
+          initialNumToRender={8}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
+          maxToRenderPerBatch={8}
           showsVerticalScrollIndicator={false}
+          windowSize={7}
         />
       </View>
 
@@ -1046,13 +1052,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   badgeUnlockEyebrow: {
     color: colors.heroMuted,
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     textTransform: "uppercase",
   },
   badgeUnlockRarity: {
     color: colors.accent,
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     textTransform: "uppercase",
   },
   badgeUnlockTitle: {
@@ -1075,12 +1081,12 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   badgeUnlockTier: {
     color: colors.inverseText,
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   badgeUnlockHint: {
     color: colors.heroMuted,
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: fontWeight.medium,
   },
   errorBanner: {
     backgroundColor: colors.dangerSoft,
@@ -1206,32 +1212,32 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   rankIcon: {
     color: colors.accent,
     fontSize: 56,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginBottom: 8,
     textAlign: "center",
   },
   levelModalEyebrow: {
     color: colors.primary,
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginBottom: 6,
     textTransform: "uppercase",
   },
   levelModalTitle: {
     color: colors.text,
     fontSize: 34,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   levelModalRank: {
     color: colors.accent,
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginTop: 4,
   },
   levelModalMessage: {
     color: colors.muted,
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: fontWeight.medium,
     lineHeight: 21,
     marginTop: 12,
   },
@@ -1240,7 +1246,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     borderRadius: 14,
     color: colors.primary,
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
     marginTop: 14,
     overflow: "hidden",
     paddingHorizontal: 12,
@@ -1270,7 +1276,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalButtonText: {
     color: colors.inverseText,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   levelModalSecondaryButton: {
     alignItems: "center",
@@ -1285,7 +1291,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalSecondaryText: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   modalButtonRow: {
     flexDirection: "row",
@@ -1314,11 +1320,11 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   themeUnlockName: {
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: fontWeight.bold,
   },
   themeUnlockMeta: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: fontWeight.medium,
     marginTop: 4,
   },
   });

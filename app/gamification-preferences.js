@@ -114,6 +114,8 @@ export default function GamificationPreferencesScreen() {
 function BackButton({ styles }) {
   return (
     <Pressable
+      accessibilityLabel="Back to Settings"
+      accessibilityRole="button"
       hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
       onPress={() => router.replace("/settings")}
       style={styles.backButton}
