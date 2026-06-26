@@ -122,7 +122,10 @@ export default function AddHabitScreen() {
               accessibilityRole="button"
               hitSlop={10}
               onPress={handleCancel}
-              style={styles.cancelButton}
+              style={({ pressed }) => [
+                styles.cancelButton,
+                pressed && styles.buttonPressed,
+              ]}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
@@ -163,7 +166,11 @@ export default function AddHabitScreen() {
           accessibilityRole="button"
           disabled={saving}
           onPress={handleSave}
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          style={({ pressed }) => [
+            styles.saveButton,
+            saving && styles.saveButtonDisabled,
+            pressed && !saving && styles.buttonPressed,
+          ]}
         >
           <Text style={styles.saveButtonText}>
             {saving ? "Saving..." : "Save habit"}
@@ -259,6 +266,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   saveButtonDisabled: {
     opacity: 0.65,
+  },
+  buttonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
   },
   saveButtonText: {
     color: colors.inverseText,

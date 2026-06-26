@@ -356,7 +356,10 @@ export default function HabitCard({
               }
             }}
             onPress={handleOpenHabit}
-            style={styles.cardMainContent}
+            style={({ pressed }) => [
+              styles.cardMainContent,
+              pressed && styles.cardMainPressed,
+            ]}
           >
           <View style={styles.identity}>
             <View
@@ -511,6 +514,9 @@ function createStyles(colors, isCompact) {
     justifyContent: "space-between",
     minHeight: 52,
     minWidth: 0,
+  },
+  cardMainPressed: {
+    opacity: 0.74,
   },
   identity: {
     alignItems: "center",

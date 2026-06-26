@@ -3,12 +3,15 @@ import * as Haptics from "expo-haptics";
 import {
   ActivityIndicator,
   FlatList,
+  LayoutAnimation,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   SafeAreaView,
   StyleSheet,
   Text,
+  UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -53,6 +56,10 @@ import {
   getCurrentStreak,
   wasCompletedToday,
 } from "../utils/habitStats";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function HomeScreen() {
   const { colors, setThemePreference } = useTheme();
@@ -259,6 +266,11 @@ export default function HomeScreen() {
     router.push("/reorder-habits");
   }
 
+  function toggleProgressExpanded() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setProgressExpanded((value) => !value);
+  }
+
   const homeSummary = useMemo(() => {
     const completedTodayCount = habits.filter((habit) =>
       wasCompletedToday(habit)
@@ -386,8 +398,11 @@ export default function HomeScreen() {
 
           <View style={styles.summaryFooter}>
             <Pressable
-              onPress={() => setProgressExpanded((value) => !value)}
-              style={styles.progressToggle}
+              onPress={toggleProgressExpanded}
+              style={({ pressed }) => [
+                styles.progressToggle,
+                pressed && styles.buttonPressed,
+              ]}
             >
               <Text style={styles.progressToggleText}>
                 {progressExpanded ? "Hide progress" : "Show progress"}
@@ -400,7 +415,10 @@ export default function HomeScreen() {
         {celebration ? (
           <Pressable
             onPress={() => setCelebration("")}
-            style={styles.celebrationBanner}
+            style={({ pressed }) => [
+              styles.celebrationBanner,
+              pressed && styles.cardPressed,
+            ]}
           >
             <Text style={styles.celebrationText}>{celebration}</Text>
           </Pressable>
@@ -409,7 +427,10 @@ export default function HomeScreen() {
         {completionReward ? (
           <Pressable
             onPress={() => setCompletionReward(null)}
-            style={styles.completionPopup}
+            style={({ pressed }) => [
+              styles.completionPopup,
+              pressed && styles.cardPressed,
+            ]}
           >
             <View style={styles.completionPopupTop}>
               <Text style={styles.completionPopupEyebrow}>Completed</Text>
@@ -430,7 +451,10 @@ export default function HomeScreen() {
         {badgeUnlock && !completionReward && !perfectDay && !levelUp && !themeUnlock ? (
           <Pressable
             onPress={() => setBadgeUnlock(null)}
-            style={styles.badgeUnlockPopup}
+            style={({ pressed }) => [
+              styles.badgeUnlockPopup,
+              pressed && styles.cardPressed,
+            ]}
           >
             <View style={styles.badgeUnlockTop}>
               <Text style={styles.badgeUnlockEyebrow}>Badge unlocked</Text>
@@ -467,7 +491,10 @@ export default function HomeScreen() {
             accessibilityLabel="Add a new habit"
             hitSlop={8}
             onPress={() => router.push("/add")}
-            style={styles.inlineAddButton}
+            style={({ pressed }) => [
+              styles.inlineAddButton,
+              pressed && styles.buttonPressed,
+            ]}
           >
             <Text style={styles.inlineAddText}>Add</Text>
           </Pressable>
@@ -542,7 +569,10 @@ export default function HomeScreen() {
             </View>
             <Pressable
               onPress={() => setLevelUp(null)}
-              style={styles.levelModalButton}
+              style={({ pressed }) => [
+                styles.levelModalButton,
+                pressed && styles.buttonPressed,
+              ]}
             >
               <Text style={styles.levelModalButtonText}>Keep Going</Text>
             </Pressable>
@@ -568,7 +598,11 @@ export default function HomeScreen() {
             <View style={styles.modalButtonRow}>
               <Pressable
                 onPress={() => setThemeUnlock(null)}
-                style={[styles.levelModalSecondaryButton, styles.modalButtonFlex]}
+                style={({ pressed }) => [
+                  styles.levelModalSecondaryButton,
+                  styles.modalButtonFlex,
+                  pressed && styles.buttonPressed,
+                ]}
               >
                 <Text style={styles.levelModalSecondaryText}>Later</Text>
               </Pressable>
@@ -579,7 +613,11 @@ export default function HomeScreen() {
                   }
                   setThemeUnlock(null);
                 }}
-                style={[styles.levelModalButton, styles.modalButtonFlex]}
+                style={({ pressed }) => [
+                  styles.levelModalButton,
+                  styles.modalButtonFlex,
+                  pressed && styles.buttonPressed,
+                ]}
               >
                 <Text style={styles.levelModalButtonText}>Equip</Text>
               </Pressable>
@@ -604,7 +642,10 @@ export default function HomeScreen() {
             <Text style={styles.levelModalUnlock}>+25 bonus XP</Text>
             <Pressable
               onPress={() => setPerfectDay(null)}
-              style={styles.levelModalButton}
+              style={({ pressed }) => [
+                styles.levelModalButton,
+                pressed && styles.buttonPressed,
+              ]}
             >
               <Text style={styles.levelModalButtonText}>Nice</Text>
             </Pressable>
@@ -1299,6 +1340,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   modalButtonFlex: {
     flex: 1,
+  },
+  buttonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.995 }],
   },
   themeUnlockPreview: {
     borderRadius: 18,

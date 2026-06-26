@@ -59,9 +59,10 @@ export default function GamificationPanel({ gamification }) {
               accessibilityLabel={`View ${badge.label} badge details`}
               key={badge.id}
               onPress={() => setSelectedBadge({ badge, earned: true })}
-              style={[
+              style={({ pressed }) => [
                 styles.badge,
                 getBadgeTierStyle(badge.tier),
+                pressed && styles.cardPressed,
               ]}
             >
               <View style={styles.badgeTop}>
@@ -96,7 +97,10 @@ export default function GamificationPanel({ gamification }) {
       {earnedBadges.length > 6 ? (
         <Pressable
           onPress={() => setShowAllBadges((value) => !value)}
-          style={styles.showBadgesButton}
+          style={({ pressed }) => [
+            styles.showBadgesButton,
+            pressed && styles.buttonPressed,
+          ]}
         >
           <Text style={styles.showBadgesText}>
             {showAllBadges ? "Show fewer badges" : "Show all badges"}
@@ -138,7 +142,13 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
               Unlock requirement: {badge.description}
             </Text>
           ) : null}
-          <Pressable onPress={onClose} style={styles.modalButton}>
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [
+              styles.modalButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Text style={styles.modalButtonText}>Close</Text>
           </Pressable>
         </View>
@@ -373,6 +383,14 @@ function createStyles(colors) {
       color: colors.inverseText,
       fontSize: fontSize.body,
       fontWeight: fontWeight.bold,
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.98 }],
+    },
+    cardPressed: {
+      opacity: 0.88,
+      transform: [{ scale: 0.995 }],
     },
   });
 }

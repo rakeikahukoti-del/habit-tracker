@@ -78,7 +78,11 @@ export default function HabitFormFields({
             accessibilityState={{ selected: emoji === item }}
             key={item}
             onPress={() => setEmoji(item)}
-            style={[styles.emojiButton, emoji === item && styles.optionSelected]}
+            style={({ pressed }) => [
+              styles.emojiButton,
+              emoji === item && styles.optionSelected,
+              pressed && styles.optionPressed,
+            ]}
           >
             <Text style={styles.emojiText}>{item}</Text>
           </Pressable>
@@ -94,9 +98,10 @@ export default function HabitFormFields({
             accessibilityState={{ selected: category === item }}
             key={item}
             onPress={() => setCategory(item)}
-            style={[
+            style={({ pressed }) => [
               styles.optionButton,
               category === item && styles.optionSelected,
+              pressed && styles.optionPressed,
             ]}
           >
             <Text
@@ -120,10 +125,11 @@ export default function HabitFormFields({
             accessibilityState={{ selected: color === item }}
             key={item}
             onPress={() => setColor(item)}
-            style={[
+            style={({ pressed }) => [
               styles.colorButton,
               { backgroundColor: item },
               color === item && styles.colorSelected,
+              pressed && styles.optionPressed,
             ]}
           />
         ))}
@@ -138,9 +144,10 @@ export default function HabitFormFields({
             accessibilityState={{ selected: frequency === item }}
             key={item}
             onPress={() => setFrequency(item)}
-            style={[
+            style={({ pressed }) => [
               styles.segmentButton,
               frequency === item && styles.segmentSelected,
+              pressed && styles.optionPressed,
             ]}
           >
             <Text
@@ -167,7 +174,11 @@ export default function HabitFormFields({
                 accessibilityState={{ selected }}
                 key={day}
                 onPress={() => toggleCustomDay(day)}
-                style={[styles.dayButton, selected && styles.daySelected]}
+                style={({ pressed }) => [
+                  styles.dayButton,
+                  selected && styles.daySelected,
+                  pressed && styles.optionPressed,
+                ]}
               >
                 <Text
                   style={[styles.dayText, selected && styles.dayTextSelected]}
@@ -258,6 +269,10 @@ function createStyles(colors, isSmallScreen) {
   optionSelected: {
     backgroundColor: colors.primarySoft,
     borderColor: colors.primary,
+  },
+  optionPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
   },
   optionText: {
     color: colors.muted,
