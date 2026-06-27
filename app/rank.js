@@ -1,12 +1,15 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  LayoutAnimation,
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -31,6 +34,10 @@ import {
   getRankForLevel,
   rankThemes,
 } from "../storage/gamificationStorage";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function RankScreen() {
   const { colors } = useTheme();
@@ -70,6 +77,11 @@ export default function RankScreen() {
     (theme) => levelInfo.level < theme.unlockLevel
   );
   const nextTheme = lockedThemes[0];
+
+  function toggleBadges() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowAllBadges((value) => !value);
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -191,8 +203,11 @@ export default function RankScreen() {
                 })}
               </View>
               <Pressable
-                onPress={() => setShowAllBadges((value) => !value)}
-                style={styles.showBadgesButton}
+                onPress={toggleBadges}
+                style={({ pressed }) => [
+                  styles.showBadgesButton,
+                  pressed && styles.buttonPressed,
+                ]}
               >
                 <Text style={styles.showBadgesText}>
                   {showAllBadges ? "Show fewer badges ↑" : "Show all badges ↓"}
@@ -315,10 +330,11 @@ function BadgeCard({ badge, earned, onPress, styles }) {
     <Pressable
       accessibilityLabel={`View ${badge.label} badge details`}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.badgeCard,
         tierStyle,
         !earned && styles.badgeLocked,
+        pressed && styles.cardPressed,
       ]}
     >
       <View style={styles.badgeCardTop}>
@@ -405,7 +421,13 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
               Unlock requirement: {badge.description}
             </Text>
           ) : null}
-          <Pressable onPress={onClose} style={styles.badgeModalButton}>
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [
+              styles.badgeModalButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Text style={styles.badgeModalButtonText}>Close</Text>
           </Pressable>
         </View>
@@ -443,7 +465,10 @@ function AchievementRow({ achievement, onPress, styles }) {
     <Pressable
       accessibilityLabel={`View ${achievement.title} achievement details`}
       onPress={onPress}
-      style={styles.achievementRow}
+      style={({ pressed }) => [
+        styles.achievementRow,
+        pressed && styles.cardPressed,
+      ]}
     >
       <View style={styles.achievementIcon}>
         <Text style={styles.achievementIconText}>
@@ -498,7 +523,13 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
               Reward: +{achievement.xp} XP
             </Text>
           ) : null}
-          <Pressable onPress={onClose} style={styles.badgeModalButton}>
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [
+              styles.badgeModalButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Text style={styles.badgeModalButtonText}>Close</Text>
           </Pressable>
         </View>
@@ -881,7 +912,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     badgeModalDescription: {
       color: colors.muted,
       fontSize: 14,
-      fontWeight: "700",
+      fontWeight: fontWeight.medium,
       lineHeight: 20,
       marginTop: 8,
       textAlign: "center",
@@ -909,7 +940,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     badgeModalRequirement: {
       color: colors.muted,
       fontSize: 12,
-      fontWeight: "700",
+      fontWeight: fontWeight.medium,
       lineHeight: 18,
       marginTop: 12,
       textAlign: "center",
@@ -978,6 +1009,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontSize: 10,
       fontWeight: fontWeight.bold,
       textTransform: "uppercase",
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.98 }],
+    },
+    cardPressed: {
+      opacity: 0.88,
+      transform: [{ scale: 0.995 }],
     },
   });
 }

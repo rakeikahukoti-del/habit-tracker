@@ -646,7 +646,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   profileSubtitle: {
     color: colors.muted,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
     lineHeight: 18,
     marginTop: 4,
   },
@@ -788,7 +788,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   legalArrow: {
     color: colors.muted,
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
   },
   themeControl: {
     borderTopColor: colors.border,

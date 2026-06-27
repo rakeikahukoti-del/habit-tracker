@@ -259,7 +259,10 @@ function HabitOrderRow({
         accessibilityRole="button"
         delayLongPress={180}
         onLongPress={() => onDragStart(habit, index)}
-        style={styles.habitRow}
+        style={({ pressed }) => [
+          styles.habitRow,
+          pressed && !isDragging && styles.habitRowPressed,
+        ]}
       >
         <View
           style={[
@@ -371,6 +374,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       gap: spacing.md,
       minHeight: 70,
       padding: isSmallScreen ? spacing.md : spacing.lg,
+    },
+    habitRowPressed: {
+      opacity: 0.82,
     },
     firstHabitRow: {
       borderTopWidth: 0,

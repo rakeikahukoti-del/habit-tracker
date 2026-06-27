@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { fontWeight } from "../constants/typography";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 
 export default function RootLayout() {
@@ -20,7 +21,7 @@ function ThemedStack() {
         headerTitleStyle: {
           color: colors.text,
           fontSize: 18,
-          fontWeight: "700",
+          fontWeight: fontWeight.bold,
         },
         headerTintColor: colors.primary,
         contentStyle: { backgroundColor: colors.background },

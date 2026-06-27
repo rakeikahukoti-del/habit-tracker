@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  LayoutAnimation,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
+} from "react-native";
 import { badgeTierColors, rarityColors } from "../constants/colors";
 import {
   fontSize,
@@ -16,6 +25,10 @@ import {
 } from "../storage/gamificationStorage";
 import { useTheme } from "../context/ThemeContext";
 
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function GamificationPanel({ gamification }) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -27,6 +40,11 @@ export default function GamificationPanel({ gamification }) {
     gamification?.earnedBadges?.includes(badge.id)
   );
   const badgePreview = showAllBadges ? earnedBadges : earnedBadges.slice(0, 6);
+
+  function toggleBadges() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowAllBadges((value) => !value);
+  }
 
   return (
     <View style={styles.card}>
@@ -96,7 +114,7 @@ export default function GamificationPanel({ gamification }) {
 
       {earnedBadges.length > 6 ? (
         <Pressable
-          onPress={() => setShowAllBadges((value) => !value)}
+          onPress={toggleBadges}
           style={({ pressed }) => [
             styles.showBadgesButton,
             pressed && styles.buttonPressed,
