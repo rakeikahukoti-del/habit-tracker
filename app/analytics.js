@@ -480,7 +480,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     smallStat: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: 14,
+      borderRadius: radius.sm,
       borderWidth: 1,
       flexBasis: "47%",
       flexGrow: 1,

@@ -329,11 +329,11 @@ function createStyles(colors) {
       justifyContent: "center",
       padding: 20,
     },
-    modalCard: {
-      alignItems: "center",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 24,
+  modalCard: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radius.xxl,
       borderWidth: 1,
       maxWidth: 380,
       padding: 20,

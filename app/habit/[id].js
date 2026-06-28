@@ -462,7 +462,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   deleteButton: {
     alignItems: "center",
     backgroundColor: colors.dangerSoft,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     flex: 1,
     minHeight: 50,
     justifyContent: "center",
@@ -476,7 +476,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   saveButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     flex: 1,
     minHeight: 50,
     justifyContent: "center",

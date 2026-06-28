@@ -625,7 +625,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   profileIcon: {
     alignItems: "center",
     backgroundColor: colors.primarySoft,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     height: 48,
     justifyContent: "center",
     width: 48,
@@ -653,7 +653,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   section: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: 24,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     marginBottom: spacing.lg,
     padding: spacing.lg,
@@ -667,7 +667,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   quoteBox: {
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     padding: 14,
   },
@@ -730,7 +730,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   primaryButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     justifyContent: "center",
     minHeight: 50,
     paddingVertical: 14,
@@ -744,7 +744,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     justifyContent: "center",
     minHeight: 50,
@@ -758,7 +758,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   dangerButton: {
     alignItems: "center",
     backgroundColor: colors.dangerSoft,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     justifyContent: "center",
     minHeight: 50,
     paddingVertical: 14,
@@ -812,7 +812,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "flex-start",
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flexBasis: isSmallScreen ? "48%" : "31%",
     flexGrow: 1,
@@ -863,8 +863,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   modalCard: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
     gap: 12,
     maxHeight: "82%",
     padding: 18,
@@ -883,7 +883,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   jsonInput: {
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.text,
     fontSize: 13,
@@ -898,7 +898,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   modalCancelButton: {
     alignItems: "center",
     backgroundColor: colors.inputBackground,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     flex: 1,
     minHeight: 50,
     justifyContent: "center",
@@ -911,7 +911,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   modalPrimaryButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     flex: 1,
     minHeight: 50,
     justifyContent: "center",

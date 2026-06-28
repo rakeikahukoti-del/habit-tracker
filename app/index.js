@@ -922,7 +922,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   percentBadge: {
     alignItems: "center",
     backgroundColor: colors.primarySoft,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     justifyContent: "center",
     minHeight: 46,
     minWidth: 70,
@@ -1030,7 +1030,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   completionPopup: {
     backgroundColor: colors.card,
     borderColor: colors.accent,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1.5,
     marginBottom: 10,
     paddingHorizontal: 16,
@@ -1243,7 +1243,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalCard: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: 26,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     maxWidth: 360,
     alignItems: "stretch",
@@ -1284,7 +1284,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   levelModalUnlock: {
     backgroundColor: colors.primarySoft,
-    borderRadius: 14,
+    borderRadius: radius.sm,
     color: colors.primary,
     fontSize: 14,
     fontWeight: fontWeight.bold,
@@ -1309,7 +1309,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     justifyContent: "center",
     marginTop: 20,
     minHeight: 50,
@@ -1323,7 +1323,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     justifyContent: "center",
     marginTop: 20,
@@ -1350,7 +1350,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     transform: [{ scale: 0.995 }],
   },
   themeUnlockPreview: {
-    borderRadius: 18,
+    borderRadius: radius.lg,
     borderWidth: 1,
     marginTop: 16,
     padding: 16,
