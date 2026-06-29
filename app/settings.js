@@ -246,11 +246,14 @@ export default function SettingsScreen() {
             {SHOW_DEMO_TOOLS ? (
               <>
                 <Pressable
+                  accessibilityLabel="Load demo data"
+                  accessibilityRole="button"
                   disabled={actionLoading}
                   onPress={handleLoadDemoData}
-                  style={[
+                  style={({ pressed }) => [
                     styles.primaryButton,
                     actionLoading && styles.disabledButton,
+                    pressed && !actionLoading && styles.buttonPressed,
                   ]}
                 >
                   <Text style={styles.primaryButtonText}>
@@ -259,11 +262,14 @@ export default function SettingsScreen() {
                 </Pressable>
 
                 <Pressable
+                  accessibilityLabel="Load master demo data"
+                  accessibilityRole="button"
                   disabled={actionLoading}
                   onPress={handleLoadMasterDemoData}
-                  style={[
+                  style={({ pressed }) => [
                     styles.secondaryButton,
                     actionLoading && styles.disabledButton,
+                    pressed && !actionLoading && styles.buttonPressed,
                   ]}
                 >
                   <Text style={styles.secondaryButtonText}>
@@ -274,33 +280,42 @@ export default function SettingsScreen() {
             ) : null}
 
             <Pressable
+              accessibilityLabel="Export habit data as JSON"
+              accessibilityRole="button"
               disabled={actionLoading}
               onPress={handleExportData}
-              style={[
+              style={({ pressed }) => [
                 styles.secondaryButton,
                 actionLoading && styles.disabledButton,
+                pressed && !actionLoading && styles.buttonPressed,
               ]}
             >
               <Text style={styles.secondaryButtonText}>Export JSON</Text>
             </Pressable>
 
             <Pressable
+              accessibilityLabel="Import habit data from JSON"
+              accessibilityRole="button"
               disabled={actionLoading}
               onPress={() => setModalMode("import")}
-              style={[
+              style={({ pressed }) => [
                 styles.secondaryButton,
                 actionLoading && styles.disabledButton,
+                pressed && !actionLoading && styles.buttonPressed,
               ]}
             >
               <Text style={styles.secondaryButtonText}>Import JSON</Text>
             </Pressable>
 
             <Pressable
+              accessibilityLabel="Reset all data"
+              accessibilityRole="button"
               disabled={actionLoading}
               onPress={confirmResetAllData}
-              style={[
+              style={({ pressed }) => [
                 styles.dangerButton,
                 actionLoading && styles.disabledButton,
+                pressed && !actionLoading && styles.buttonPressed,
               ]}
             >
               <Text style={styles.dangerButtonText}>Reset all data</Text>
@@ -362,20 +377,31 @@ export default function SettingsScreen() {
 
             <View style={styles.modalActions}>
               <Pressable
+                accessibilityLabel="Close data dialog"
+                accessibilityRole="button"
                 onPress={() => setModalMode(null)}
-                style={styles.modalCancelButton}
+                style={({ pressed }) => [
+                  styles.modalCancelButton,
+                  pressed && styles.buttonPressed,
+                ]}
               >
                 <Text style={styles.modalCancelText}>Close</Text>
               </Pressable>
 
               {modalMode === "import" ? (
                 <Pressable
+                  accessibilityLabel="Import JSON backup"
+                  accessibilityRole="button"
                   disabled={actionLoading || !importText.trim()}
                   onPress={confirmImportData}
-                  style={[
+                  style={({ pressed }) => [
                     styles.modalPrimaryButton,
                     (actionLoading || !importText.trim()) &&
                       styles.disabledButton,
+                    pressed &&
+                      !actionLoading &&
+                      importText.trim() &&
+                      styles.buttonPressed,
                   ]}
                 >
                   <Text style={styles.modalPrimaryText}>Import</Text>
@@ -418,7 +444,15 @@ function LegalLink({ href, label, styles }) {
 function SettingsLink({ href, label, styles, value }) {
   return (
     <Link href={href} asChild>
-      <Pressable style={styles.legalRow}>
+      <Pressable
+        accessibilityLabel={`Open ${label}`}
+        accessibilityRole="button"
+        hitSlop={4}
+        style={({ pressed }) => [
+          styles.legalRow,
+          pressed && styles.rowPressed,
+        ]}
+      >
         <View style={styles.settingText}>
           <Text style={styles.legalLabel}>{label}</Text>
           {value ? <Text style={styles.settingHelper}>{value}</Text> : null}
@@ -496,13 +530,17 @@ function renderThemeOption({ option, selected, setThemePreference, styles }) {
 
   return (
     <Pressable
+      accessibilityLabel={`${option.label} theme${option.unlocked ? "" : `, locked until level ${option.requiredLevel}`}`}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !option.unlocked, selected }}
       key={option.value}
       disabled={!option.unlocked}
       onPress={() => setThemePreference(option.value)}
-      style={[
+      style={({ pressed }) => [
         styles.themeOption,
         selected && styles.themeOptionSelected,
         !option.unlocked && styles.themeOptionLocked,
+        pressed && option.unlocked && styles.cardPressed,
       ]}
     >
       <View style={styles.themePreviewRow}>
@@ -770,6 +808,17 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   disabledButton: {
     opacity: 0.55,
+  },
+  buttonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
+  },
+  cardPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.995 }],
+  },
+  rowPressed: {
+    opacity: 0.72,
   },
   legalRow: {
     alignItems: "center",

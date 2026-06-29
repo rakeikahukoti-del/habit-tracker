@@ -182,7 +182,16 @@ export default function HabitDetailsScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.missingContainer}>
           <Text style={styles.missingTitle}>Habit not found</Text>
-          <Pressable onPress={() => router.replace("/")} style={styles.saveButton}>
+          <Pressable
+            accessibilityLabel="Go Home"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => router.replace("/")}
+            style={({ pressed }) => [
+              styles.saveButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Text style={styles.saveButtonText}>Go Home</Text>
           </Pressable>
         </View>
@@ -208,9 +217,14 @@ export default function HabitDetailsScreen() {
         >
           <View style={styles.topActions}>
             <Pressable
+              accessibilityLabel="Back to Home"
+              accessibilityRole="button"
               hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
               onPress={() => router.replace("/")}
-              style={styles.homeButton}
+              style={({ pressed }) => [
+                styles.homeButton,
+                pressed && styles.buttonPressed,
+              ]}
             >
               <Text style={styles.homeButtonText}>← Home</Text>
             </Pressable>
@@ -280,14 +294,29 @@ export default function HabitDetailsScreen() {
         </ScrollView>
 
         <View style={styles.actions}>
-          <Pressable onPress={handleDelete} style={styles.deleteButton}>
+          <Pressable
+            accessibilityLabel="Delete habit"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={handleDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Text style={styles.deleteButtonText}>Delete</Text>
           </Pressable>
 
           <Pressable
+            accessibilityLabel="Save habit changes"
+            accessibilityRole="button"
             disabled={saving}
             onPress={handleSave}
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            style={({ pressed }) => [
+              styles.saveButton,
+              saving && styles.saveButtonDisabled,
+              pressed && !saving && styles.buttonPressed,
+            ]}
           >
             <Text style={styles.saveButtonText}>
               {saving ? "Saving..." : "Save"}
@@ -484,6 +513,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   saveButtonDisabled: {
     opacity: 0.65,
+  },
+  buttonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
   },
   saveButtonText: {
     color: colors.inverseText,

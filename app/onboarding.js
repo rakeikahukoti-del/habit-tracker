@@ -47,7 +47,16 @@ export default function OnboardingScreen() {
           <Text style={styles.point}>Export a JSON backup anytime</Text>
         </View>
 
-        <Pressable onPress={handleStart} style={styles.button}>
+        <Pressable
+          accessibilityLabel="Start tracking habits"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={handleStart}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+        >
           <Text style={styles.buttonText}>Start tracking</Text>
         </Pressable>
       </View>
@@ -124,6 +133,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       minHeight: 54,
       paddingHorizontal: 18,
       paddingVertical: 16,
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.98 }],
     },
     buttonText: {
       color: colors.inverseText,

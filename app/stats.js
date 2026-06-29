@@ -124,8 +124,14 @@ export default function StatsScreen() {
             </View>
 
             <Pressable
+              accessibilityLabel="Open analytics"
+              accessibilityRole="button"
+              hitSlop={6}
               onPress={() => router.push("/analytics")}
-              style={styles.analyticsLinkCard}
+              style={({ pressed }) => [
+                styles.analyticsLinkCard,
+                pressed && styles.cardPressed,
+              ]}
             >
               <View style={styles.analyticsLinkText}>
                 <Text style={styles.analyticsLinkLabel}>Analytics</Text>
@@ -341,6 +347,10 @@ function createStyles(colors, { isLandscape, isSmallScreen, isTablet }) {
     justifyContent: "space-between",
     marginTop: 14,
     padding: spacing.lg,
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.995 }],
   },
   analyticsLinkText: {
     flex: 1,

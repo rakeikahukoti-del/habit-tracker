@@ -62,9 +62,13 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
         <View style={styles.monthControls}>
           <Pressable
             accessibilityLabel="Previous month"
-            hitSlop={8}
+            accessibilityRole="button"
+            hitSlop={10}
             onPress={goToPreviousMonth}
-            style={styles.monthButton}
+            style={({ pressed }) => [
+              styles.monthButton,
+              pressed && styles.buttonPressed,
+            ]}
           >
             <Text style={styles.monthButtonText}>‹</Text>
           </Pressable>
@@ -76,10 +80,16 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
           </Text>
           <Pressable
             accessibilityLabel="Next month"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canGoNext }}
             disabled={!canGoNext}
-            hitSlop={8}
+            hitSlop={10}
             onPress={goToNextMonth}
-            style={[styles.monthButton, !canGoNext && styles.disabledButton]}
+            style={({ pressed }) => [
+              styles.monthButton,
+              !canGoNext && styles.disabledButton,
+              pressed && canGoNext && styles.buttonPressed,
+            ]}
           >
             <Text style={styles.monthButtonText}>›</Text>
           </Pressable>
@@ -216,6 +226,10 @@ function createStyles(colors, isSmallScreen) {
     },
     disabledButton: {
       opacity: 0.35,
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.96 }],
     },
     monthButtonText: {
       color: colors.primary,

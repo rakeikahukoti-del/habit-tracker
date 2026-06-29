@@ -23,7 +23,15 @@ export default function EmptyState() {
         Create your first habit and give today a clear next step.
       </Text>
       <Link href="/add" asChild>
-        <Pressable style={styles.button}>
+        <Pressable
+          accessibilityLabel="Create a new habit"
+          accessibilityRole="button"
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+        >
           <Text style={styles.buttonText}>Create Habit</Text>
         </Pressable>
       </Link>
@@ -75,11 +83,15 @@ function createStyles(colors) {
   button: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     justifyContent: "center",
     minHeight: 48,
     paddingHorizontal: 18,
     paddingVertical: 13,
+  },
+  buttonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
   },
   buttonText: {
     color: colors.inverseText,
