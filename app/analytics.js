@@ -66,6 +66,8 @@ export default function AnalyticsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Pressable
+          accessibilityLabel="Back to Progress"
+          accessibilityRole="button"
           hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={goBackToStats}
           style={styles.backButton}

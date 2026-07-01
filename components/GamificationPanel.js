@@ -75,6 +75,7 @@ export default function GamificationPanel({ gamification }) {
           badgePreview.map((badge) => (
             <Pressable
               accessibilityLabel={`View ${badge.label} badge details`}
+              accessibilityRole="button"
               key={badge.id}
               onPress={() => setSelectedBadge({ badge, earned: true })}
               style={({ pressed }) => [
@@ -114,6 +115,10 @@ export default function GamificationPanel({ gamification }) {
 
       {earnedBadges.length > 6 ? (
         <Pressable
+          accessibilityLabel={
+            showAllBadges ? "Show fewer badges" : "Show all badges"
+          }
+          accessibilityRole="button"
           onPress={toggleBadges}
           style={({ pressed }) => [
             styles.showBadgesButton,
@@ -161,6 +166,8 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
             </Text>
           ) : null}
           <Pressable
+            accessibilityLabel="Close badge details"
+            accessibilityRole="button"
             onPress={onClose}
             style={({ pressed }) => [
               styles.modalButton,

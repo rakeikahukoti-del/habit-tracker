@@ -203,6 +203,10 @@ export default function RankScreen() {
                 })}
               </View>
               <Pressable
+                accessibilityLabel={
+                  showAllBadges ? "Show fewer badges" : "Show all badges"
+                }
+                accessibilityRole="button"
                 onPress={toggleBadges}
                 style={({ pressed }) => [
                   styles.showBadgesButton,
@@ -329,6 +333,7 @@ function BadgeCard({ badge, earned, onPress, styles }) {
   return (
     <Pressable
       accessibilityLabel={`View ${badge.label} badge details`}
+      accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
         styles.badgeCard,
@@ -422,6 +427,8 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
             </Text>
           ) : null}
           <Pressable
+            accessibilityLabel="Close badge details"
+            accessibilityRole="button"
             onPress={onClose}
             style={({ pressed }) => [
               styles.badgeModalButton,
@@ -464,6 +471,7 @@ function AchievementRow({ achievement, onPress, styles }) {
   return (
     <Pressable
       accessibilityLabel={`View ${achievement.title} achievement details`}
+      accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
         styles.achievementRow,
@@ -524,6 +532,8 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
             </Text>
           ) : null}
           <Pressable
+            accessibilityLabel="Close achievement details"
+            accessibilityRole="button"
             onPress={onClose}
             style={({ pressed }) => [
               styles.badgeModalButton,
