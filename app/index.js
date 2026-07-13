@@ -398,6 +398,10 @@ export default function HomeScreen() {
 
           <View style={styles.summaryFooter}>
             <Pressable
+              accessibilityLabel={
+                progressExpanded ? "Hide progress" : "Show progress"
+              }
+              accessibilityRole="button"
               onPress={toggleProgressExpanded}
               style={({ pressed }) => [
                 styles.progressToggle,
@@ -414,6 +418,8 @@ export default function HomeScreen() {
 
         {celebration ? (
           <Pressable
+            accessibilityLabel="Dismiss celebration message"
+            accessibilityRole="button"
             onPress={() => setCelebration("")}
             style={({ pressed }) => [
               styles.celebrationBanner,
@@ -426,6 +432,10 @@ export default function HomeScreen() {
 
         {completionReward ? (
           <Pressable
+            accessibilityLabel={`Dismiss completion reward for ${
+              completionReward.habitName
+            }`}
+            accessibilityRole="button"
             onPress={() => setCompletionReward(null)}
             style={({ pressed }) => [
               styles.completionPopup,
@@ -450,6 +460,8 @@ export default function HomeScreen() {
 
         {badgeUnlock && !completionReward && !perfectDay && !levelUp && !themeUnlock ? (
           <Pressable
+            accessibilityLabel={`Dismiss ${badgeUnlock.label} badge unlock`}
+            accessibilityRole="button"
             onPress={() => setBadgeUnlock(null)}
             style={({ pressed }) => [
               styles.badgeUnlockPopup,
@@ -489,6 +501,7 @@ export default function HomeScreen() {
           </View>
           <Pressable
             accessibilityLabel="Add a new habit"
+            accessibilityRole="button"
             hitSlop={8}
             onPress={() => router.push("/add")}
             style={({ pressed }) => [
@@ -568,6 +581,8 @@ export default function HomeScreen() {
               />
             </View>
             <Pressable
+              accessibilityLabel="Close level up message"
+              accessibilityRole="button"
               onPress={() => setLevelUp(null)}
               style={({ pressed }) => [
                 styles.levelModalButton,
@@ -597,6 +612,8 @@ export default function HomeScreen() {
             </Text>
             <View style={styles.modalButtonRow}>
               <Pressable
+                accessibilityLabel="Equip unlocked theme later"
+                accessibilityRole="button"
                 onPress={() => setThemeUnlock(null)}
                 style={({ pressed }) => [
                   styles.levelModalSecondaryButton,
@@ -607,6 +624,8 @@ export default function HomeScreen() {
                 <Text style={styles.levelModalSecondaryText}>Later</Text>
               </Pressable>
               <Pressable
+                accessibilityLabel="Equip unlocked theme"
+                accessibilityRole="button"
                 onPress={() => {
                   if (themeUnlock?.themeKey) {
                     setThemePreference(themeUnlock.themeKey);
@@ -641,6 +660,8 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.levelModalUnlock}>+25 bonus XP</Text>
             <Pressable
+              accessibilityLabel="Close perfect day message"
+              accessibilityRole="button"
               onPress={() => setPerfectDay(null)}
               style={({ pressed }) => [
                 styles.levelModalButton,
