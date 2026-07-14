@@ -38,20 +38,6 @@ export async function setLastShownLevel(level) {
   await AsyncStorage.setItem(LAST_SHOWN_LEVEL_KEY, String(level));
 }
 
-export async function getMoveCompletedToBottom() {
-  const preferences = await getAppPreferences();
-
-  return preferences.moveCompletedToBottom;
-}
-
-export async function setMoveCompletedToBottom(enabled) {
-  await setAppPreference("moveCompletedToBottom", enabled);
-  await AsyncStorage.setItem(
-    MOVE_COMPLETED_TO_BOTTOM_KEY,
-    enabled ? "true" : "false"
-  );
-}
-
 export async function getAppPreferences() {
   const rawPreferences = await AsyncStorage.getItem(APP_PREFERENCES_KEY);
   let parsedPreferences = {};

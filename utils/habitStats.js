@@ -92,25 +92,6 @@ export function getWeeklyCompletionSummary(habits, weekDays = getWeekDays()) {
   });
 }
 
-export function getHabitHistoryDays(habit, numberOfDays = 30) {
-  const completedSet = new Set(habit.completedDates);
-  const todayKey = getTodayKey();
-  const today = startOfDay(new Date());
-
-  return Array.from({ length: numberOfDays }, (_, index) => {
-    const date = addDays(today, index - (numberOfDays - 1));
-    const dateKey = toDateKey(date);
-
-    return {
-      dateKey,
-      dayOfMonth: date.getDate(),
-      label: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1),
-      completed: completedSet.has(dateKey),
-      isToday: dateKey === todayKey,
-    };
-  });
-}
-
 export function getAnalyticsSummary(habits, gamification = null) {
   const habitAnalytics = habits.map(getHabitAnalytics);
   const totalCompletions = habits.reduce(
