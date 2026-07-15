@@ -30,6 +30,7 @@ export default function BottomNav() {
                 accessibilityLabel={`${item.label}${active ? ", selected" : ""}`}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
+                android_ripple={{ color: colors.primarySoft, borderless: true }}
                 hitSlop={{ bottom: 12, left: 10, right: 10, top: 12 }}
                 onPress={() => {
                   if (!active) {
@@ -40,7 +41,8 @@ export default function BottomNav() {
                   styles.item,
                   active && styles.itemActive,
                   isAdd && styles.addItem,
-                  pressed && styles.itemPressed,
+                  pressed &&
+                    (active ? styles.itemActivePressed : styles.itemPressed),
                 ]}
               >
                 <NavIcon
@@ -198,6 +200,10 @@ function createStyles(colors, bottomInset) {
     itemPressed: {
       opacity: 0.82,
       transform: [{ scale: 0.96 }],
+    },
+    itemActivePressed: {
+      opacity: 0.9,
+      transform: [{ scale: 1.02 }],
     },
     addItem: {
       height: 56,

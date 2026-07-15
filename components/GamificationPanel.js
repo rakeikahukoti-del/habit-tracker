@@ -148,7 +148,12 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
   }
 
   return (
-    <Modal transparent animationType="fade" visible={visible}>
+    <Modal
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      visible={visible}
+    >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <Text style={styles.modalEyebrow}>
@@ -336,14 +341,20 @@ function createStyles(colors) {
       justifyContent: "center",
       padding: 20,
     },
-  modalCard: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: radius.xxl,
+    modalCard: {
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: radius.xxl,
       borderWidth: 1,
+      gap: spacing.sm,
       maxWidth: 380,
       padding: 20,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 18 },
+      shadowOpacity: 0.18,
+      shadowRadius: 26,
+      elevation: 12,
       width: "100%",
     },
     modalEyebrow: {
@@ -401,7 +412,7 @@ function createStyles(colors) {
       borderRadius: radius.md,
       justifyContent: "center",
       marginTop: 18,
-      minHeight: 46,
+      minHeight: 48,
       width: "100%",
     },
     modalButtonText: {

@@ -67,7 +67,10 @@ export default function HabitPreferencesScreen() {
             accessibilityLabel="Open reorder habits"
             accessibilityRole="button"
             onPress={() => router.push("/reorder-habits")}
-            style={styles.navigationRow}
+            style={({ pressed }) => [
+              styles.navigationRow,
+              pressed && styles.rowPressed,
+            ]}
           >
             <View style={styles.navigationText}>
               <Text style={styles.settingLabel}>Reorder habits</Text>
@@ -117,7 +120,10 @@ function BackButton({ styles }) {
       accessibilityRole="button"
       hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
       onPress={() => router.replace("/settings")}
-      style={styles.backButton}
+      style={({ pressed }) => [
+        styles.backButton,
+        pressed && styles.buttonPressed,
+      ]}
     >
       <Text style={styles.backButtonText}>← Settings</Text>
     </Pressable>
@@ -231,6 +237,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       color: colors.primary,
       fontSize: 22,
       fontWeight: fontWeight.bold,
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.98 }],
+    },
+    rowPressed: {
+      opacity: 0.78,
     },
   });
 }

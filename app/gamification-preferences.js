@@ -118,7 +118,10 @@ function BackButton({ styles }) {
       accessibilityRole="button"
       hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
       onPress={() => router.replace("/settings")}
-      style={styles.backButton}
+      style={({ pressed }) => [
+        styles.backButton,
+        pressed && styles.buttonPressed,
+      ]}
     >
       <Text style={styles.backButtonText}>← Settings</Text>
     </Pressable>
@@ -206,6 +209,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       flex: 1,
       fontSize: fontSize.bodyLarge,
       fontWeight: fontWeight.bold,
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.98 }],
     },
   });
 }
