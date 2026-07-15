@@ -213,6 +213,7 @@ export default function HabitDetailsScreen() {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.topActions}>

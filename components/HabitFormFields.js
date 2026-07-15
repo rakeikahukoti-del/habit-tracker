@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -44,6 +45,7 @@ export default function HabitFormFields({
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const styles = createStyles(colors, isSmallScreen);
+  const reminderInputRef = useRef(null);
 
   function toggleCustomDay(day) {
     if (customDays.includes(day)) {
@@ -63,8 +65,10 @@ export default function HabitFormFields({
           setName(value);
           onNameChange?.();
         }}
+        onSubmitEditing={() => reminderInputRef.current?.focus()}
         placeholder="Drink water"
         placeholderTextColor={colors.muted}
+        returnKeyType="next"
         style={styles.input}
         value={name}
       />
@@ -193,9 +197,12 @@ export default function HabitFormFields({
 
       <Text style={styles.label}>Reminder time</Text>
       <TextInput
+        keyboardType="numbers-and-punctuation"
         onChangeText={setReminderTime}
         placeholder="Optional, e.g. 08:30"
         placeholderTextColor={colors.muted}
+        ref={reminderInputRef}
+        returnKeyType="done"
         style={styles.input}
         value={reminderTime}
       />

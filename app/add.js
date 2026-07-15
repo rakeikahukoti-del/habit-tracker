@@ -114,6 +114,7 @@ export default function AddHabitScreen() {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.topBar}>
@@ -261,7 +262,12 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     shadowOpacity: 0.18,
     shadowRadius: 16,
     elevation: 3,
-    margin: layout.screenPadding,
+    marginBottom: isSmallScreen
+      ? layout.screenPaddingSmall
+      : layout.screenPadding,
+    marginHorizontal: isSmallScreen
+      ? layout.screenPaddingSmall
+      : layout.screenPadding,
     marginTop: 0,
   },
   saveButtonDisabled: {
