@@ -135,6 +135,9 @@ function PreferenceSwitch({ colors, label, onValueChange, styles, value }) {
     <View style={styles.switchRow}>
       <Text style={styles.settingLabel}>{label}</Text>
       <Switch
+        accessibilityLabel={label}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: value }}
         ios_backgroundColor={colors.border}
         onValueChange={onValueChange}
         thumbColor={value ? colors.primary : colors.surface}

@@ -102,6 +102,11 @@ export default function NotificationPreferencesScreen() {
               </Text>
             </View>
             <Switch
+              accessibilityLabel="Daily reminders"
+              accessibilityRole="switch"
+              accessibilityState={{
+                checked: preferences.enableDailyReminders,
+              }}
               ios_backgroundColor={colors.border}
               onValueChange={handleDailyReminderChange}
               thumbColor={

@@ -72,7 +72,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
           >
             <Text style={styles.monthButtonText}>‹</Text>
           </Pressable>
-          <Text style={styles.monthTitle}>
+          <Text numberOfLines={1} style={styles.monthTitle}>
             {visibleMonth.toLocaleDateString(undefined, {
               month: "long",
               year: "numeric",
@@ -113,6 +113,10 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               <Pressable
                 accessibilityLabel={`${day.completed ? "Remove" : "Add"} completion for ${day.dateKey}`}
                 accessibilityRole="button"
+                accessibilityState={{
+                  disabled: !onToggleDate || day.isFuture,
+                  selected: day.completed,
+                }}
                 disabled={!onToggleDate || day.isFuture}
                 hitSlop={4}
                 onPress={onToggleDate ? () => onToggleDate(day) : undefined}
@@ -220,9 +224,9 @@ function createStyles(colors, isSmallScreen) {
       borderColor: colors.border,
       borderRadius: radius.round,
       borderWidth: 1,
-      height: 38,
       justifyContent: "center",
-      width: 38,
+      minHeight: 44,
+      minWidth: 44,
     },
     disabledButton: {
       opacity: 0.35,
@@ -273,7 +277,7 @@ function createStyles(colors, isSmallScreen) {
       borderRadius: radius.sm,
       borderWidth: 1,
       justifyContent: "center",
-      minHeight: isSmallScreen ? 36 : 40,
+      minHeight: isSmallScreen ? 40 : 44,
       width: "100%",
     },
     dayCompleted: {

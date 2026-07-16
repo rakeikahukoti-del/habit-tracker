@@ -174,7 +174,10 @@ export default function ReorderHabitsScreen() {
           accessibilityRole="button"
           hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={() => router.replace("/habit-preferences")}
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.buttonPressed,
+          ]}
         >
           <Text style={styles.backButtonText}>← Habits</Text>
         </Pressable>
@@ -255,8 +258,10 @@ function HabitOrderRow({
       ]}
     >
       <Pressable
-        accessibilityLabel={`Hold and drag ${habit.name}`}
+        accessibilityHint="Long press, then drag up or down to reorder."
+        accessibilityLabel={`Reorder ${habit.name}`}
         accessibilityRole="button"
+        accessibilityState={{ busy: isDragging }}
         delayLongPress={180}
         onLongPress={() => onDragStart(habit, index)}
         style={({ pressed }) => [
@@ -286,7 +291,7 @@ function HabitOrderRow({
         </View>
 
         <View
-          accessibilityLabel="Drag handle"
+          accessible={false}
           style={styles.dragHandle}
         >
           <Text style={styles.dragHandleText}>☰</Text>
@@ -377,6 +382,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     habitRowPressed: {
       opacity: 0.82,
+    },
+    buttonPressed: {
+      opacity: 0.78,
+      transform: [{ scale: 0.98 }],
     },
     firstHabitRow: {
       borderTopWidth: 0,
