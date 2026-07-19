@@ -23,6 +23,10 @@ Notifications.setNotificationHandler({
 });
 
 export async function scheduleHabitReminder(habit) {
+  if (!habit || typeof habit !== "object") {
+    return createReminderResult([], "none");
+  }
+
   const time = parseReminderTime(habit.reminderTime);
 
   if (!time) {
@@ -91,7 +95,7 @@ export function hasReminderScheduleChanged(previousHabit, nextHabit) {
 }
 
 export function parseReminderTime(reminderTime) {
-  if (!reminderTime) {
+  if (!reminderTime || typeof reminderTime !== "string") {
     return null;
   }
 

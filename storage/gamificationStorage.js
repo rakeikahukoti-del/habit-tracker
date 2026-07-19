@@ -82,18 +82,19 @@ export async function rebuildGamificationFromHabits(
   habits,
   { includeMessage = true } = {}
 ) {
+  const safeHabits = getSafeHabits(habits);
   const previousGamification = await getGamification();
   const previousLevel = getGamificationLevelInfo(previousGamification).level;
-  const completionCount = habits.reduce(
-    (count, habit) => count + habit.completedDates.length,
+  const completionCount = safeHabits.reduce(
+    (count, habit) => count + getCompletedDates(habit).length,
     0
   );
-  const perfectDayBonusDates = getPerfectDayBonusDates(habits);
+  const perfectDayBonusDates = getPerfectDayBonusDates(safeHabits);
   const xp =
     completionCount * XP_PER_COMPLETION +
     perfectDayBonusDates.length * PERFECT_DAY_BONUS_XP;
   const earnedBadges = getEarnedBadgeIds({
-    habits,
+    habits: safeHabits,
     perfectDayBonusDates,
     xp,
   });
@@ -164,12 +165,15 @@ export async function awardHabitCreatedBadge() {
 }
 
 export async function awardHabitCompletion({ completedHabit, habits }) {
+  const safeHabits = getSafeHabits(habits);
+  const habitName = completedHabit?.name || "habit";
   const gamification = await getGamification();
   const todayKey = getTodayKey();
   let xpToAdd = XP_PER_COMPLETION;
-  const messages = [`+${XP_PER_COMPLETION} XP for completing ${completedHabit.name}.`];
+  const messages = [`+${XP_PER_COMPLETION} XP for completing ${habitName}.`];
   const completedAllToday =
-    habits.length > 0 && habits.every((habit) => wasCompletedToday(habit));
+    safeHabits.length > 0 &&
+    safeHabits.every((habit) => wasCompletedToday(habit));
 
   if (
     completedAllToday &&
@@ -180,7 +184,7 @@ export async function awardHabitCompletion({ completedHabit, habits }) {
   }
 
   return saveAward(gamification, {
-    habits,
+    habits: safeHabits,
     messages,
     perfectDayBonusDate: completedAllToday ? todayKey : null,
     xpToAdd,
@@ -536,24 +540,25 @@ function createPendingMessage({
 }
 
 function getEarnedBadgeIds({ habits, perfectDayBonusDates, xp }) {
+  const safeHabits = getSafeHabits(habits);
   const earnedBadges = new Set();
-  const completionCount = habits.reduce(
-    (count, habit) => count + habit.completedDates.length,
+  const completionCount = safeHabits.reduce(
+    (count, habit) => count + getCompletedDates(habit).length,
     0
   );
-  const longestStreak = habits.reduce(
+  const longestStreak = safeHabits.reduce(
     (longest, habit) =>
       Math.max(
         longest,
-        getCurrentStreak(habit.completedDates),
-        getBestStreak(habit.completedDates)
+        getCurrentStreak(getCompletedDates(habit)),
+        getBestStreak(getCompletedDates(habit))
       ),
     0
   );
-  const highestDailyCompletionCount = getHighestDailyCompletionCount(habits);
+  const highestDailyCompletionCount = getHighestDailyCompletionCount(safeHabits);
   const level = Math.floor((xp || 0) / XP_PER_LEVEL) + 1;
 
-  if (habits.length > 0) {
+  if (safeHabits.length > 0) {
     earnedBadges.add("first-habit-created");
   }
 
@@ -629,8 +634,8 @@ function getEarnedBadgeIds({ habits, perfectDayBonusDates, xp }) {
 function getHighestDailyCompletionCount(habits) {
   const countsByDate = {};
 
-  habits.forEach((habit) => {
-    habit.completedDates.forEach((dateKey) => {
+  getSafeHabits(habits).forEach((habit) => {
+    getCompletedDates(habit).forEach((dateKey) => {
       countsByDate[dateKey] = (countsByDate[dateKey] || 0) + 1;
     });
   });
@@ -639,17 +644,40 @@ function getHighestDailyCompletionCount(habits) {
 }
 
 function getPerfectDayBonusDates(habits) {
-  if (habits.length === 0) {
+  const safeHabits = getSafeHabits(habits);
+
+  if (safeHabits.length === 0) {
     return [];
   }
 
   const allCompletedDates = Array.from(
-    new Set(habits.flatMap((habit) => habit.completedDates))
+    new Set(safeHabits.flatMap((habit) => getCompletedDates(habit)))
   );
 
   return allCompletedDates
     .filter((dateKey) =>
-      habits.every((habit) => habit.completedDates.includes(dateKey))
+      safeHabits.every((habit) => getCompletedDates(habit).includes(dateKey))
     )
     .sort();
+}
+
+function getSafeHabits(habits) {
+  return Array.isArray(habits)
+    ? habits.filter((habit) => habit && typeof habit === "object")
+    : [];
+}
+
+function getCompletedDates(habit) {
+  if (!Array.isArray(habit?.completedDates)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      habit.completedDates.filter(
+        (dateKey) =>
+          typeof dateKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+      )
+    )
+  );
 }

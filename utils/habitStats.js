@@ -13,7 +13,7 @@ export function toDateKey(date) {
 }
 
 export function wasCompletedToday(habit) {
-  return habit.completedDates.includes(getTodayKey());
+  return getCompletedDates(habit).includes(getTodayKey());
 }
 
 export function getWeekDays() {
@@ -31,7 +31,7 @@ export function getWeekDays() {
 }
 
 export function getWeeklyProgress(habit) {
-  const completedSet = new Set(habit.completedDates);
+  const completedSet = new Set(getCompletedDates(habit));
 
   return getWeekDays().map((day) => ({
     ...day,
@@ -40,19 +40,20 @@ export function getWeeklyProgress(habit) {
 }
 
 export function getStatsSummary(habits) {
+  const safeHabits = getSafeHabits(habits);
   const weekDays = getWeekDays();
-  const totalHabits = habits.length;
-  const completedToday = habits.filter(wasCompletedToday).length;
-  const currentLongestStreak = habits.reduce(
+  const totalHabits = safeHabits.length;
+  const completedToday = safeHabits.filter(wasCompletedToday).length;
+  const currentLongestStreak = safeHabits.reduce(
     (longest, habit) =>
-      Math.max(longest, getCurrentStreak(habit.completedDates)),
+      Math.max(longest, getCurrentStreak(getCompletedDates(habit))),
     0
   );
-  const bestAllTimeStreak = habits.reduce(
-    (best, habit) => Math.max(best, getBestStreak(habit.completedDates)),
+  const bestAllTimeStreak = safeHabits.reduce(
+    (best, habit) => Math.max(best, getBestStreak(getCompletedDates(habit))),
     0
   );
-  const weeklySummary = getWeeklyCompletionSummary(habits, weekDays);
+  const weeklySummary = getWeeklyCompletionSummary(safeHabits, weekDays);
   const totalPossibleCompletions = totalHabits * weekDays.length;
   const totalWeeklyCompletions = weeklySummary.reduce(
     (sum, day) => sum + day.completedCount,
@@ -74,35 +75,38 @@ export function getStatsSummary(habits) {
 }
 
 export function getWeeklyCompletionSummary(habits, weekDays = getWeekDays()) {
+  const safeHabits = getSafeHabits(habits);
+
   return weekDays.map((day) => {
-    const completedCount = habits.filter((habit) =>
-      habit.completedDates.includes(day.dateKey)
+    const completedCount = safeHabits.filter((habit) =>
+      getCompletedDates(habit).includes(day.dateKey)
     ).length;
     const percentage =
-      habits.length === 0
+      safeHabits.length === 0
         ? 0
-        : Math.round((completedCount / habits.length) * 100);
+        : Math.round((completedCount / safeHabits.length) * 100);
 
     return {
       ...day,
       completedCount,
-      totalHabits: habits.length,
+      totalHabits: safeHabits.length,
       percentage,
     };
   });
 }
 
 export function getAnalyticsSummary(habits, gamification = null) {
-  const habitAnalytics = habits.map(getHabitAnalytics);
-  const totalCompletions = habits.reduce(
-    (sum, habit) => sum + habit.completedDates.length,
+  const safeHabits = getSafeHabits(habits);
+  const habitAnalytics = safeHabits.map(getHabitAnalytics);
+  const totalCompletions = safeHabits.reduce(
+    (sum, habit) => sum + getCompletedDates(habit).length,
     0
   );
-  const habitsCompletedThisWeek = getCompletionCountInLastDays(habits, 7);
-  const habitsCompletedThisMonth = getCompletionCountInLastDays(habits, 30);
+  const habitsCompletedThisWeek = getCompletionCountInLastDays(safeHabits, 7);
+  const habitsCompletedThisMonth = getCompletionCountInLastDays(safeHabits, 30);
   const mostConsistentHabit = getTopHabit(habitAnalytics);
   const weakestHabit = getWeakestHabit(habitAnalytics);
-  const bestCategory = getBestCategory(habits);
+  const bestCategory = getBestCategory(safeHabits);
   const insights = getAnalyticsInsights({
     bestCategory,
     habitAnalytics,
@@ -150,7 +154,7 @@ export function getHabitAnalytics(habit) {
 }
 
 export function getCurrentStreak(completedDates) {
-  const completedSet = new Set(completedDates);
+  const completedSet = new Set(getSafeDateKeys(completedDates));
   const today = startOfDay(new Date());
   let cursor = completedSet.has(toDateKey(today)) ? today : addDays(today, -1);
   let streak = 0;
@@ -191,7 +195,7 @@ export function getBestStreak(completedDates) {
 }
 
 function getSortedUniqueDateKeys(completedDates) {
-  return Array.from(new Set(completedDates)).sort();
+  return getSafeDateKeys(completedDates);
 }
 
 function getHabitCompletionRate(habit) {
@@ -250,13 +254,39 @@ function getHabitTrend(habit) {
 
 function getCompletionCountInLastDays(habits, numberOfDays) {
   const dateKeys = getDateKeysForLastDays(numberOfDays);
+  const safeHabits = getSafeHabits(habits);
 
-  return habits.reduce(
+  return safeHabits.reduce(
     (sum, habit) =>
       sum +
-      habit.completedDates.filter((dateKey) => dateKeys.has(dateKey)).length,
+      getCompletedDates(habit).filter((dateKey) => dateKeys.has(dateKey)).length,
     0
   );
+}
+
+function getSafeHabits(habits) {
+  return Array.isArray(habits)
+    ? habits.filter((habit) => habit && typeof habit === "object")
+    : [];
+}
+
+function getCompletedDates(habit) {
+  return getSafeDateKeys(habit?.completedDates);
+}
+
+function getSafeDateKeys(completedDates) {
+  if (!Array.isArray(completedDates)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      completedDates.filter(
+        (dateKey) =>
+          typeof dateKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+      )
+    )
+  ).sort();
 }
 
 function getDateKeysForLastDays(numberOfDays) {

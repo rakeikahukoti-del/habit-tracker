@@ -40,7 +40,9 @@ export async function getHabits() {
 }
 
 export async function saveHabits(habits) {
-  await AsyncStorage.setItem(HABITS_KEY, JSON.stringify(habits));
+  const safeHabits = Array.isArray(habits) ? habits : [];
+
+  await AsyncStorage.setItem(HABITS_KEY, JSON.stringify(safeHabits));
 }
 
 export async function addHabit({
@@ -263,6 +265,10 @@ export async function importHabitsBackup(jsonText) {
   const normalizedHabits = [];
 
   for (const habit of importedHabits) {
+    if (!habit || typeof habit !== "object") {
+      continue;
+    }
+
     const normalizedHabit = normalizeHabit({
       ...habit,
       id: habit.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -320,24 +326,52 @@ export async function applyDailyReminderPreference(enabled) {
 }
 
 export function normalizeHabit(habit, fallbackOrder = 0) {
+  const safeHabit = habit && typeof habit === "object" ? habit : {};
+
   return {
-    ...habit,
-    name: habit.name || "",
-    emoji: habit.emoji || DEFAULT_HABIT_EMOJI,
-    category: habit.category || DEFAULT_CATEGORY,
-    color: habit.color || DEFAULT_HABIT_COLOR,
-    frequency: habit.frequency || DEFAULT_FREQUENCY,
-    customDays: Array.isArray(habit.customDays) ? habit.customDays : [],
-    reminderTime: habit.reminderTime || "",
-    notificationIds: Array.isArray(habit.notificationIds)
-      ? habit.notificationIds
+    ...safeHabit,
+    id: safeHabit.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: typeof safeHabit.name === "string" ? safeHabit.name : "",
+    createdAt: getSafeCreatedAt(safeHabit.createdAt),
+    emoji: safeHabit.emoji || DEFAULT_HABIT_EMOJI,
+    category: safeHabit.category || DEFAULT_CATEGORY,
+    color: safeHabit.color || DEFAULT_HABIT_COLOR,
+    frequency: safeHabit.frequency || DEFAULT_FREQUENCY,
+    customDays: Array.isArray(safeHabit.customDays) ? safeHabit.customDays : [],
+    reminderTime:
+      typeof safeHabit.reminderTime === "string" ? safeHabit.reminderTime : "",
+    notificationIds: Array.isArray(safeHabit.notificationIds)
+      ? safeHabit.notificationIds
       : [],
-    order: Number.isFinite(habit.order) ? habit.order : fallbackOrder,
-    reminderStatus: habit.reminderStatus || "none",
-    completedDates: Array.isArray(habit.completedDates)
-      ? habit.completedDates
-      : [],
+    order: Number.isFinite(safeHabit.order) ? safeHabit.order : fallbackOrder,
+    reminderStatus: safeHabit.reminderStatus || "none",
+    completedDates: getSafeDateKeys(safeHabit.completedDates),
   };
+}
+
+function getSafeCreatedAt(createdAt) {
+  if (typeof createdAt !== "string") {
+    return new Date().toISOString();
+  }
+
+  return Number.isNaN(new Date(createdAt).getTime())
+    ? new Date().toISOString()
+    : createdAt;
+}
+
+function getSafeDateKeys(dateKeys) {
+  if (!Array.isArray(dateKeys)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      dateKeys.filter(
+        (dateKey) =>
+          typeof dateKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+      )
+    )
+  ).sort();
 }
 
 function getNextTopOrder(habits) {
