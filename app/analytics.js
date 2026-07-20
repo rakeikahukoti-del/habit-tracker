@@ -79,7 +79,7 @@ export default function AnalyticsScreen() {
           <Text style={styles.eyebrow}>Analytics</Text>
           <Text style={styles.title}>Insights</Text>
           <Text style={styles.subtitle}>
-            See what is working, what slipped, and which habits are strongest.
+            See patterns after you complete habits for a few days.
           </Text>
         </View>
 
@@ -148,7 +148,7 @@ export default function AnalyticsScreen() {
             <Section title="Individual habits" styles={styles}>
               {analytics.habitAnalytics.length === 0 ? (
                 <Text style={styles.emptyText}>
-                  Add habits to see individual analytics.
+                  Individual insights appear after you create and complete a habit.
                 </Text>
               ) : (
                 analytics.habitAnalytics.map((item) => (

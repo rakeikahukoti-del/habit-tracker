@@ -36,15 +36,15 @@ export default function OnboardingScreen() {
           <Text style={styles.heroEmoji}>⚡</Text>
         </View>
         <Text style={styles.eyebrow}>Welcome to Momentum</Text>
-        <Text style={styles.title}>Build habits one small win at a time</Text>
+        <Text style={styles.title}>Make today's habits clear</Text>
         <Text style={styles.subtitle}>
-          Track habits, earn XP, and keep progress on this device.
+          Create a habit, swipe to complete it, and watch your progress build.
         </Text>
 
         <View style={styles.points}>
-          <Text style={styles.point}>Track streaks and weekly progress</Text>
-          <Text style={styles.point}>Earn badges and level up</Text>
-          <Text style={styles.point}>Export a JSON backup anytime</Text>
+          <Text style={styles.point}>Home shows what to do today</Text>
+          <Text style={styles.point}>Progress and Rank show what you have built</Text>
+          <Text style={styles.point}>Your habit data stays on this device</Text>
         </View>
 
         <Pressable

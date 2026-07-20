@@ -93,6 +93,18 @@ export default function StatsScreen() {
 
         {!loading ? (
           <>
+            {stats.totalHabits === 0 ? (
+              <View style={styles.firstUseCard}>
+                <Text style={styles.firstUseTitle}>
+                  Progress starts with one habit
+                </Text>
+                <Text style={styles.firstUseText}>
+                  Create a habit from the Add tab. Your completions, streaks,
+                  XP, and badges will appear here.
+                </Text>
+              </View>
+            ) : null}
+
             <SectionHeader
               title="Overview"
               subtitle="Today and streaks"
@@ -258,6 +270,26 @@ function createStyles(colors, { isLandscape, isSmallScreen, isTablet }) {
     fontWeight: fontWeight.regular,
     lineHeight: lineHeight.bodyLarge,
     marginTop: spacing.sm,
+  },
+  firstUseCard: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+  },
+  firstUseTitle: {
+    color: colors.text,
+    fontSize: fontSize.section,
+    fontWeight: fontWeight.bold,
+    marginBottom: spacing.sm,
+  },
+  firstUseText: {
+    color: colors.muted,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.regular,
+    lineHeight: lineHeight.body,
   },
   grid: {
     flexDirection: "row",

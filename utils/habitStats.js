@@ -352,7 +352,7 @@ function getAnalyticsInsights({
   weakestHabit,
 }) {
   if (habitAnalytics.length === 0) {
-    return ["Add habits to start building useful insights."];
+    return ["Create a habit first. Insights appear after you complete it."];
   }
 
   const insights = [];

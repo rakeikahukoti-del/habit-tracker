@@ -20,7 +20,8 @@ export default function EmptyState() {
       </View>
       <Text style={styles.title}>No habits yet</Text>
       <Text style={styles.message}>
-        Create your first habit and give today a clear next step.
+        Add one small habit to start your daily check-in. After that, swipe it
+        complete from Home.
       </Text>
       <Link href="/add" asChild>
         <Pressable
@@ -32,7 +33,7 @@ export default function EmptyState() {
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.buttonText}>Create Habit</Text>
+          <Text style={styles.buttonText}>Create habit</Text>
         </Pressable>
       </Link>
     </View>

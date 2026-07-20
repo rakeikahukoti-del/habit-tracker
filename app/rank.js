@@ -231,7 +231,8 @@ export default function RankScreen() {
                 ))
               ) : (
                 <Text style={styles.emptyText}>
-                  Complete habits to build your achievement feed.
+                  Recent achievements appear here when you complete habits,
+                  earn badges, or level up.
                 </Text>
               )}
             </Section>

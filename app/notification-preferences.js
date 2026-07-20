@@ -88,7 +88,7 @@ export default function NotificationPreferencesScreen() {
         <Text style={styles.eyebrow}>Settings</Text>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.subtitle}>
-          Control local habit reminders. Momentum still works if reminders are off.
+          Reminders are optional. Momentum works normally if you leave them off.
         </Text>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -98,7 +98,7 @@ export default function NotificationPreferencesScreen() {
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>Daily reminders</Text>
               <Text style={styles.settingHelper}>
-                Send reminders for habits with a reminder time.
+                We ask permission only when a habit has a reminder time.
               </Text>
             </View>
             <Switch

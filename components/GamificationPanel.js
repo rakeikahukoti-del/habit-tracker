@@ -109,7 +109,9 @@ export default function GamificationPanel({ gamification }) {
             </Pressable>
           ))
         ) : (
-          <Text style={styles.emptyText}>Earn badges as you build momentum.</Text>
+          <Text style={styles.emptyText}>
+            Badges appear here after your first habit completion.
+          </Text>
         )}
       </View>
 
