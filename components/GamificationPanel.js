@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   LayoutAnimation,
   Modal,
@@ -34,12 +34,23 @@ export default function GamificationPanel({ gamification }) {
   const styles = createStyles(colors);
   const [showAllBadges, setShowAllBadges] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState(null);
-  const levelInfo = getGamificationLevelInfo(gamification);
-  const rank = getRankForLevel(levelInfo.level);
-  const earnedBadges = badges.filter((badge) =>
-    gamification?.earnedBadges?.includes(badge.id)
+  const levelInfo = useMemo(
+    () => getGamificationLevelInfo(gamification),
+    [gamification]
   );
-  const badgePreview = showAllBadges ? earnedBadges : earnedBadges.slice(0, 6);
+  const rank = useMemo(
+    () => getRankForLevel(levelInfo.level),
+    [levelInfo.level]
+  );
+  const earnedBadges = useMemo(
+    () =>
+      badges.filter((badge) => gamification?.earnedBadges?.includes(badge.id)),
+    [gamification]
+  );
+  const badgePreview = useMemo(
+    () => (showAllBadges ? earnedBadges : earnedBadges.slice(0, 6)),
+    [earnedBadges, showAllBadges]
+  );
 
   function toggleBadges() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

@@ -40,9 +40,13 @@ export function ThemeProvider({ children }) {
       return;
     }
 
+    if (nextPreference === themePreference) {
+      return;
+    }
+
     setThemePreferenceState(nextPreference);
     await AsyncStorage.setItem(THEME_PREFERENCE_KEY, nextPreference);
-  }, []);
+  }, [themePreference]);
 
   const resolvedTheme =
     themePreference === "system" ? systemScheme || "light" : themePreference;

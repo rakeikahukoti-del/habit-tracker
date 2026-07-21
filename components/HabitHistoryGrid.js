@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -25,8 +25,14 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
   const [visibleMonth, setVisibleMonth] = useState(() =>
     startOfMonth(new Date())
   );
-  const monthDays = getCalendarMonthDays(habit, visibleMonth);
-  const completedCount = monthDays.filter((day) => day.completed).length;
+  const monthDays = useMemo(
+    () => getCalendarMonthDays(habit, visibleMonth),
+    [habit, visibleMonth]
+  );
+  const completedCount = useMemo(
+    () => monthDays.filter((day) => day.completed).length,
+    [monthDays]
+  );
   const todayMonth = startOfMonth(new Date());
   const canGoNext = visibleMonth < todayMonth;
 

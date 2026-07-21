@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -66,7 +66,7 @@ export default function StatsScreen() {
     }, [])
   );
 
-  const stats = getStatsSummary(habits);
+  const stats = useMemo(() => getStatsSummary(habits), [habits]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { memo, useMemo, useRef } from "react";
 import * as Haptics from "expo-haptics";
 import {
   Animated,
@@ -25,7 +25,7 @@ const SWIPE_UNDO_COLOR = "#A94C50";
 const SWIPE_THRESHOLD = 38;
 const SWIPE_LIMIT = 112;
 
-export default function HabitCard({
+function HabitCard({
   enableLongPressReorder = true,
   enableSwipeToComplete = true,
   habit,
@@ -35,7 +35,10 @@ export default function HabitCard({
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const styles = createStyles(colors, isCompact);
+  const styles = useMemo(
+    () => createStyles(colors, isCompact),
+    [colors, isCompact]
+  );
   const completedToday = wasCompletedToday(habit);
   const currentStreak = getCurrentStreak(habit.completedDates);
   const weeklyProgress = getWeeklyProgress(habit);
@@ -412,6 +415,8 @@ export default function HabitCard({
     </View>
   );
 }
+
+export default memo(HabitCard);
 
 function createStyles(colors, isCompact) {
   return StyleSheet.create({

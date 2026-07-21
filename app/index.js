@@ -66,7 +66,10 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -93,19 +96,26 @@ export default function HomeScreen() {
         return;
       }
 
-      const storedHabits = await getHabits();
-      const storedPreferences = await getAppPreferences();
-      const messages = await consumeGamificationMessages();
-      const storedGamification = await getGamification();
+      const [
+        storedHabits,
+        storedPreferences,
+        messages,
+        storedGamification,
+      ] = await Promise.all([
+        getHabits(),
+        getAppPreferences(),
+        consumeGamificationMessages(),
+        getGamification(),
+      ]);
 
       setHabits(storedHabits);
       setMoveCompletedToBottom(storedPreferences.moveCompletedToBottom);
       setPreferences(storedPreferences);
       setGamification(storedGamification);
 
-      if (progressExpanded === null) {
-        setProgressExpanded(storedHabits.length <= 3);
-      }
+      setProgressExpanded((currentValue) =>
+        currentValue === null ? storedHabits.length <= 3 : currentValue
+      );
 
       if (messages.length > 0) {
         const queuedRewards = getQueuedRewardsFromMessages(
@@ -129,7 +139,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [progressExpanded]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -161,16 +171,16 @@ export default function HomeScreen() {
     return () => clearTimeout(timeoutId);
   }, [badgeUnlock]);
 
-  async function handleRefresh() {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await loadHabits();
     } finally {
       setRefreshing(false);
     }
-  }
+  }, [loadHabits]);
 
-  async function handleToggleComplete(habit, options = {}) {
+  const handleToggleComplete = useCallback(async (habit, options = {}) => {
     try {
       setError("");
       if (preferences.enableRewardHaptics) {
@@ -260,16 +270,16 @@ export default function HomeScreen() {
     } catch {
       setError("Could not update this habit. Please try again.");
     }
-  }
+  }, [gamification, habits, preferences]);
 
-  function handleReorderPress() {
+  const handleReorderPress = useCallback(() => {
     router.push("/reorder-habits");
-  }
+  }, []);
 
-  function toggleProgressExpanded() {
+  const toggleProgressExpanded = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setProgressExpanded((value) => !value);
-  }
+  }, []);
 
   const homeSummary = useMemo(() => {
     const completedTodayCount = habits.filter((habit) =>
@@ -329,6 +339,30 @@ export default function HomeScreen() {
     rank,
     todayXp,
   } = homeSummary;
+  const renderHabitItem = useCallback(
+    ({ item }) => (
+      <View style={styles.listItem}>
+        <HabitCard
+          habit={item}
+          enableLongPressReorder={preferences.enableLongPressReorder}
+          enableSwipeToComplete={preferences.enableSwipeToComplete}
+          onReorderPress={handleReorderPress}
+          onToggleComplete={handleToggleComplete}
+        />
+      </View>
+    ),
+    [
+      handleReorderPress,
+      handleToggleComplete,
+      preferences.enableLongPressReorder,
+      preferences.enableSwipeToComplete,
+      styles.listItem,
+    ]
+  );
+  const renderSeparator = useCallback(
+    () => <View style={styles.separator} />,
+    [styles.separator]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -534,19 +568,9 @@ export default function HomeScreen() {
               <EmptyState />
             )
           }
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
-              <HabitCard
-                habit={item}
-                enableLongPressReorder={preferences.enableLongPressReorder}
-                enableSwipeToComplete={preferences.enableSwipeToComplete}
-                onReorderPress={handleReorderPress}
-                onToggleComplete={handleToggleComplete}
-              />
-            </View>
-          )}
+          renderItem={renderHabitItem}
           initialNumToRender={8}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={renderSeparator}
           maxToRenderPerBatch={8}
           showsVerticalScrollIndicator={false}
           windowSize={7}

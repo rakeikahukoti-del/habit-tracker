@@ -85,6 +85,10 @@ export async function saveAppPreferences(preferences) {
 export async function setAppPreference(key, value) {
   const preferences = await getAppPreferences();
 
+  if (preferences[key] === value) {
+    return preferences;
+  }
+
   return saveAppPreferences({
     ...preferences,
     [key]: value,

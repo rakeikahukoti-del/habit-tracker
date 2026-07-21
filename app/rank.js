@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   LayoutAnimation,
@@ -64,17 +64,37 @@ export default function RankScreen() {
     }, [])
   );
 
-  const levelInfo = getGamificationLevelInfo(gamification);
-  const rank = getRankForLevel(levelInfo.level);
-  const nextRank = getNextRankUnlock(levelInfo.level);
-  const previousRank = getPreviousRankUnlock(levelInfo.level);
-  const rankProgress = getUnlockProgress(levelInfo.level, previousRank, nextRank);
-  const badgePreview = showAllBadges ? badges : badges.slice(0, 6);
-  const unlockedThemes = rankThemes.filter(
-    (theme) => levelInfo.level >= theme.unlockLevel
+  const levelInfo = useMemo(
+    () => getGamificationLevelInfo(gamification),
+    [gamification]
   );
-  const lockedThemes = rankThemes.filter(
-    (theme) => levelInfo.level < theme.unlockLevel
+  const rank = useMemo(
+    () => getRankForLevel(levelInfo.level),
+    [levelInfo.level]
+  );
+  const nextRank = useMemo(
+    () => getNextRankUnlock(levelInfo.level),
+    [levelInfo.level]
+  );
+  const previousRank = useMemo(
+    () => getPreviousRankUnlock(levelInfo.level),
+    [levelInfo.level]
+  );
+  const rankProgress = useMemo(
+    () => getUnlockProgress(levelInfo.level, previousRank, nextRank),
+    [levelInfo.level, nextRank, previousRank]
+  );
+  const badgePreview = useMemo(
+    () => (showAllBadges ? badges : badges.slice(0, 6)),
+    [showAllBadges]
+  );
+  const unlockedThemes = useMemo(
+    () => rankThemes.filter((theme) => levelInfo.level >= theme.unlockLevel),
+    [levelInfo.level]
+  );
+  const lockedThemes = useMemo(
+    () => rankThemes.filter((theme) => levelInfo.level < theme.unlockLevel),
+    [levelInfo.level]
   );
   const nextTheme = lockedThemes[0];
 
