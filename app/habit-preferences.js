@@ -34,6 +34,7 @@ export default function HabitPreferencesScreen() {
   const isTablet = width >= 768;
   const styles = createStyles(colors, { isSmallScreen, isTablet });
   const [preferences, setPreferences] = useState(defaultAppPreferences);
+  const [message, setMessage] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -46,10 +47,16 @@ export default function HabitPreferencesScreen() {
   );
 
   async function handlePreferenceChange(key, value) {
-    setPreferences((current) => ({ ...current, [key]: value }));
-    const savedPreferences = await setAppPreference(key, value);
+    try {
+      setMessage("");
+      setPreferences((current) => ({ ...current, [key]: value }));
+      const savedPreferences = await setAppPreference(key, value);
 
-    setPreferences(savedPreferences);
+      setPreferences(savedPreferences);
+    } catch {
+      setMessage("Could not save that preference. Please try again.");
+      setPreferences(await getAppPreferences());
+    }
   }
 
   return (
@@ -61,6 +68,8 @@ export default function HabitPreferencesScreen() {
         <BackButton styles={styles} />
         <Text style={styles.eyebrow}>Settings</Text>
         <Text style={styles.title}>Habits</Text>
+
+        {message ? <Text style={styles.message}>{message}</Text> : null}
 
         <View style={styles.section}>
           <Pressable
@@ -191,6 +200,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontWeight: fontWeight.bold,
       lineHeight: pageTitleLineHeight(isSmallScreen),
       marginBottom: spacing.xl,
+    },
+    message: {
+      color: colors.primary,
+      fontSize: fontSize.body,
+      fontWeight: fontWeight.semibold,
+      lineHeight: lineHeight.body,
+      marginBottom: spacing.md,
     },
     section: {
       backgroundColor: colors.card,

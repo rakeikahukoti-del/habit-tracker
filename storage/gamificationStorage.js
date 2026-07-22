@@ -5,6 +5,7 @@ import {
   getTodayKey,
   wasCompletedToday,
 } from "../utils/habitStats";
+import { isPlainObject, logStorageError } from "./storageUtils";
 
 const GAMIFICATION_KEY = "habit-tracker:gamification";
 const XP_PER_COMPLETION = 10;
@@ -61,21 +62,36 @@ export const rankThemes = [
 ];
 
 export async function getGamification() {
-  const rawData = await AsyncStorage.getItem(GAMIFICATION_KEY);
-
-  if (!rawData) {
-    return normalizeGamification();
-  }
-
   try {
-    return normalizeGamification(JSON.parse(rawData));
-  } catch {
+    const rawData = await AsyncStorage.getItem(GAMIFICATION_KEY);
+
+    if (!rawData) {
+      return normalizeGamification();
+    }
+
+    try {
+      const parsedData = JSON.parse(rawData);
+
+      return normalizeGamification(
+        isPlainObject(parsedData) ? parsedData : {}
+      );
+    } catch (error) {
+      logStorageError("Could not parse gamification data.", error);
+      return normalizeGamification();
+    }
+  } catch (error) {
+    logStorageError("Could not read gamification data.", error);
     return normalizeGamification();
   }
 }
 
 export async function resetGamification() {
-  await AsyncStorage.removeItem(GAMIFICATION_KEY);
+  try {
+    await AsyncStorage.removeItem(GAMIFICATION_KEY);
+  } catch (error) {
+    logStorageError("Could not reset gamification data.", error);
+    throw error;
+  }
 }
 
 export async function rebuildGamificationFromHabits(
@@ -365,10 +381,15 @@ async function saveAward(
 }
 
 async function saveGamification(gamification) {
-  await AsyncStorage.setItem(
-    GAMIFICATION_KEY,
-    JSON.stringify(normalizeGamification(gamification))
-  );
+  try {
+    await AsyncStorage.setItem(
+      GAMIFICATION_KEY,
+      JSON.stringify(normalizeGamification(gamification))
+    );
+  } catch (error) {
+    logStorageError("Could not save gamification data.", error);
+    throw error;
+  }
 }
 
 function normalizeGamification(gamification = {}) {

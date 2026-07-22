@@ -6,6 +6,7 @@ import {
   rebuildGamificationFromHabits,
   resetGamification,
 } from "./gamificationStorage";
+import { isPlainObject, logStorageError } from "./storageUtils";
 import {
   cancelHabitReminders,
   hasReminderScheduleChanged,
@@ -20,29 +21,52 @@ const DEFAULT_CATEGORY = "Health";
 const DEFAULT_FREQUENCY = "Daily";
 
 export async function getHabits() {
-  const rawHabits = await AsyncStorage.getItem(HABITS_KEY);
-
-  if (!rawHabits) {
-    return [];
-  }
-
   try {
-    const parsedHabits = JSON.parse(rawHabits);
-    return Array.isArray(parsedHabits)
-      ? parsedHabits
-          .map((habit, index) => normalizeHabit(habit, index))
-          .sort((firstHabit, secondHabit) => firstHabit.order - secondHabit.order)
-      : [];
-  } catch {
-    await AsyncStorage.setItem(HABITS_BACKUP_KEY, rawHabits);
+    const rawHabits = await AsyncStorage.getItem(HABITS_KEY);
+
+    if (!rawHabits) {
+      return [];
+    }
+
+    try {
+      const parsedHabits = JSON.parse(rawHabits);
+
+      return Array.isArray(parsedHabits)
+        ? normalizeHabitList(parsedHabits).sort(
+            (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
+          )
+        : [];
+    } catch (error) {
+      logStorageError("Could not parse saved habits. Backing up raw data.", error);
+
+      try {
+        await AsyncStorage.setItem(HABITS_BACKUP_KEY, rawHabits);
+      } catch (backupError) {
+        logStorageError("Could not back up unreadable habits.", backupError);
+      }
+
+      return [];
+    }
+  } catch (error) {
+    logStorageError("Could not read saved habits.", error);
     return [];
   }
 }
 
 export async function saveHabits(habits) {
-  const safeHabits = Array.isArray(habits) ? habits : [];
+  if (!Array.isArray(habits)) {
+    const error = new Error("saveHabits expected an array.");
 
-  await AsyncStorage.setItem(HABITS_KEY, JSON.stringify(safeHabits));
+    logStorageError("Refusing to overwrite habits with invalid data.", error);
+    throw error;
+  }
+
+  try {
+    await AsyncStorage.setItem(HABITS_KEY, JSON.stringify(habits));
+  } catch (error) {
+    logStorageError("Could not save habits.", error);
+    throw error;
+  }
 }
 
 export async function addHabit({
@@ -171,8 +195,11 @@ export async function uncompleteHabitForToday(id) {
 
 export async function saveHabitOrder(orderedHabitIds) {
   const habits = await getHabits();
+  const safeOrderedHabitIds = Array.isArray(orderedHabitIds)
+    ? orderedHabitIds
+    : [];
   const orderLookup = new Map(
-    orderedHabitIds.map((habitId, index) => [habitId, index])
+    safeOrderedHabitIds.map((habitId, index) => [habitId, index])
   );
   const orderedHabits = habits.map((habit, index) =>
     normalizeHabit(
@@ -250,7 +277,15 @@ export async function exportHabitsBackup() {
 }
 
 export async function importHabitsBackup(jsonText) {
-  const parsedData = JSON.parse(jsonText);
+  let parsedData;
+
+  try {
+    parsedData = JSON.parse(jsonText);
+  } catch (error) {
+    logStorageError("Could not parse imported habit backup.", error);
+    throw new Error("Backup JSON could not be parsed.");
+  }
+
   const importedHabits = Array.isArray(parsedData)
     ? parsedData
     : parsedData?.habits;
@@ -259,21 +294,20 @@ export async function importHabitsBackup(jsonText) {
     throw new Error("Backup must include a habits array.");
   }
 
-  const existingHabits = await getHabits();
-  await cancelRemindersForHabits(existingHabits);
+  const normalizedBaseHabits = normalizeHabitList(
+    importedHabits.filter(isPlainObject)
+  );
 
+  if (importedHabits.length > 0 && normalizedBaseHabits.length === 0) {
+    throw new Error("Backup does not include any valid habits.");
+  }
+
+  const existingHabits = await getHabits();
   const normalizedHabits = [];
 
-  for (const habit of importedHabits) {
-    if (!habit || typeof habit !== "object") {
-      continue;
-    }
+  await cancelRemindersForHabits(existingHabits);
 
-    const normalizedHabit = normalizeHabit({
-      ...habit,
-      id: habit.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      createdAt: habit.createdAt || new Date().toISOString(),
-    });
+  for (const normalizedHabit of normalizedBaseHabits) {
     const reminderResult = await scheduleReminderIfEnabled(normalizedHabit);
 
     normalizedHabits.push({
@@ -326,7 +360,7 @@ export async function applyDailyReminderPreference(enabled) {
 }
 
 export function normalizeHabit(habit, fallbackOrder = 0) {
-  const safeHabit = habit && typeof habit === "object" ? habit : {};
+  const safeHabit = isPlainObject(habit) ? habit : {};
 
   return {
     ...safeHabit,
@@ -347,6 +381,38 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
     reminderStatus: safeHabit.reminderStatus || "none",
     completedDates: getSafeDateKeys(safeHabit.completedDates),
   };
+}
+
+function normalizeHabitList(habits) {
+  const seenIds = new Set();
+
+  return habits.map((habit, index) => {
+    const normalizedHabit = normalizeHabit(habit, index);
+    const uniqueId = getUniqueHabitId(normalizedHabit.id, index, seenIds);
+
+    seenIds.add(uniqueId);
+
+    return {
+      ...normalizedHabit,
+      id: uniqueId,
+    };
+  });
+}
+
+function getUniqueHabitId(id, index, seenIds) {
+  let nextId = id || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  if (!seenIds.has(nextId)) {
+    return nextId;
+  }
+
+  let duplicateCount = 1;
+
+  while (seenIds.has(`${nextId}-duplicate-${index}-${duplicateCount}`)) {
+    duplicateCount += 1;
+  }
+
+  return `${nextId}-duplicate-${index}-${duplicateCount}`;
 }
 
 function getSafeCreatedAt(createdAt) {

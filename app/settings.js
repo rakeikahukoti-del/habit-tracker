@@ -107,6 +107,36 @@ export default function SettingsScreen() {
     }
   }
 
+  function confirmLoadDemoData() {
+    Alert.alert(
+      "Load demo data?",
+      "This replaces your current habits with sample habits for testing.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Load demo data",
+          style: "destructive",
+          onPress: handleLoadDemoData,
+        },
+      ]
+    );
+  }
+
+  function confirmLoadMasterDemoData() {
+    Alert.alert(
+      "Load Master demo?",
+      "This replaces your current habits with high-progress sample habits.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Load Master demo",
+          style: "destructive",
+          onPress: handleLoadMasterDemoData,
+        },
+      ]
+    );
+  }
+
   function confirmResetAllData() {
     Alert.alert(
       "Reset all data?",
@@ -249,7 +279,7 @@ export default function SettingsScreen() {
                   accessibilityLabel="Load demo data"
                   accessibilityRole="button"
                   disabled={actionLoading}
-                  onPress={handleLoadDemoData}
+                  onPress={confirmLoadDemoData}
                   style={({ pressed }) => [
                     styles.primaryButton,
                     actionLoading && styles.disabledButton,
@@ -265,7 +295,7 @@ export default function SettingsScreen() {
                   accessibilityLabel="Load master demo data"
                   accessibilityRole="button"
                   disabled={actionLoading}
-                  onPress={handleLoadMasterDemoData}
+                  onPress={confirmLoadMasterDemoData}
                   style={({ pressed }) => [
                     styles.secondaryButton,
                     actionLoading && styles.disabledButton,

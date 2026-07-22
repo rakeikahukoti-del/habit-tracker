@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useColorScheme } from "react-native";
 import { themes } from "../constants/colors";
+import { logStorageError } from "../storage/storageUtils";
 
 const THEME_PREFERENCE_KEY = "momentum:theme-preference";
 const ThemeContext = createContext(null);
@@ -27,6 +28,8 @@ export function ThemeProvider({ children }) {
         if (isValidThemePreference(savedPreference)) {
           setThemePreferenceState(savedPreference);
         }
+      } catch (error) {
+        logStorageError("Could not read theme preference.", error);
       } finally {
         setThemeLoaded(true);
       }
@@ -45,7 +48,12 @@ export function ThemeProvider({ children }) {
     }
 
     setThemePreferenceState(nextPreference);
-    await AsyncStorage.setItem(THEME_PREFERENCE_KEY, nextPreference);
+
+    try {
+      await AsyncStorage.setItem(THEME_PREFERENCE_KEY, nextPreference);
+    } catch (error) {
+      logStorageError("Could not save theme preference.", error);
+    }
   }, [themePreference]);
 
   const resolvedTheme =

@@ -33,6 +33,7 @@ export default function GamificationPreferencesScreen() {
   const isTablet = width >= 768;
   const styles = createStyles(colors, { isSmallScreen, isTablet });
   const [preferences, setPreferences] = useState(defaultAppPreferences);
+  const [message, setMessage] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -45,8 +46,14 @@ export default function GamificationPreferencesScreen() {
   );
 
   async function handlePreferenceChange(key, value) {
-    setPreferences((current) => ({ ...current, [key]: value }));
-    setPreferences(await setAppPreference(key, value));
+    try {
+      setMessage("");
+      setPreferences((current) => ({ ...current, [key]: value }));
+      setPreferences(await setAppPreference(key, value));
+    } catch {
+      setMessage("Could not save that preference. Please try again.");
+      setPreferences(await getAppPreferences());
+    }
   }
 
   return (
@@ -58,6 +65,8 @@ export default function GamificationPreferencesScreen() {
         <BackButton styles={styles} />
         <Text style={styles.eyebrow}>Settings</Text>
         <Text style={styles.title}>Gamification</Text>
+
+        {message ? <Text style={styles.message}>{message}</Text> : null}
 
         <View style={styles.section}>
           <PreferenceSwitch
@@ -189,6 +198,12 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontWeight: fontWeight.bold,
       lineHeight: pageTitleLineHeight(isSmallScreen),
       marginBottom: spacing.xl,
+    },
+    message: {
+      color: colors.primary,
+      fontSize: fontSize.body,
+      fontWeight: fontWeight.semibold,
+      marginBottom: spacing.md,
     },
     section: {
       backgroundColor: colors.card,
