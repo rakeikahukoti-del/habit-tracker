@@ -1,5 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_HABIT_COLOR } from "../constants/habitOptions";
+import {
+  DEFAULT_HABIT_CATEGORY,
+  DEFAULT_HABIT_COLOR,
+  DEFAULT_HABIT_EMOJI,
+  DEFAULT_HABIT_FREQUENCY,
+} from "../constants/habitOptions";
 import { getAppPreferences, setLastShownLevel } from "./appPreferences";
 import {
   getGamificationLevelInfo,
@@ -16,10 +21,6 @@ import { getTodayKey, toDateKey, wasCompletedToday } from "../utils/habitStats";
 
 const HABITS_KEY = "habit-tracker:habits";
 const HABITS_BACKUP_KEY = "habit-tracker:habits-backup";
-const DEFAULT_HABIT_EMOJI = "✨";
-const DEFAULT_CATEGORY = "Health";
-const DEFAULT_FREQUENCY = "Daily";
-
 export async function getHabits() {
   try {
     const rawHabits = await AsyncStorage.getItem(HABITS_KEY);
@@ -368,9 +369,9 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
     name: typeof safeHabit.name === "string" ? safeHabit.name : "",
     createdAt: getSafeCreatedAt(safeHabit.createdAt),
     emoji: safeHabit.emoji || DEFAULT_HABIT_EMOJI,
-    category: safeHabit.category || DEFAULT_CATEGORY,
+    category: safeHabit.category || DEFAULT_HABIT_CATEGORY,
     color: safeHabit.color || DEFAULT_HABIT_COLOR,
-    frequency: safeHabit.frequency || DEFAULT_FREQUENCY,
+    frequency: safeHabit.frequency || DEFAULT_HABIT_FREQUENCY,
     customDays: Array.isArray(safeHabit.customDays) ? safeHabit.customDays : [],
     reminderTime:
       typeof safeHabit.reminderTime === "string" ? safeHabit.reminderTime : "",

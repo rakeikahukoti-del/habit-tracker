@@ -1,4 +1,7 @@
 export const DEFAULT_HABIT_COLOR = "#5A6F9F";
+export const DEFAULT_HABIT_EMOJI = "✨";
+export const DEFAULT_HABIT_CATEGORY = "Health";
+export const DEFAULT_HABIT_FREQUENCY = "Daily";
 
 export const emojiOptions = ["✨", "💪", "📚", "💧", "🧘", "⚡", "🌱", "🎯"];
 

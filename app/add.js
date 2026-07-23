@@ -13,7 +13,12 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import HabitFormFields from "../components/HabitFormFields";
-import { DEFAULT_HABIT_COLOR } from "../constants/habitOptions";
+import {
+  DEFAULT_HABIT_CATEGORY,
+  DEFAULT_HABIT_COLOR,
+  DEFAULT_HABIT_EMOJI,
+  DEFAULT_HABIT_FREQUENCY,
+} from "../constants/habitOptions";
 import {
   fontSize,
   fontWeight,
@@ -36,20 +41,20 @@ export default function AddHabitScreen() {
   const isTablet = width >= 768;
   const styles = createStyles(colors, { isSmallScreen, isTablet });
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("✨");
-  const [category, setCategory] = useState("Health");
+  const [emoji, setEmoji] = useState(DEFAULT_HABIT_EMOJI);
+  const [category, setCategory] = useState(DEFAULT_HABIT_CATEGORY);
   const [color, setColor] = useState(DEFAULT_HABIT_COLOR);
-  const [frequency, setFrequency] = useState("Daily");
+  const [frequency, setFrequency] = useState(DEFAULT_HABIT_FREQUENCY);
   const [customDays, setCustomDays] = useState([]);
   const [reminderTime, setReminderTime] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const hasUnsavedInput =
     name.trim() ||
-    emoji !== "✨" ||
-    category !== "Health" ||
+    emoji !== DEFAULT_HABIT_EMOJI ||
+    category !== DEFAULT_HABIT_CATEGORY ||
     color !== DEFAULT_HABIT_COLOR ||
-    frequency !== "Daily" ||
+    frequency !== DEFAULT_HABIT_FREQUENCY ||
     customDays.length > 0 ||
     reminderTime.trim();
 

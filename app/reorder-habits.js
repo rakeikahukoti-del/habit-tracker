@@ -14,7 +14,10 @@ import {
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { DEFAULT_HABIT_COLOR } from "../constants/habitOptions";
+import {
+  DEFAULT_HABIT_COLOR,
+  DEFAULT_HABIT_EMOJI,
+} from "../constants/habitOptions";
 import {
   fontSize,
   fontWeight,
@@ -27,6 +30,7 @@ import {
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
 import { getHabits, saveHabitOrder } from "../storage/habitsStorage";
+import { withAlpha } from "../utils/colorUtils";
 
 const ROW_DRAG_HEIGHT = 76;
 
@@ -278,7 +282,9 @@ function HabitOrderRow({
             },
           ]}
         >
-          <Text style={styles.iconText}>{habit.emoji || "✨"}</Text>
+          <Text style={styles.iconText}>
+            {habit.emoji || DEFAULT_HABIT_EMOJI}
+          </Text>
         </View>
 
         <View style={styles.habitText}>
@@ -488,18 +494,4 @@ function animateToRest(animatedValue) {
       useNativeDriver: true,
     }).start(resolve);
   });
-}
-
-function withAlpha(hexColor, alpha) {
-  const normalized = hexColor.replace("#", "");
-
-  if (normalized.length !== 6) {
-    return hexColor;
-  }
-
-  const red = parseInt(normalized.slice(0, 2), 16);
-  const green = parseInt(normalized.slice(2, 4), 16);
-  const blue = parseInt(normalized.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }

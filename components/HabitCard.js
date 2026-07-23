@@ -22,7 +22,11 @@ import {
   getWeeklyProgress,
   wasCompletedToday,
 } from "../utils/habitStats";
-import { DEFAULT_HABIT_COLOR } from "../constants/habitOptions";
+import { withAlpha } from "../utils/colorUtils";
+import {
+  DEFAULT_HABIT_COLOR,
+  DEFAULT_HABIT_EMOJI,
+} from "../constants/habitOptions";
 import { useTheme } from "../context/ThemeContext";
 import { router } from "expo-router";
 
@@ -48,7 +52,7 @@ function HabitCard({
   const completedToday = wasCompletedToday(habit);
   const currentStreak = getCurrentStreak(habit.completedDates);
   const weeklyProgress = getWeeklyProgress(habit);
-  const icon = habit.emoji || "✨";
+  const icon = habit.emoji || DEFAULT_HABIT_EMOJI;
   const accentColor = habit.color || DEFAULT_HABIT_COLOR;
   const themeAccent = colors.accent || colors.primary;
   const swipeX = useRef(new Animated.Value(0)).current;
@@ -605,18 +609,4 @@ async function triggerSelectionHaptic() {
   } catch {
     // Haptic feedback is optional and should never interrupt swipe completion.
   }
-}
-
-function withAlpha(hexColor, alpha) {
-  const normalized = hexColor.replace("#", "");
-
-  if (normalized.length !== 6) {
-    return hexColor;
-  }
-
-  const red = parseInt(normalized.slice(0, 2), 16);
-  const green = parseInt(normalized.slice(2, 4), 16);
-  const blue = parseInt(normalized.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
