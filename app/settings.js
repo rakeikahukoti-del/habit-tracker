@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
   Modal,
@@ -58,6 +58,7 @@ export default function SettingsScreen() {
   const [level, setLevel] = useState(1);
   const [modalMode, setModalMode] = useState(null);
   const [message, setMessage] = useState("");
+  const actionLoadingRef = useRef(false);
   const quote = getQuoteOfTheDay();
 
   useFocusEffect(
@@ -78,6 +79,11 @@ export default function SettingsScreen() {
   );
 
   async function handleLoadDemoData() {
+    if (actionLoadingRef.current) {
+      return;
+    }
+
+    actionLoadingRef.current = true;
     setActionLoading(true);
 
     try {
@@ -88,11 +94,17 @@ export default function SettingsScreen() {
     } catch {
       setMessage("Could not load demo data. Please try again.");
     } finally {
+      actionLoadingRef.current = false;
       setActionLoading(false);
     }
   }
 
   async function handleLoadMasterDemoData() {
+    if (actionLoadingRef.current) {
+      return;
+    }
+
+    actionLoadingRef.current = true;
     setActionLoading(true);
 
     try {
@@ -103,6 +115,7 @@ export default function SettingsScreen() {
     } catch {
       setMessage("Could not load Master demo data. Please try again.");
     } finally {
+      actionLoadingRef.current = false;
       setActionLoading(false);
     }
   }
@@ -153,6 +166,11 @@ export default function SettingsScreen() {
   }
 
   async function handleResetAllData() {
+    if (actionLoadingRef.current) {
+      return;
+    }
+
+    actionLoadingRef.current = true;
     setActionLoading(true);
 
     try {
@@ -163,11 +181,17 @@ export default function SettingsScreen() {
     } catch {
       setMessage("Could not reset data. Please try again.");
     } finally {
+      actionLoadingRef.current = false;
       setActionLoading(false);
     }
   }
 
   async function handleExportData() {
+    if (actionLoadingRef.current) {
+      return;
+    }
+
+    actionLoadingRef.current = true;
     setActionLoading(true);
 
     try {
@@ -178,6 +202,7 @@ export default function SettingsScreen() {
     } catch {
       setMessage("Could not export habit data. Please try again.");
     } finally {
+      actionLoadingRef.current = false;
       setActionLoading(false);
     }
   }
@@ -197,6 +222,11 @@ export default function SettingsScreen() {
   }
 
   async function handleImportData() {
+    if (actionLoadingRef.current) {
+      return;
+    }
+
+    actionLoadingRef.current = true;
     setActionLoading(true);
 
     try {
@@ -209,6 +239,7 @@ export default function SettingsScreen() {
     } catch {
       setMessage("Could not import that JSON backup. Check the text and try again.");
     } finally {
+      actionLoadingRef.current = false;
       setActionLoading(false);
     }
   }

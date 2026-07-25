@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -36,6 +36,7 @@ export default function NotificationPreferencesScreen() {
   const styles = createStyles(colors, { isSmallScreen, isTablet });
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [message, setMessage] = useState("");
+  const preferenceUpdatingRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -48,6 +49,12 @@ export default function NotificationPreferencesScreen() {
   );
 
   async function handleDailyReminderChange(value) {
+    if (preferenceUpdatingRef.current) {
+      return;
+    }
+
+    preferenceUpdatingRef.current = true;
+
     try {
       setMessage("");
       setPreferences((current) => ({
@@ -63,6 +70,8 @@ export default function NotificationPreferencesScreen() {
     } catch {
       setMessage("Could not update reminders. Please try again.");
       setPreferences(await getAppPreferences());
+    } finally {
+      preferenceUpdatingRef.current = false;
     }
   }
 

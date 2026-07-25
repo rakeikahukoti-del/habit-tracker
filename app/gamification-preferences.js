@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -34,6 +34,7 @@ export default function GamificationPreferencesScreen() {
   const styles = createStyles(colors, { isSmallScreen, isTablet });
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [message, setMessage] = useState("");
+  const preferenceUpdatingRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,6 +47,12 @@ export default function GamificationPreferencesScreen() {
   );
 
   async function handlePreferenceChange(key, value) {
+    if (preferenceUpdatingRef.current) {
+      return;
+    }
+
+    preferenceUpdatingRef.current = true;
+
     try {
       setMessage("");
       setPreferences((current) => ({ ...current, [key]: value }));
@@ -53,6 +60,8 @@ export default function GamificationPreferencesScreen() {
     } catch {
       setMessage("Could not save that preference. Please try again.");
       setPreferences(await getAppPreferences());
+    } finally {
+      preferenceUpdatingRef.current = false;
     }
   }
 

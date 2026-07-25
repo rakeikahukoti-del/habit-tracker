@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -49,6 +49,7 @@ export default function AddHabitScreen() {
   const [reminderTime, setReminderTime] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const hasUnsavedInput =
     name.trim() ||
     emoji !== DEFAULT_HABIT_EMOJI ||
@@ -75,6 +76,10 @@ export default function AddHabitScreen() {
   }
 
   async function handleSave() {
+    if (savingRef.current) {
+      return;
+    }
+
     if (!name.trim()) {
       setError("Habit name is required.");
       return;
@@ -90,6 +95,7 @@ export default function AddHabitScreen() {
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
 
     try {
@@ -107,6 +113,7 @@ export default function AddHabitScreen() {
     } catch {
       setError("Could not save this habit. Please try again.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

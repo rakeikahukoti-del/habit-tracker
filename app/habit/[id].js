@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -62,6 +62,9 @@ export default function HabitDetailsScreen() {
   const [reminderTime, setReminderTime] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const deleteInProgressRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const savingRef = useRef(false);
 
   const loadHabit = useCallback(async () => {
     const habits = await getHabits();
@@ -91,6 +94,10 @@ export default function HabitDetailsScreen() {
   );
 
   async function handleSave() {
+    if (savingRef.current || !habit) {
+      return;
+    }
+
     if (!name.trim()) {
       setError("Habit name is required.");
       return;
@@ -117,6 +124,7 @@ export default function HabitDetailsScreen() {
       reminderTime: reminderTime.trim(),
     };
 
+    savingRef.current = true;
     setSaving(true);
 
     try {
@@ -126,29 +134,53 @@ export default function HabitDetailsScreen() {
     } catch {
       setError("Could not save this habit. Please try again.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
 
   function handleDelete() {
+    if (deletePendingRef.current) {
+      return;
+    }
+
+    deletePendingRef.current = true;
+
     Alert.alert(
       "Delete habit?",
       "This removes the habit and all of its progress.",
       [
-        { text: "Cancel", style: "cancel" },
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => {
+            deletePendingRef.current = false;
+          },
+        },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            deleteInProgressRef.current = true;
+
             try {
               await deleteHabit(id);
               router.replace("/");
             } catch {
+              deleteInProgressRef.current = false;
+              deletePendingRef.current = false;
               setError("Could not delete this habit. Please try again.");
             }
           },
         },
-      ]
+      ],
+      {
+        onDismiss: () => {
+          if (!deleteInProgressRef.current) {
+            deletePendingRef.current = false;
+          }
+        },
+      }
     );
   }
 
