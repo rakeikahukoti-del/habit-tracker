@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -229,98 +231,98 @@ export default function SettingsScreen() {
     >
       <SettingsMessage>{message}</SettingsMessage>
 
-        <SettingsSection title="Habits">
-          <SettingsRow
-            description="Sorting, swipe, and reorder behavior."
-            onPress={() => router.push("/habit-preferences")}
-            title="Habit preferences"
-          />
-          <SettingsRow
-            description="Drag habits into your preferred Home order."
-            onPress={() => router.push("/reorder-habits")}
-            title="Reorder habits"
-          />
-        </SettingsSection>
+      <SettingsSection title="Habits">
+        <SettingsRow
+          description="Sorting, swipe, and reorder behavior."
+          onPress={() => router.push("/habit-preferences")}
+          title="Habit preferences"
+        />
+        <SettingsRow
+          description="Drag habits into your preferred Home order."
+          onPress={() => router.push("/reorder-habits")}
+          title="Reorder habits"
+        />
+      </SettingsSection>
 
-        <SettingsSection title="Experience">
-          <SettingsRow
-            description="Mode and unlocked rank themes."
-            onPress={() => router.push("/appearance")}
-            title="Appearance"
-            value={formatThemeLabel(resolvedTheme)}
-          />
-          <SettingsRow
-            description="Home progress, reward popups, and haptics."
-            onPress={() => router.push("/gamification-preferences")}
-            title="Gamification"
-          />
-          <SettingsRow
-            description="Daily reminder preference."
-            onPress={() => router.push("/notification-preferences")}
-            title="Notifications"
-          />
-        </SettingsSection>
+      <SettingsSection title="Experience">
+        <SettingsRow
+          description="Mode and unlocked rank themes."
+          onPress={() => router.push("/appearance")}
+          title="Appearance"
+          value={formatThemeLabel(resolvedTheme)}
+        />
+        <SettingsRow
+          description="Home progress, reward popups, and haptics."
+          onPress={() => router.push("/gamification-preferences")}
+          title="Gamification"
+        />
+        <SettingsRow
+          description="Daily reminder preference."
+          onPress={() => router.push("/notification-preferences")}
+          title="Notifications"
+        />
+      </SettingsSection>
 
-        <SettingsSection
-          footer="Demo actions replace current habits. Export first if you want a backup."
-          title="Data"
-        >
-          {SHOW_DEMO_TOOLS ? (
-            <>
-              <SettingsRow
-                disabled={actionLoading}
-                onPress={confirmLoadDemoData}
-                title="Load demo data"
-                value={actionLoading ? "Working" : undefined}
-              />
-              <SettingsRow
-                description="Loads a high-progress sample profile."
-                disabled={actionLoading}
-                onPress={confirmLoadMasterDemoData}
-                title="Load Master demo"
-              />
-            </>
-          ) : null}
-          <SettingsRow
-            disabled={actionLoading}
-            onPress={handleExportData}
-            title="Export JSON"
-          />
-          <SettingsRow
-            disabled={actionLoading}
-            onPress={() => setModalMode("import")}
-            title="Import JSON"
-          />
-          <SettingsRow
-            destructive
-            disabled={actionLoading}
-            onPress={confirmResetAllData}
-            showChevron={false}
-            title="Reset all data"
-          />
-        </SettingsSection>
+      <SettingsSection
+        footer="Demo actions replace current habits. Export first if you want a backup."
+        title="Data"
+      >
+        {SHOW_DEMO_TOOLS ? (
+          <>
+            <SettingsRow
+              disabled={actionLoading}
+              onPress={confirmLoadDemoData}
+              title="Load demo data"
+              value={actionLoading ? "Working" : undefined}
+            />
+            <SettingsRow
+              description="Loads a high-progress sample profile."
+              disabled={actionLoading}
+              onPress={confirmLoadMasterDemoData}
+              title="Load Master demo"
+            />
+          </>
+        ) : null}
+        <SettingsRow
+          disabled={actionLoading}
+          onPress={handleExportData}
+          title="Export JSON"
+        />
+        <SettingsRow
+          disabled={actionLoading}
+          onPress={() => setModalMode("import")}
+          title="Import JSON"
+        />
+        <SettingsRow
+          destructive
+          disabled={actionLoading}
+          onPress={confirmResetAllData}
+          showChevron={false}
+          title="Reset all data"
+        />
+      </SettingsSection>
 
-        <SettingsSection title="Legal">
-          <SettingsRow
-            onPress={() => router.push("/privacy")}
-            title="Privacy Policy"
-          />
-          <SettingsRow onPress={() => router.push("/terms")} title="Terms of Use" />
-          <SettingsRow
-            onPress={() => router.push("/disclaimer")}
-            title="Disclaimer"
-          />
-        </SettingsSection>
+      <SettingsSection title="Legal">
+        <SettingsRow
+          onPress={() => router.push("/privacy")}
+          title="Privacy Policy"
+        />
+        <SettingsRow onPress={() => router.push("/terms")} title="Terms of Use" />
+        <SettingsRow
+          onPress={() => router.push("/disclaimer")}
+          title="Disclaimer"
+        />
+      </SettingsSection>
 
-        <SettingsSection title="About">
-          <SettingsRow showChevron={false} title="App version" value={packageJson.version} />
-          <SettingsRow
-            description="Personal habit tracking only. No account or backend."
-            showChevron={false}
-            title="App info"
-            value={`Level ${level}`}
-          />
-        </SettingsSection>
+      <SettingsSection title="About">
+        <SettingsRow showChevron={false} title="App version" value={packageJson.version} />
+        <SettingsRow
+          description="Personal habit tracking only. No account or backend."
+          showChevron={false}
+          title="App info"
+          value={`Level ${level}`}
+        />
+      </SettingsSection>
 
       <Modal
         animationType="slide"
@@ -328,7 +330,10 @@ export default function SettingsScreen() {
         transparent
         visible={Boolean(modalMode)}
       >
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalBackdrop}
+        >
           <View style={styles.modalCard}>
             <AppText style={styles.modalTitle}>
               {modalMode === "export" ? "Export JSON" : "Import JSON"}
@@ -382,7 +387,7 @@ export default function SettingsScreen() {
               ) : null}
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SettingsShell>
   );

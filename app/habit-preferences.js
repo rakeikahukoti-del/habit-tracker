@@ -65,40 +65,40 @@ export default function HabitPreferencesScreen() {
     >
       <SettingsMessage>{message}</SettingsMessage>
 
-        <SettingsSection title="Order">
-          <SettingsRow
-            description="Drag habits into your preferred order."
-            onPress={() => router.push("/reorder-habits")}
-            title="Reorder habits"
-          />
-          <SettingsToggleRow
-            description="Keeps unfinished habits at the top of Today."
-            onValueChange={(value) =>
-              handlePreferenceChange("moveCompletedToBottom", value)
-            }
-            title="Move completed habits to bottom"
-            value={preferences.moveCompletedToBottom}
-          />
-        </SettingsSection>
+      <SettingsSection title="Order">
+        <SettingsRow
+          description="Drag habits into your preferred order."
+          onPress={() => router.push("/reorder-habits")}
+          title="Reorder habits"
+        />
+        <SettingsToggleRow
+          description="Keeps unfinished habits at the top of Today."
+          onValueChange={(value) =>
+            handlePreferenceChange("moveCompletedToBottom", value)
+          }
+          title="Move completed habits to bottom"
+          value={preferences.moveCompletedToBottom}
+        />
+      </SettingsSection>
 
-        <SettingsSection title="Interactions">
-          <SettingsToggleRow
-            description="Swipe right to complete and left to undo."
-            onValueChange={(value) =>
-              handlePreferenceChange("enableSwipeToComplete", value)
-            }
-            title="Swipe actions"
-            value={preferences.enableSwipeToComplete}
-          />
-          <SettingsToggleRow
-            description="Allows drag reordering where supported."
-            onValueChange={(value) =>
-              handlePreferenceChange("enableLongPressReorder", value)
-            }
-            title="Long-press reorder"
-            value={preferences.enableLongPressReorder}
-          />
-        </SettingsSection>
+      <SettingsSection title="Interactions">
+        <SettingsToggleRow
+          description="Swipe right to complete and left to undo."
+          onValueChange={(value) =>
+            handlePreferenceChange("enableSwipeToComplete", value)
+          }
+          title="Swipe actions"
+          value={preferences.enableSwipeToComplete}
+        />
+        <SettingsToggleRow
+          description="Allows drag reordering where supported."
+          onValueChange={(value) =>
+            handlePreferenceChange("enableLongPressReorder", value)
+          }
+          title="Long-press reorder"
+          value={preferences.enableLongPressReorder}
+        />
+      </SettingsSection>
     </SettingsScreen>
   );
 }

@@ -1,10 +1,10 @@
 import { StyleSheet } from "react-native";
 import {
-  v2Colors,
   v2Layout,
   v2Radius,
   v2Spacing,
 } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
 import AppText from "./AppText";
 import PressableScale from "./PressableScale";
 
@@ -15,15 +15,28 @@ export default function SecondaryButton({
   textStyle,
   ...props
 }) {
+  const { colors } = useTheme();
+
   return (
     <PressableScale
       {...props}
       accessibilityRole="button"
       disabled={disabled}
-      style={[styles.button, disabled && styles.disabled, style]}
+      style={[
+        styles.button,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        },
+        disabled && {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
+        style,
+      ]}
     >
       <AppText
-        color={disabled ? v2Colors.textDisabled : v2Colors.textPrimary}
+        color={disabled ? colors.softText : colors.text}
         style={textStyle}
         variant="button"
       >
@@ -36,17 +49,11 @@ export default function SecondaryButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: v2Colors.surfaceElevated,
-    borderColor: v2Colors.borderDefault,
     borderRadius: v2Radius.medium,
     borderWidth: 1,
     justifyContent: "center",
     minHeight: v2Layout.minTapTarget,
     paddingHorizontal: v2Spacing.lg,
     paddingVertical: v2Spacing.md,
-  },
-  disabled: {
-    backgroundColor: v2Colors.surface,
-    borderColor: v2Colors.borderSubtle,
   },
 });

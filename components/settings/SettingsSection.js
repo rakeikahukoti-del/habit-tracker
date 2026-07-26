@@ -142,7 +142,7 @@ export function SettingsRow({
       accessibilityRole={onPress ? "button" : undefined}
       accessibilityState={{ disabled }}
       disabled={!onPress || disabled}
-      hitSlop={4}
+      hitSlop={{ bottom: 8, left: 8, right: 8, top: 8 }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
@@ -206,8 +206,8 @@ export function SettingsToggleRow({
           disabled={disabled}
           ios_backgroundColor={colors.border}
           onValueChange={onValueChange}
-          thumbColor={value ? colors.primary : colors.surface}
-          trackColor={{ false: colors.border, true: colors.primarySoft }}
+          thumbColor={value ? colors.inverseText : colors.surface}
+          trackColor={{ false: colors.border, true: colors.primary }}
           value={Boolean(value)}
         />
       }
@@ -234,7 +234,7 @@ export function ThemePreviewRow({
       accessibilityRole="button"
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
-      hitSlop={4}
+      hitSlop={{ bottom: 8, left: 8, right: 8, top: 8 }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.themeRow,
@@ -297,7 +297,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       paddingBottom: v2Layout.bottomNavigationClearance,
     },
     header: {
-      paddingBottom: v2Spacing.xl,
+      paddingBottom: v2Spacing.lg,
       paddingTop: v2Spacing.sm,
     },
     backButton: {
@@ -374,7 +374,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
       gap: v2Spacing.md,
-      minHeight: 58,
+      minHeight: 62,
       paddingHorizontal: v2Spacing.lg,
       paddingVertical: v2Spacing.md,
     },
@@ -384,6 +384,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     trailingControl: {
       flexShrink: 0,
+      minHeight: v2Layout.minTapTarget,
+      justifyContent: "center",
     },
     rowTitle: {
       color: colors.text,
@@ -429,7 +431,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       color: colors.softText,
     },
     pressed: {
-      opacity: 0.76,
+      backgroundColor: colors.surface,
+      opacity: 0.9,
     },
     themeRow: {
       alignItems: "center",
@@ -437,7 +440,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
       gap: v2Spacing.md,
-      minHeight: 68,
+      minHeight: 72,
       paddingHorizontal: v2Spacing.lg,
       paddingVertical: v2Spacing.md,
     },

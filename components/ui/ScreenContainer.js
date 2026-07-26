@@ -1,6 +1,7 @@
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { v2Colors, v2Layout } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
+import { v2Layout } from "../../src/design";
 
 export default function ScreenContainer({
   avoidKeyboard = false,
@@ -10,6 +11,7 @@ export default function ScreenContainer({
   scroll = false,
   style,
 }) {
+  const { colors } = useTheme();
   const Body = scroll ? ScrollView : View;
   const bodyProps = scroll
     ? {
@@ -30,7 +32,7 @@ export default function ScreenContainer({
         ],
       };
   const screen = (
-    <SafeAreaView style={[styles.safeArea, style]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }, style]}>
       <Body {...bodyProps}>{children}</Body>
     </SafeAreaView>
   );
@@ -51,7 +53,6 @@ export default function ScreenContainer({
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: v2Colors.background,
     flex: 1,
   },
   flex: {

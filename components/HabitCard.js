@@ -30,8 +30,8 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { router } from "expo-router";
 
-const SWIPE_COMPLETE_COLOR = "#557A60";
-const SWIPE_UNDO_COLOR = "#8A4D50";
+const SWIPE_COMPLETE_COLOR = "#4F755B";
+const SWIPE_UNDO_COLOR = "#85494D";
 const SWIPE_START_DISTANCE = 8;
 const SWIPE_DIRECTION_RATIO = 0.85;
 const SWIPE_THRESHOLD = 32;
@@ -470,6 +470,7 @@ function createStyles(colors, isCompact) {
   return StyleSheet.create({
     swipeWrap: {
       borderRadius: v2Radius.large,
+      marginBottom: 1,
       maxWidth: "100%",
       overflow: "hidden",
       position: "relative",
@@ -484,7 +485,7 @@ function createStyles(colors, isCompact) {
       gap: v2Spacing.md,
       justifyContent: "flex-start",
       left: 0,
-      paddingHorizontal: v2Spacing.xl,
+      paddingHorizontal: isCompact ? v2Spacing.lg : v2Spacing.xl,
       position: "absolute",
       top: 0,
       width: "100%",
@@ -514,9 +515,9 @@ function createStyles(colors, isCompact) {
       alignItems: "center",
       backgroundColor: "rgba(243, 243, 243, 0.92)",
       borderRadius: v2Radius.pill,
-      height: 32,
+      height: 34,
       justifyContent: "center",
-      width: 32,
+      width: 34,
     },
     swipeIcon: {
       color: "#111111",
@@ -534,9 +535,9 @@ function createStyles(colors, isCompact) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       maxWidth: "100%",
-      minHeight: isCompact ? 86 : 94,
+      minHeight: isCompact ? 92 : 98,
       paddingHorizontal: isCompact ? v2Spacing.md : v2Spacing.base,
-      paddingVertical: isCompact ? v2Spacing.md : 15,
+      paddingVertical: isCompact ? v2Spacing.md : v2Spacing.base,
       ...v2Shadows.low,
       shadowColor: colors.shadow,
       shadowOpacity: 0.08,
@@ -565,7 +566,7 @@ function createStyles(colors, isCompact) {
       flexShrink: 1,
       gap: v2Spacing.md,
       justifyContent: "space-between",
-      minHeight: 50,
+      minHeight: 54,
       minWidth: 0,
     },
     cardMainPressed: {
@@ -583,9 +584,9 @@ function createStyles(colors, isCompact) {
       alignItems: "center",
       borderRadius: v2Radius.medium,
       borderWidth: 1,
-      height: isCompact ? 42 : 44,
+      height: isCompact ? 44 : 46,
       justifyContent: "center",
-      width: isCompact ? 42 : 44,
+      width: isCompact ? 44 : 46,
     },
     icon: {
       fontSize: isCompact ? 21 : 23,
@@ -603,6 +604,7 @@ function createStyles(colors, isCompact) {
     },
     category: {
       marginTop: 3,
+      lineHeight: v2Typography.caption.lineHeight,
     },
     rightActions: {
       alignItems: "center",
@@ -611,7 +613,7 @@ function createStyles(colors, isCompact) {
       gap: isCompact ? v2Spacing.sm : 10,
     },
     weekRow: {
-      marginTop: v2Spacing.md,
+      marginTop: v2Spacing.sm,
       maxWidth: "100%",
       paddingTop: 2,
       width: "100%",

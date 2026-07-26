@@ -1,12 +1,16 @@
 import { StyleSheet, View } from "react-native";
-import { v2Colors, v2Spacing } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
+import { v2Spacing } from "../../src/design";
 
 export default function Divider({ inset = 0, style }) {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
         styles.divider,
         {
+          backgroundColor: colors.border,
           marginLeft: inset,
           marginRight: inset,
         },
@@ -18,7 +22,6 @@ export default function Divider({ inset = 0, style }) {
 
 const styles = StyleSheet.create({
   divider: {
-    backgroundColor: v2Colors.borderSubtle,
     height: StyleSheet.hairlineWidth,
     marginVertical: v2Spacing.sm,
   },

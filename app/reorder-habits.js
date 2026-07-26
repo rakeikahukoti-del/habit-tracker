@@ -38,7 +38,10 @@ export default function ReorderHabitsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const styles = createStyles(colors, { isSmallScreen });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen }),
+    [colors, isSmallScreen]
+  );
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -179,32 +182,32 @@ export default function ReorderHabitsScreen() {
     >
       {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
 
-        <View style={styles.listCard}>
-          {loading ? (
-            <AppText style={styles.emptyText}>Loading habits...</AppText>
-          ) : habits.length === 0 ? (
-            <View style={styles.emptyState}>
-              <AppText style={styles.emptyTitle}>No habits yet</AppText>
-              <AppText style={styles.emptyText}>
-                Create a habit first, then set its order here.
-              </AppText>
-            </View>
-          ) : (
-            habits.map((habit, index) => (
-              <HabitOrderRow
-                habit={habit}
-                index={index}
-                isDragging={draggingId === habit.id}
-                key={habit.id}
-                dragY={activeDragY}
-                onDragEnd={handleDragEnd}
-                onDragMove={handleDragMove}
-                onDragStart={handleDragStart}
-                styles={styles}
-              />
-            ))
-          )}
-        </View>
+      <View style={styles.listCard}>
+        {loading ? (
+          <AppText style={styles.emptyText}>Loading habits...</AppText>
+        ) : habits.length === 0 ? (
+          <View style={styles.emptyState}>
+            <AppText style={styles.emptyTitle}>No habits yet</AppText>
+            <AppText style={styles.emptyText}>
+              Create a habit first, then set its order here.
+            </AppText>
+          </View>
+        ) : (
+          habits.map((habit, index) => (
+            <HabitOrderRow
+              dragY={activeDragY}
+              habit={habit}
+              index={index}
+              isDragging={draggingId === habit.id}
+              key={habit.id}
+              onDragEnd={handleDragEnd}
+              onDragMove={handleDragMove}
+              onDragStart={handleDragStart}
+              styles={styles}
+            />
+          ))
+        )}
+      </View>
     </SettingsScreen>
   );
 }

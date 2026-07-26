@@ -1,10 +1,10 @@
 import { ActivityIndicator, StyleSheet } from "react-native";
 import {
-  v2Colors,
   v2Layout,
   v2Radius,
   v2Spacing,
 } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
 import AppText from "./AppText";
 import PressableScale from "./PressableScale";
 
@@ -16,6 +16,7 @@ export default function PrimaryButton({
   textStyle,
   ...props
 }) {
+  const { colors } = useTheme();
   const isDisabled = disabled || loading;
 
   return (
@@ -23,13 +24,18 @@ export default function PrimaryButton({
       {...props}
       accessibilityRole="button"
       disabled={isDisabled}
-      style={[styles.button, isDisabled && styles.disabled, style]}
+      style={[
+        styles.button,
+        { backgroundColor: colors.primary },
+        isDisabled && { backgroundColor: colors.border },
+        style,
+      ]}
     >
       {loading ? (
-        <ActivityIndicator color={v2Colors.accentContrast} size="small" />
+        <ActivityIndicator color={colors.inverseText} size="small" />
       ) : (
         <AppText
-          color={v2Colors.accentContrast}
+          color={isDisabled ? colors.softText : colors.inverseText}
           style={textStyle}
           variant="button"
         >
@@ -43,14 +49,10 @@ export default function PrimaryButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: v2Colors.accentPrimary,
     borderRadius: v2Radius.medium,
     justifyContent: "center",
     minHeight: v2Layout.minTapTarget,
     paddingHorizontal: v2Spacing.lg,
     paddingVertical: v2Spacing.md,
-  },
-  disabled: {
-    backgroundColor: v2Colors.textDisabled,
   },
 });

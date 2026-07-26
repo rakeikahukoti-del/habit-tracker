@@ -76,38 +76,38 @@ export default function AppearanceScreen() {
     >
       <SettingsMessage>{message}</SettingsMessage>
 
-        <SettingsSection title="Mode">
-          {BASE_THEMES.map((option) => (
+      <SettingsSection title="Mode">
+        {BASE_THEMES.map((option) => (
+          <ThemePreviewRow
+            key={option.value}
+            label={option.label}
+            onPress={() => selectTheme(option.value)}
+            previewColors={getPreviewColors(option.value)}
+            selected={themePreference === option.value}
+          />
+        ))}
+      </SettingsSection>
+
+      <SettingsSection
+        footer="Rank themes unlock automatically as your level increases."
+        title="Rank themes"
+      >
+        {rankThemes.map((theme) => {
+          const unlocked = level >= theme.unlockLevel;
+
+          return (
             <ThemePreviewRow
-              key={option.value}
-              label={option.label}
-              onPress={() => selectTheme(option.value)}
-              previewColors={getPreviewColors(option.value)}
-              selected={themePreference === option.value}
+              disabled={!unlocked}
+              key={theme.key}
+              label={theme.label}
+              lockedText={`Unlocks at level ${theme.unlockLevel}`}
+              onPress={() => selectTheme(theme.key)}
+              previewColors={getPreviewColors(theme.key)}
+              selected={themePreference === theme.key}
             />
-          ))}
-        </SettingsSection>
-
-        <SettingsSection
-          footer="Rank themes unlock automatically as your level increases."
-          title="Rank themes"
-        >
-          {rankThemes.map((theme) => {
-            const unlocked = level >= theme.unlockLevel;
-
-            return (
-              <ThemePreviewRow
-                disabled={!unlocked}
-                key={theme.key}
-                label={theme.label}
-                lockedText={`Unlocks at level ${theme.unlockLevel}`}
-                onPress={() => selectTheme(theme.key)}
-                previewColors={getPreviewColors(theme.key)}
-                selected={themePreference === theme.key}
-              />
-            );
-          })}
-        </SettingsSection>
+          );
+        })}
+      </SettingsSection>
     </SettingsScreen>
   );
 }

@@ -339,7 +339,7 @@ function createStyles(colors, { isSmallScreen }) {
       alignItems: "center",
       borderRadius: v2Radius.medium,
       flex: 1,
-      minHeight: 40,
+      minHeight: 44,
       justifyContent: "center",
     },
     periodItemSelected: {

@@ -21,6 +21,7 @@ export default function RootLayout() {
 
 function ThemedStack() {
   const { colors, themeLoaded } = useTheme();
+  const statusBarStyle = isLightColor(colors.background) ? "dark" : "light";
 
   if (!themeLoaded) {
     return <LaunchShell />;
@@ -28,7 +29,7 @@ function ThemedStack() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar backgroundColor={colors.background} style="light" />
+      <StatusBar backgroundColor={colors.background} style={statusBarStyle} />
       <Stack
         screenOptions={{
           animation: "fade",
@@ -97,3 +98,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+function isLightColor(color) {
+  if (typeof color !== "string" || !color.startsWith("#")) {
+    return false;
+  }
+
+  const normalized = color.replace("#", "");
+
+  if (normalized.length !== 6) {
+    return false;
+  }
+
+  const red = parseInt(normalized.slice(0, 2), 16);
+  const green = parseInt(normalized.slice(2, 4), 16);
+  const blue = parseInt(normalized.slice(4, 6), 16);
+
+  if ([red, green, blue].some((value) => Number.isNaN(value))) {
+    return false;
+  }
+
+  return (red * 299 + green * 587 + blue * 114) / 1000 > 180;
+}

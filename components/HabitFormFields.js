@@ -221,7 +221,7 @@ function createStyles(colors, isSmallScreen) {
       ...v2Typography.label,
       fontWeight: v2FontWeight.bold,
       marginTop: v2Spacing.xs,
-      },
+    },
     input: {
       backgroundColor: colors.card,
       borderColor: colors.border,
@@ -261,6 +261,7 @@ function createStyles(colors, isSmallScreen) {
       borderColor: colors.border,
       borderRadius: v2Radius.large,
       borderWidth: 1,
+      minHeight: v2Layout.minTapTarget,
       paddingHorizontal: v2Spacing.md,
       paddingVertical: 10,
     },

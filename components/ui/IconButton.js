@@ -1,21 +1,22 @@
 import { StyleSheet } from "react-native";
 import {
-  v2Colors,
   v2Layout,
-  v2Radius,
   v2Typography,
 } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
 import AppText from "./AppText";
 import PressableScale from "./PressableScale";
 
 export default function IconButton({
   children,
-  color = v2Colors.textPrimary,
+  color,
   disabled = false,
   size = v2Layout.minTapTarget,
   style,
   ...props
 }) {
+  const { colors } = useTheme();
+  const iconColor = color || colors.text;
   const isTextIcon = typeof children === "string" || typeof children === "number";
 
   return (
@@ -27,18 +28,24 @@ export default function IconButton({
       style={[
         styles.button,
         {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
           borderRadius: size / 2,
           height: Math.max(size, v2Layout.minTapTarget),
           width: Math.max(size, v2Layout.minTapTarget),
         },
-        disabled && styles.disabled,
+        disabled && {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          opacity: 0.58,
+        },
         style,
       ]}
     >
       {isTextIcon ? (
         <AppText
           align="center"
-          color={disabled ? v2Colors.textDisabled : color}
+          color={disabled ? colors.softText : iconColor}
           style={styles.icon}
         >
           {children}
@@ -53,14 +60,8 @@ export default function IconButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: v2Colors.surfaceElevated,
-    borderColor: v2Colors.borderDefault,
     borderWidth: 1,
     justifyContent: "center",
-  },
-  disabled: {
-    backgroundColor: v2Colors.surface,
-    borderColor: v2Colors.borderSubtle,
   },
   icon: {
     ...v2Typography.sectionTitle,

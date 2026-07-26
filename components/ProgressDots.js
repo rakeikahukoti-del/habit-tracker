@@ -26,7 +26,12 @@ export default function ProgressDots({ days, compact = false }) {
 
       <View style={styles.container}>
         {days.map((day) => (
-          <View key={day.dateKey} style={styles.day}>
+          <View
+            accessible
+            accessibilityLabel={`${day.label}, ${day.completed ? "completed" : "not completed"}${day.dateKey === todayKey ? ", today" : ""}`}
+            key={day.dateKey}
+            style={styles.day}
+          >
             <View
               style={[
                 styles.dot,
@@ -70,7 +75,7 @@ function createStyles(colors) {
       alignItems: "center",
       flexDirection: "row",
       flexShrink: 1,
-      gap: 9,
+      gap: 8,
       maxWidth: "100%",
     },
     day: {
@@ -102,7 +107,8 @@ function createStyles(colors) {
       fontWeight: v2FontWeight.medium,
     },
     labelCompleted: {
-      color: colors.primaryDark,
+      color: colors.text,
+      fontWeight: v2FontWeight.bold,
     },
   });
 }

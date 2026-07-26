@@ -64,51 +64,51 @@ export default function GamificationPreferencesScreen() {
     >
       <SettingsMessage>{message}</SettingsMessage>
 
-        <SettingsSection title="Home">
-          <SettingsToggleRow
-            description="Shows your daily progress summary on Home."
-            onValueChange={(value) =>
-              handlePreferenceChange("showProgressCard", value)
-            }
-            title="Progress card"
-            value={preferences.showProgressCard}
-          />
-          <SettingsToggleRow
-            description="Shows XP, level, and rank details on Home."
-            onValueChange={(value) =>
-              handlePreferenceChange("showXpRankOnHome", value)
-            }
-            title="Show rank on Home"
-            value={preferences.showXpRankOnHome}
-          />
-        </SettingsSection>
+      <SettingsSection title="Home">
+        <SettingsToggleRow
+          description="Shows your daily progress summary on Home."
+          onValueChange={(value) =>
+            handlePreferenceChange("showProgressCard", value)
+          }
+          title="Progress card"
+          value={preferences.showProgressCard}
+        />
+        <SettingsToggleRow
+          description="Shows XP, level, and rank details on Home."
+          onValueChange={(value) =>
+            handlePreferenceChange("showXpRankOnHome", value)
+          }
+          title="Show rank on Home"
+          value={preferences.showXpRankOnHome}
+        />
+      </SettingsSection>
 
-        <SettingsSection title="Rewards">
-          <SettingsToggleRow
-            description="Future badge unlocks can show a short popup."
-            onValueChange={(value) =>
-              handlePreferenceChange("showBadgePopups", value)
-            }
-            title="Badge popups"
-            value={preferences.showBadgePopups}
-          />
-          <SettingsToggleRow
-            description="Future level changes can show a short popup."
-            onValueChange={(value) =>
-              handlePreferenceChange("showLevelUpPopup", value)
-            }
-            title="Level-up popup"
-            value={preferences.showLevelUpPopup}
-          />
-          <SettingsToggleRow
-            description="Uses subtle haptics for reward moments."
-            onValueChange={(value) =>
-              handlePreferenceChange("enableRewardHaptics", value)
-            }
-            title="Reward haptics"
-            value={preferences.enableRewardHaptics}
-          />
-        </SettingsSection>
+      <SettingsSection title="Rewards">
+        <SettingsToggleRow
+          description="Future badge unlocks can show a short popup."
+          onValueChange={(value) =>
+            handlePreferenceChange("showBadgePopups", value)
+          }
+          title="Badge popups"
+          value={preferences.showBadgePopups}
+        />
+        <SettingsToggleRow
+          description="Future level changes can show a short popup."
+          onValueChange={(value) =>
+            handlePreferenceChange("showLevelUpPopup", value)
+          }
+          title="Level-up popup"
+          value={preferences.showLevelUpPopup}
+        />
+        <SettingsToggleRow
+          description="Uses subtle haptics for reward moments."
+          onValueChange={(value) =>
+            handlePreferenceChange("enableRewardHaptics", value)
+          }
+          title="Reward haptics"
+          value={preferences.enableRewardHaptics}
+        />
+      </SettingsSection>
     </SettingsScreen>
   );
 }

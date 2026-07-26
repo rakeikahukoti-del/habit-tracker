@@ -47,6 +47,7 @@ export default function BottomNav() {
               }}
               style={({ pressed }) => [
                 styles.item,
+                active && styles.itemActive,
                 pressed && styles.itemPressed,
               ]}
             >
@@ -181,6 +182,7 @@ function createStyles(colors, bottomInset) {
     },
     item: {
       alignItems: "center",
+      borderRadius: v2Radius.large,
       flex: 1,
       gap: 3,
       justifyContent: "center",
@@ -188,6 +190,9 @@ function createStyles(colors, bottomInset) {
       minWidth: v2Layout.minTapTarget,
       paddingHorizontal: 2,
       transform: [{ scale: 1 }],
+    },
+    itemActive: {
+      backgroundColor: colors.surface,
     },
     itemPressed: {
       opacity: 0.72,

@@ -1,14 +1,17 @@
 import { StyleSheet, View } from "react-native";
-import { v2Colors, v2Spacing } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
+import { v2Spacing } from "../../src/design";
 import AppText from "./AppText";
 
 export default function SectionHeader({ action, subtitle, title }) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.wrap}>
       <View style={styles.textGroup}>
-        <AppText variant="sectionTitle">{title}</AppText>
+        <AppText color={colors.text} variant="sectionTitle">{title}</AppText>
         {subtitle ? (
-          <AppText color={v2Colors.textSecondary} variant="bodySupporting">
+          <AppText color={colors.muted} variant="bodySupporting">
             {subtitle}
           </AppText>
         ) : null}

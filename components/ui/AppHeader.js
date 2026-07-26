@@ -1,5 +1,6 @@
 import { StyleSheet, View } from "react-native";
-import { v2Colors, v2Layout, v2Spacing } from "../../src/design";
+import { useTheme } from "../../context/ThemeContext";
+import { v2Layout, v2Spacing } from "../../src/design";
 import BackIcon from "./BackIcon";
 import AppText from "./AppText";
 import IconButton from "./IconButton";
@@ -11,24 +12,31 @@ export default function AppHeader({
   subtitle,
   title,
 }) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.header}>
       <View style={styles.side}>
         {onBack ? (
           <IconButton accessibilityLabel={backLabel} onPress={onBack}>
-            <BackIcon />
+            <BackIcon color={colors.text} />
           </IconButton>
         ) : null}
       </View>
 
       <View style={styles.titleGroup}>
-        <AppText align="center" numberOfLines={2} variant="screenTitle">
+        <AppText
+          align="center"
+          color={colors.text}
+          numberOfLines={2}
+          variant="screenTitle"
+        >
           {title}
         </AppText>
         {subtitle ? (
           <AppText
             align="center"
-            color={v2Colors.textSecondary}
+            color={colors.muted}
             numberOfLines={2}
             style={styles.subtitle}
             variant="bodySupporting"

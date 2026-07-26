@@ -1,4 +1,5 @@
 import { StyleSheet, View } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
 import { AppText, PressableScale } from "./ui";
@@ -13,7 +14,8 @@ import { useTheme } from "../context/ThemeContext";
 
 export default function EmptyState() {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const { width } = useWindowDimensions();
+  const styles = createStyles(colors, width < 380);
 
   return (
     <View style={styles.container}>
@@ -41,7 +43,7 @@ export default function EmptyState() {
   );
 }
 
-function createStyles(colors) {
+function createStyles(colors, isSmallScreen) {
   return StyleSheet.create({
     container: {
       alignItems: "center",
@@ -50,8 +52,8 @@ function createStyles(colors) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       marginTop: v2Spacing.xl,
-      paddingHorizontal: v2Spacing.xxl,
-      paddingVertical: 36,
+      paddingHorizontal: isSmallScreen ? v2Spacing.lg : v2Spacing.xxl,
+      paddingVertical: isSmallScreen ? v2Spacing.xxl : 36,
       ...v2Shadows.low,
       shadowColor: colors.shadow,
       shadowOpacity: 0.08,

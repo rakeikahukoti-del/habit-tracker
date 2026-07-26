@@ -81,26 +81,26 @@ export default function NotificationPreferencesScreen() {
     >
       <SettingsMessage tone="danger">{message}</SettingsMessage>
 
-        <SettingsSection title="Permission">
-          <SettingsRow
-            description={getPermissionDescription(permissionState)}
-            showChevron={false}
-            title="Notification access"
-            value={getPermissionLabel(permissionState)}
-          />
-        </SettingsSection>
+      <SettingsSection title="Permission">
+        <SettingsRow
+          description={getPermissionDescription(permissionState)}
+          showChevron={false}
+          title="Notification access"
+          value={getPermissionLabel(permissionState)}
+        />
+      </SettingsSection>
 
-        <SettingsSection
-          footer="Momentum asks permission only when reminders need to be scheduled."
-          title="Reminders"
-        >
-          <SettingsToggleRow
-            description="Allow scheduled reminders for habits with reminder times."
-            onValueChange={handleDailyReminderChange}
-            title="Daily reminders"
-            value={preferences.enableDailyReminders}
-          />
-        </SettingsSection>
+      <SettingsSection
+        footer="Momentum asks permission only when reminders need to be scheduled."
+        title="Reminders"
+      >
+        <SettingsToggleRow
+          description="Allow scheduled reminders for habits with reminder times."
+          onValueChange={handleDailyReminderChange}
+          title="Daily reminders"
+          value={preferences.enableDailyReminders}
+        />
+      </SettingsSection>
     </SettingsScreen>
   );
 }
