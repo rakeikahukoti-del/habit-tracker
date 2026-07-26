@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -18,23 +18,33 @@ import {
   fontWeight,
   layout,
   lineHeight,
-  pageTitleLineHeight,
-  pageTitleSize,
   radius,
   spacing,
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
 import { getGamification } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
-import { getAnalyticsSummary, getWeeklyProgress } from "../utils/habitStats";
+import { getDeepAnalytics } from "../utils/habitStats";
+
+const PERIODS = [
+  { key: "week", label: "Week" },
+  { key: "month", label: "Month" },
+  { key: "year", label: "Year" },
+  { key: "all", label: "All" },
+];
 
 export default function AnalyticsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
-  const [analytics, setAnalytics] = useState(null);
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
+  const [period, setPeriod] = useState("month");
+  const [habits, setHabits] = useState([]);
+  const [gamification, setGamification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -54,10 +64,11 @@ export default function AnalyticsScreen() {
             return;
           }
 
-          setAnalytics(getAnalyticsSummary(storedHabits, storedGamification));
+          setHabits(storedHabits);
+          setGamification(storedGamification);
         } catch {
           if (isActive) {
-            setError("Could not load analytics. Please try again.");
+            setError("Could not load analytics. Try again.");
           }
         } finally {
           if (isActive) {
@@ -72,6 +83,11 @@ export default function AnalyticsScreen() {
         isActive = false;
       };
     }, [])
+  );
+
+  const analytics = useMemo(
+    () => getDeepAnalytics(habits, period, gamification),
+    [gamification, habits, period]
   );
 
   return (
@@ -89,12 +105,13 @@ export default function AnalyticsScreen() {
         </IconButton>
 
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Analytics</Text>
-          <Text style={styles.title}>Insights</Text>
+          <Text style={styles.title}>Analytics</Text>
           <Text style={styles.subtitle}>
-            See patterns after you complete habits for a few days.
+            Trends and habit performance for {getPeriodLabel(period).toLowerCase()}.
           </Text>
         </View>
+
+        <PeriodControl period={period} setPeriod={setPeriod} styles={styles} />
 
         {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
 
@@ -105,50 +122,63 @@ export default function AnalyticsScreen() {
           </View>
         ) : null}
 
-        {!loading && analytics ? (
+        {!loading && analytics.habitCount === 0 ? (
+          <EmptyAnalytics styles={styles} />
+        ) : null}
+
+        {!loading && analytics.habitCount > 0 ? (
           <>
-            <View style={styles.grid}>
-              <MetricCard
-                label="This week"
-                value={analytics.habitsCompletedThisWeek}
-                helper="completions"
+            <Section title="Consistency trend" styles={styles}>
+              <TrendChart
+                points={analytics.trendPoints}
+                styles={styles}
+                summary={`Completion trend ranges from ${Math.min(
+                  ...analytics.trendPoints.map((point) => point.percentage)
+                )}% to ${Math.max(
+                  ...analytics.trendPoints.map((point) => point.percentage)
+                )}% over ${getPeriodLabel(period).toLowerCase()}.`}
+              />
+            </Section>
+
+            <View style={styles.metricGrid}>
+              <MetricBlock
+                label="Completion"
+                value={`${analytics.completionRate}%`}
+                helper={formatTrendDelta(analytics.trendDelta)}
                 styles={styles}
               />
-              <MetricCard
-                label="This month"
-                value={analytics.habitsCompletedThisMonth}
-                helper="completions"
+              <MetricBlock
+                label="Total completed"
+                value={analytics.completedCount}
                 styles={styles}
               />
-              <MetricCard
-                label="Total completions"
-                value={analytics.totalCompletions}
+              <MetricBlock
+                label="Average per day"
+                value={analytics.averagePerDay}
                 styles={styles}
               />
-              <MetricCard
-                label="Total XP"
+              <MetricBlock
+                label="XP earned"
                 value={analytics.totalXpEarned}
                 styles={styles}
               />
             </View>
 
-            <View style={styles.summaryCard}>
-              <SummaryRow
-                label="Best category"
-                value={analytics.bestCategory?.name || "None yet"}
-                styles={styles}
-              />
-              <SummaryRow
-                label="Most consistent"
-                value={analytics.mostConsistentHabit?.habit.name || "None yet"}
-                styles={styles}
-              />
-              <SummaryRow
-                label="Weakest habit"
-                value={analytics.weakestHabit?.habit.name || "None yet"}
-                styles={styles}
-              />
-            </View>
+            <Section title="Habit performance" styles={styles}>
+              {analytics.habitPerformance.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  Complete habits to compare performance.
+                </Text>
+              ) : (
+                analytics.habitPerformance.map((item) => (
+                  <HabitPerformanceRow
+                    item={item}
+                    key={item.habit.id}
+                    styles={styles}
+                  />
+                ))
+              )}
+            </Section>
 
             <Section title="Insights" styles={styles}>
               {analytics.insights.map((insight) => (
@@ -156,22 +186,6 @@ export default function AnalyticsScreen() {
                   {insight}
                 </Text>
               ))}
-            </Section>
-
-            <Section title="Individual habits" styles={styles}>
-              {analytics.habitAnalytics.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  Individual insights appear after you create and complete a habit.
-                </Text>
-              ) : (
-                analytics.habitAnalytics.map((item) => (
-                  <HabitAnalyticsCard
-                    item={item}
-                    key={item.habit.id}
-                    styles={styles}
-                  />
-                ))
-              )}
             </Section>
           </>
         ) : null}
@@ -181,23 +195,36 @@ export default function AnalyticsScreen() {
   );
 }
 
-function MetricCard({ helper, label, styles, value }) {
+function PeriodControl({ period, setPeriod, styles }) {
   return (
-    <View style={styles.metricCard}>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-      {helper ? <Text style={styles.metricHelper}>{helper}</Text> : null}
-    </View>
-  );
-}
+    <View accessibilityRole="tablist" style={styles.periodControl}>
+      {PERIODS.map((item) => {
+        const selected = period === item.key;
 
-function SummaryRow({ label, styles, value }) {
-  return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue} numberOfLines={1}>
-        {value}
-      </Text>
+        return (
+          <Pressable
+            accessibilityLabel={`${item.label} period`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            key={item.key}
+            onPress={() => setPeriod(item.key)}
+            style={({ pressed }) => [
+              styles.periodItem,
+              selected && styles.periodItemSelected,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.periodLabel,
+                selected && styles.periodLabelSelected,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -211,52 +238,109 @@ function Section({ children, styles, title }) {
   );
 }
 
-function HabitAnalyticsCard({ item, styles }) {
-  const weeklyProgress = getWeeklyProgress(item.habit);
+function TrendChart({ points, styles, summary }) {
+  const safePoints = points.length > 0 ? points : [{ label: "Now", percentage: 0 }];
 
   return (
-    <View style={styles.habitCard}>
-      <View style={styles.habitHeader}>
-        <View style={styles.habitTitleGroup}>
-          <Text numberOfLines={1} style={styles.habitName}>
-            {item.habit.name}
-          </Text>
-          <Text style={styles.habitCategory}>{item.category}</Text>
-        </View>
-        <View style={styles.ratePill}>
-          <Text style={styles.ratePillValue}>{item.completionRate}%</Text>
-          <Text style={styles.ratePillLabel}>rate</Text>
-        </View>
-      </View>
-
-      <View style={styles.habitStatsRow}>
-        <SmallStat
-          label="Current streak"
-          value={item.currentStreak}
-          styles={styles}
-        />
-        <SmallStat
-          label="Best streak"
-          value={item.bestStreak}
-          styles={styles}
-        />
-      </View>
-
-      <View style={styles.weekProgressRow}>
-        <Text style={styles.weekProgressLabel}>Last 7 days</Text>
-        <ProgressDots days={weeklyProgress} compact />
+    <View accessibilityLabel={summary} accessible style={styles.chart}>
+      <View style={styles.chartBars}>
+        {safePoints.map((point, index) => (
+          <View key={`${point.label}-${index}`} style={styles.chartColumn}>
+            <View style={styles.chartTrack}>
+              <View
+                style={[
+                  styles.chartFill,
+                  { height: `${Math.max(4, point.percentage)}%` },
+                ]}
+              />
+            </View>
+            <Text numberOfLines={1} style={styles.chartLabel}>
+              {point.label}
+            </Text>
+          </View>
+        ))}
       </View>
     </View>
   );
 }
 
-function SmallStat({ label, styles, value }) {
+function MetricBlock({ helper, label, styles, value }) {
   return (
-    <View style={styles.smallStat}>
-      <Text style={styles.smallStatValue}>{value}</Text>
-      <Text style={styles.smallStatLabel}>{label}</Text>
+    <View style={styles.metricBlock}>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
+      {helper ? <Text style={styles.metricHelper}>{helper}</Text> : null}
     </View>
   );
+}
+
+function HabitPerformanceRow({ item, styles }) {
+  const trendLabel =
+    item.trendDelta > 5
+      ? `+${item.trendDelta}%`
+      : item.trendDelta < -5
+        ? `${item.trendDelta}%`
+        : "Stable";
+
+  return (
+    <Pressable
+      accessibilityLabel={`Open analytics for ${item.habit.name}`}
+      accessibilityRole="button"
+      onPress={() => router.push(`/analytics/${item.habit.id}`)}
+      style={({ pressed }) => [
+        styles.habitRow,
+        pressed && styles.pressed,
+      ]}
+    >
+      <View style={styles.habitMain}>
+        <Text numberOfLines={1} style={styles.habitName}>
+          {item.habit.name}
+        </Text>
+        <Text numberOfLines={1} style={styles.habitMeta}>
+          {item.category} · {item.currentStreak} day streak · {trendLabel}
+        </Text>
+        <View style={styles.habitTrack}>
+          <View
+            style={[
+              styles.habitFill,
+              { width: `${item.completionRate}%` },
+            ]}
+          />
+        </View>
+      </View>
+      <View style={styles.habitRate}>
+        <Text style={styles.habitRateValue}>{item.completionRate}%</Text>
+        <ProgressDots days={item.weeklyProgress} compact />
+      </View>
+    </Pressable>
+  );
+}
+
+function EmptyAnalytics({ styles }) {
+  return (
+    <View style={styles.emptyCard}>
+      <Text style={styles.emptyTitle}>Not enough data yet</Text>
+      <Text style={styles.emptyText}>
+        Complete habits for a few days to begin seeing useful trends.
+      </Text>
+    </View>
+  );
+}
+
+function formatTrendDelta(delta) {
+  if (delta > 0) {
+    return `+${delta}% vs previous period`;
+  }
+
+  if (delta < 0) {
+    return `${delta}% vs previous period`;
+  }
+
+  return "No change vs previous period";
+}
+
+function getPeriodLabel(period) {
+  return PERIODS.find((item) => item.key === period)?.label || "Month";
 }
 
 function goBackToStats() {
@@ -278,36 +362,58 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignSelf: "center",
       maxWidth: isTablet ? 860 : "100%",
       padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding,
+      paddingBottom: layout.screenBottomPadding + 88,
       width: "100%",
-    },
-    header: {
-      marginBottom: spacing.xl,
-      paddingTop: spacing.sm,
     },
     backButton: {
       alignSelf: "flex-start",
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md,
     },
-    eyebrow: {
-      color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginBottom: 6,
-      textTransform: "uppercase",
+    header: {
+      paddingBottom: spacing.lg,
     },
     title: {
       color: colors.text,
-      fontSize: pageTitleSize(isSmallScreen),
+      fontSize: isSmallScreen ? 28 : 32,
       fontWeight: fontWeight.bold,
-      lineHeight: pageTitleLineHeight(isSmallScreen),
+      lineHeight: isSmallScreen ? 34 : 38,
     },
     subtitle: {
       color: colors.muted,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.bodyLarge,
-      marginTop: spacing.sm,
+      fontSize: fontSize.body,
+      fontWeight: fontWeight.medium,
+      lineHeight: lineHeight.body,
+      marginTop: 4,
+    },
+    periodControl: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: 4,
+      marginBottom: spacing.lg,
+      padding: 4,
+    },
+    periodItem: {
+      alignItems: "center",
+      borderRadius: radius.md,
+      flex: 1,
+      justifyContent: "center",
+      minHeight: 40,
+    },
+    periodItemSelected: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    periodLabel: {
+      color: colors.muted,
+      fontSize: fontSize.label,
+      fontWeight: fontWeight.bold,
+    },
+    periodLabelSelected: {
+      color: colors.text,
     },
     errorBanner: {
       backgroundColor: colors.dangerSoft,
@@ -323,7 +429,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.xl,
+      borderRadius: radius.lg,
       borderWidth: 1,
       gap: 10,
       padding: 28,
@@ -333,29 +439,82 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontSize: fontSize.body,
       fontWeight: fontWeight.medium,
     },
-    grid: {
+    section: {
+      gap: spacing.md,
+      marginBottom: spacing.xl,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: fontSize.section,
+      fontWeight: fontWeight.bold,
+    },
+    chart: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      padding: spacing.lg,
+    },
+    chartBars: {
+      alignItems: "flex-end",
+      flexDirection: "row",
+      gap: spacing.sm,
+      height: 150,
+    },
+    chartColumn: {
+      alignItems: "center",
+      flex: 1,
+      gap: spacing.sm,
+      height: "100%",
+      justifyContent: "flex-end",
+      minWidth: 0,
+    },
+    chartTrack: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      flex: 1,
+      justifyContent: "flex-end",
+      overflow: "hidden",
+      width: "100%",
+    },
+    chartFill: {
+      backgroundColor: colors.text,
+      borderRadius: radius.sm,
+      minHeight: 4,
+      width: "100%",
+    },
+    chartLabel: {
+      color: colors.muted,
+      fontSize: fontSize.caption,
+      fontWeight: fontWeight.medium,
+      maxWidth: "100%",
+    },
+    metricGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.md,
+      marginBottom: spacing.xl,
     },
-    metricCard: {
+    metricBlock: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.xl,
+      borderRadius: radius.lg,
       borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
       padding: spacing.lg,
     },
     metricValue: {
-      color: colors.primary,
-      fontSize: isSmallScreen ? 28 : 32,
+      color: colors.text,
+      fontSize: isSmallScreen ? 26 : 30,
       fontWeight: fontWeight.bold,
     },
     metricLabel: {
-      color: colors.text,
+      color: colors.muted,
       fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
+      fontWeight: fontWeight.medium,
       marginTop: spacing.sm,
     },
     metricHelper: {
@@ -364,150 +523,87 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontWeight: fontWeight.medium,
       marginTop: 3,
     },
-    summaryCard: {
+    habitRow: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      marginTop: 14,
-      padding: spacing.lg,
-    },
-    summaryRow: {
-      alignItems: "center",
-      borderTopColor: colors.border,
-      borderTopWidth: 1,
-      flexDirection: "row",
-      gap: spacing.md,
-      justifyContent: "space-between",
-      paddingVertical: 11,
-    },
-    summaryLabel: {
-      color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
-    },
-    summaryValue: {
-      color: colors.text,
-      flex: 1,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
-      textAlign: "right",
-    },
-    section: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      gap: spacing.md,
-      marginTop: 14,
-      padding: spacing.lg,
-    },
-    sectionTitle: {
-      color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
-    },
-    insightText: {
-      backgroundColor: colors.inputBackground,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      padding: spacing.md,
-    },
-    emptyText: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-    },
-    habitCard: {
-      backgroundColor: colors.inputBackground,
       borderColor: colors.border,
       borderRadius: radius.lg,
       borderWidth: 1,
-      gap: spacing.md,
-      maxWidth: "100%",
-      padding: spacing.md,
-      width: "100%",
-    },
-    habitHeader: {
-      alignItems: "center",
       flexDirection: "row",
       gap: spacing.md,
-      justifyContent: "space-between",
+      minHeight: 92,
+      padding: spacing.lg,
     },
-    habitTitleGroup: {
+    habitMain: {
       flex: 1,
       minWidth: 0,
     },
     habitName: {
       color: colors.text,
-      fontSize: fontSize.cardTitle,
+      fontSize: fontSize.bodyLarge,
       fontWeight: fontWeight.bold,
     },
-    habitCategory: {
+    habitMeta: {
       color: colors.muted,
       fontSize: fontSize.caption,
       fontWeight: fontWeight.medium,
       marginTop: 4,
     },
-    ratePill: {
-      alignItems: "center",
-      backgroundColor: colors.primarySoft,
-      borderRadius: 999,
+    habitTrack: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill || 999,
+      height: 6,
+      marginTop: spacing.md,
       overflow: "hidden",
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
     },
-    ratePillValue: {
-      color: colors.primary,
-      fontSize: fontSize.body,
+    habitFill: {
+      backgroundColor: colors.text,
+      borderRadius: 999,
+      height: "100%",
+    },
+    habitRate: {
+      alignItems: "flex-end",
+      flexShrink: 0,
+      gap: spacing.sm,
+      justifyContent: "space-between",
+      maxWidth: 96,
+    },
+    habitRateValue: {
+      color: colors.text,
+      fontSize: fontSize.section,
       fontWeight: fontWeight.bold,
     },
-    ratePillLabel: {
-      color: colors.primary,
-      fontSize: fontSize.tiny,
-      fontWeight: fontWeight.medium,
-      marginTop: -2,
-    },
-    habitStatsRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 8,
-    },
-    smallStat: {
+    insightText: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.sm,
+      borderRadius: radius.lg,
       borderWidth: 1,
-      flexBasis: "47%",
-      flexGrow: 1,
-      padding: spacing.md,
-    },
-    smallStatValue: {
       color: colors.text,
-      fontSize: fontSize.cardTitle,
-      fontWeight: fontWeight.bold,
-    },
-    smallStatLabel: {
-      color: colors.muted,
-      fontSize: fontSize.tiny,
+      fontSize: fontSize.body,
       fontWeight: fontWeight.medium,
-      marginTop: 3,
+      lineHeight: lineHeight.body,
+      padding: spacing.lg,
     },
-    weekProgressRow: {
-      gap: spacing.sm,
-      maxWidth: "100%",
+    emptyCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      padding: spacing.xl,
     },
-    weekProgressLabel: {
-      color: colors.muted,
-      fontSize: fontSize.caption,
+    emptyTitle: {
+      color: colors.text,
+      fontSize: fontSize.section,
       fontWeight: fontWeight.bold,
-      textTransform: "uppercase",
+    },
+    emptyText: {
+      color: colors.muted,
+      fontSize: fontSize.body,
+      lineHeight: lineHeight.body,
+      marginTop: spacing.sm,
+    },
+    pressed: {
+      opacity: 0.74,
+      transform: [{ scale: 0.98 }],
     },
   });
 }

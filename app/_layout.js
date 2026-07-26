@@ -47,6 +47,7 @@ function ThemedStack() {
         <Stack.Screen name="add" options={{ headerShown: false }} />
         <Stack.Screen name="stats" options={{ headerShown: false }} />
         <Stack.Screen name="analytics" options={{ headerShown: false }} />
+        <Stack.Screen name="analytics/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="rank" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="habit-preferences" options={{ headerShown: false }} />

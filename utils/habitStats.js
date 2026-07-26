@@ -127,6 +127,108 @@ export function getAnalyticsSummary(habits, gamification = null) {
   };
 }
 
+export function getProgressOverview(habits, period = "month", gamification = null) {
+  const safeHabits = getSafeHabits(habits);
+  const periodDays = getPeriodDays(safeHabits, period);
+  const completionSummary = getCompletionSummaryForDays(safeHabits, periodDays);
+  const weekDays = getWeekDays();
+  const weeklySummary = getWeeklyCompletionSummary(safeHabits, weekDays);
+  const perfectDays = completionSummary.days.filter(
+    (day) => day.totalHabits > 0 && day.completedCount === day.totalHabits
+  ).length;
+  const historyDays = getCompletionSummaryForDays(
+    safeHabits,
+    getDateRangeDays(addDays(startOfDay(new Date()), -34), startOfDay(new Date()))
+  ).days;
+
+  return {
+    ...completionSummary,
+    averagePerDay:
+      periodDays.length === 0
+        ? 0
+        : Number((completionSummary.completedCount / periodDays.length).toFixed(1)),
+    bestAllTimeStreak: safeHabits.reduce(
+      (best, habit) => Math.max(best, getBestStreak(getCompletedDates(habit))),
+      0
+    ),
+    currentLongestStreak: safeHabits.reduce(
+      (longest, habit) =>
+        Math.max(longest, getCurrentStreak(getCompletedDates(habit))),
+      0
+    ),
+    habitCount: safeHabits.length,
+    historyDays,
+    perfectDays,
+    period,
+    totalXpEarned: gamification?.xp || 0,
+    weeklySummary,
+  };
+}
+
+export function getDeepAnalytics(habits, period = "month", gamification = null) {
+  const safeHabits = getSafeHabits(habits);
+  const overview = getProgressOverview(safeHabits, period, gamification);
+  const previousOverview = getPreviousProgressOverview(safeHabits, period);
+  const habitPerformance = safeHabits
+    .map((habit) => getHabitPerformance(habit, period))
+    .sort(
+      (first, second) =>
+        second.completionRate - first.completionRate ||
+        second.currentStreak - first.currentStreak ||
+        second.completedCount - first.completedCount
+    );
+  const bestHabit = habitPerformance[0] || null;
+  const weakestHabit = [...habitPerformance]
+    .filter((item) => item.possibleCount > 0)
+    .sort(
+      (first, second) =>
+        first.completionRate - second.completionRate ||
+        first.currentStreak - second.currentStreak
+    )[0] || null;
+
+  return {
+    ...overview,
+    bestHabit,
+    habitPerformance,
+    insights: getProgressInsights({
+      bestHabit,
+      overview,
+      previousOverview,
+      weakestHabit,
+    }),
+    previousCompletionRate: previousOverview.completionRate,
+    trendDelta: overview.completionRate - previousOverview.completionRate,
+    trendPoints: getTrendPoints(safeHabits, period),
+    weakestHabit,
+  };
+}
+
+export function getHabitPerformance(habit, period = "month") {
+  const safeHabit = habit && typeof habit === "object" ? habit : {};
+  const days = getPeriodDays([safeHabit], period);
+  const completedSet = new Set(getCompletedDates(safeHabit));
+  const completedCount = days.filter((day) => completedSet.has(day.dateKey)).length;
+  const possibleCount = days.length;
+  const completionRate =
+    possibleCount === 0 ? 0 : Math.round((completedCount / possibleCount) * 100);
+  const trend = getHabitTrendForPeriod(safeHabit, period);
+  const previousRate = trend[trend.length - 2]?.percentage || 0;
+  const latestRate = trend[trend.length - 1]?.percentage || 0;
+
+  return {
+    bestStreak: getBestStreak(getCompletedDates(safeHabit)),
+    category: safeHabit.category || "General",
+    completedCount,
+    completionRate,
+    currentStreak: getCurrentStreak(getCompletedDates(safeHabit)),
+    habit: safeHabit,
+    possibleCount,
+    trend,
+    trendDelta: latestRate - previousRate,
+    weeklyProgress: getWeeklyProgress(safeHabit),
+  };
+}
+
 export function getHabitAnalytics(habit) {
   const completedDates = Array.isArray(habit.completedDates)
     ? habit.completedDates
@@ -383,6 +485,204 @@ function getAnalyticsInsights({
   }
 
   return insights.slice(0, 3);
+}
+
+function getPreviousProgressOverview(habits, period) {
+  const safeHabits = getSafeHabits(habits);
+  const currentDays = getPeriodDays(safeHabits, period);
+
+  if (currentDays.length === 0) {
+    return getCompletionSummaryForDays(safeHabits, []);
+  }
+
+  const previousEnd = addDays(currentDays[0], -1);
+  const previousStart = addDays(previousEnd, -(currentDays.length - 1));
+
+  return getCompletionSummaryForDays(
+    safeHabits,
+    getDateRangeDays(previousStart, previousEnd)
+  );
+}
+
+function getProgressInsights({
+  bestHabit,
+  overview,
+  previousOverview,
+  weakestHabit,
+}) {
+  const insights = [];
+
+  if (overview.habitCount === 0) {
+    return ["Create a habit to begin seeing progress."];
+  }
+
+  if (overview.completedCount === 0) {
+    return ["Complete habits for a few days to begin seeing trends."];
+  }
+
+  const delta = overview.completionRate - previousOverview.completionRate;
+
+  if (Math.abs(delta) >= 8) {
+    insights.push(
+      `Consistency ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)}% compared with the previous period.`
+    );
+  }
+
+  if (bestHabit && bestHabit.completionRate > 0) {
+    insights.push(
+      `${bestHabit.habit.name} has the highest completion rate this period.`
+    );
+  }
+
+  if (
+    weakestHabit &&
+    weakestHabit.completionRate < 60 &&
+    weakestHabit.habit.id !== bestHabit?.habit.id
+  ) {
+    insights.push(
+      `${weakestHabit.habit.name} needs the most attention this period.`
+    );
+  }
+
+  if (overview.currentLongestStreak > 0 && overview.bestAllTimeStreak > 0) {
+    const daysToBest = overview.bestAllTimeStreak - overview.currentLongestStreak;
+
+    if (daysToBest > 0 && daysToBest <= 3) {
+      insights.push(`${daysToBest} more days would match your best streak.`);
+    }
+  }
+
+  if (insights.length === 0) {
+    insights.push("Keep completing habits to reveal clearer patterns.");
+  }
+
+  return insights.slice(0, 3);
+}
+
+function getCompletionSummaryForDays(habits, days) {
+  const safeHabits = getSafeHabits(habits);
+  const daySummaries = days.map((date) => {
+    const dateKey = toDateKey(date);
+    const completedCount = safeHabits.filter((habit) =>
+      getCompletedDates(habit).includes(dateKey)
+    ).length;
+    const percentage =
+      safeHabits.length === 0
+        ? 0
+        : Math.round((completedCount / safeHabits.length) * 100);
+
+    return {
+      completedCount,
+      dateKey,
+      label: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1),
+      percentage,
+      totalHabits: safeHabits.length,
+    };
+  });
+  const completedCount = daySummaries.reduce(
+    (sum, day) => sum + day.completedCount,
+    0
+  );
+  const possibleCount = safeHabits.length * days.length;
+  const completionRate =
+    possibleCount === 0 ? 0 : Math.round((completedCount / possibleCount) * 100);
+
+  return {
+    completedCount,
+    completionRate,
+    days: daySummaries,
+    possibleCount,
+  };
+}
+
+function getTrendPoints(habits, period) {
+  const safeHabits = getSafeHabits(habits);
+  const today = startOfDay(new Date());
+
+  if (period === "week") {
+    return getCompletionSummaryForDays(
+      safeHabits,
+      getDateRangeDays(addDays(today, -6), today)
+    ).days.map((day) => ({
+      label: day.label,
+      percentage: day.percentage,
+    }));
+  }
+
+  const bucketCount = period === "year" || period === "all" ? 6 : 5;
+  const bucketSize = period === "year" || period === "all" ? 30 : 7;
+
+  return Array.from({ length: bucketCount }, (_, index) => {
+    const bucketEnd = addDays(today, -((bucketCount - index - 1) * bucketSize));
+    const bucketStart = addDays(bucketEnd, -(bucketSize - 1));
+    const summary = getCompletionSummaryForDays(
+      safeHabits,
+      getDateRangeDays(bucketStart, bucketEnd)
+    );
+
+    return {
+      label:
+        period === "month"
+          ? `W${index + 1}`
+          : bucketEnd.toLocaleDateString(undefined, { month: "short" }),
+      percentage: summary.completionRate,
+    };
+  });
+}
+
+function getHabitTrendForPeriod(habit, period) {
+  return getTrendPoints([habit], period);
+}
+
+function getPeriodDays(habits, period) {
+  const today = startOfDay(new Date());
+
+  if (period === "week") {
+    return getDateRangeDays(addDays(today, -6), today);
+  }
+
+  if (period === "year") {
+    return getDateRangeDays(addDays(today, -364), today);
+  }
+
+  if (period === "all") {
+    const oldestDate = getOldestRelevantDate(habits) || addDays(today, -29);
+
+    return getDateRangeDays(oldestDate, today);
+  }
+
+  return getDateRangeDays(addDays(today, -29), today);
+}
+
+function getDateRangeDays(startDate, endDate) {
+  const start = startOfDay(startDate);
+  const end = startOfDay(endDate);
+  const days = [];
+  let cursor = start;
+
+  while (cursor <= end) {
+    days.push(cursor);
+    cursor = addDays(cursor, 1);
+  }
+
+  return days;
+}
+
+function getOldestRelevantDate(habits) {
+  const dates = getSafeHabits(habits).flatMap((habit) => {
+    const createdAt = habit.createdAt ? new Date(habit.createdAt) : null;
+    const safeCreatedAt =
+      createdAt && !Number.isNaN(createdAt.getTime())
+        ? [startOfDay(createdAt)]
+        : [];
+    const completedDates = getCompletedDates(habit).map(dateKeyToLocalDate);
+
+    return [...safeCreatedAt, ...completedDates];
+  });
+
+  return dates.length
+    ? dates.reduce((oldest, date) => (date < oldest ? date : oldest), dates[0])
+    : null;
 }
 
 function dateKeyToLocalDate(dateKey) {
