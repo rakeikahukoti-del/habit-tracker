@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import {
   ActivityIndicator,
@@ -87,6 +87,7 @@ export default function HomeScreen() {
   const [moveCompletedToBottom, setMoveCompletedToBottom] = useState(false);
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
+  const habitActionInProgressRef = useRef(new Set());
 
   const loadHabits = useCallback(async ({ isActive = () => true } = {}) => {
     try {
@@ -207,6 +208,12 @@ export default function HomeScreen() {
   }, [loadHabits]);
 
   const handleToggleComplete = useCallback(async (habit, options = {}) => {
+    if (habitActionInProgressRef.current.has(habit.id)) {
+      return;
+    }
+
+    habitActionInProgressRef.current.add(habit.id);
+
     try {
       setError("");
       if (preferences.enableRewardHaptics) {
@@ -295,6 +302,8 @@ export default function HomeScreen() {
       }
     } catch {
       setError("Could not update this habit. Please try again.");
+    } finally {
+      habitActionInProgressRef.current.delete(habit.id);
     }
   }, [gamification, habits, preferences]);
 

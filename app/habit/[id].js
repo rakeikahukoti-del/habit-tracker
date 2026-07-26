@@ -65,6 +65,7 @@ export default function HabitDetailsScreen() {
   const [saving, setSaving] = useState(false);
   const deleteInProgressRef = useRef(false);
   const deletePendingRef = useRef(false);
+  const historyUpdatingRef = useRef(false);
   const savingRef = useRef(false);
 
   const loadHabit = useCallback(async (isActive = () => true) => {
@@ -196,6 +197,12 @@ export default function HabitDetailsScreen() {
   }
 
   async function updateCompletedDates(nextCompletedDates) {
+    if (historyUpdatingRef.current || !habit) {
+      return;
+    }
+
+    historyUpdatingRef.current = true;
+
     try {
       setError("");
       const savedHabit = await updateHabit({
@@ -206,6 +213,8 @@ export default function HabitDetailsScreen() {
       setHabit(savedHabit);
     } catch {
       setError("Could not update completion history. Please try again.");
+    } finally {
+      historyUpdatingRef.current = false;
     }
   }
 

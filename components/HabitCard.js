@@ -32,6 +32,8 @@ import { router } from "expo-router";
 
 const SWIPE_COMPLETE_COLOR = "#557A60";
 const SWIPE_UNDO_COLOR = "#8A4D50";
+const SWIPE_START_DISTANCE = 8;
+const SWIPE_DIRECTION_RATIO = 0.85;
 const SWIPE_THRESHOLD = 32;
 const SWIPE_LIMIT = 112;
 
@@ -121,8 +123,8 @@ function HabitCard({
           const verticalDistance = Math.abs(gestureState.dy);
 
           return (
-            horizontalDistance > 4 &&
-            horizontalDistance > verticalDistance * 0.55
+            horizontalDistance > SWIPE_START_DISTANCE &&
+            horizontalDistance > verticalDistance * SWIPE_DIRECTION_RATIO
           );
         },
         onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -131,8 +133,9 @@ function HabitCard({
           }
 
           const horizontalSwipe =
-            Math.abs(gestureState.dx) > 4 &&
-            Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 0.55;
+            Math.abs(gestureState.dx) > SWIPE_START_DISTANCE &&
+            Math.abs(gestureState.dx) >
+              Math.abs(gestureState.dy) * SWIPE_DIRECTION_RATIO;
 
           if (!horizontalSwipe) {
             return false;
@@ -597,7 +600,7 @@ function createStyles(colors, isCompact) {
       alignItems: "center",
       flexDirection: "row",
       flexShrink: 0,
-      gap: 10,
+      gap: isCompact ? spacing.sm : 10,
     },
     weekRow: {
       marginTop: 12,
@@ -619,7 +622,7 @@ function createStyles(colors, isCompact) {
       flexShrink: 0,
       gap: spacing.xs,
       justifyContent: "center",
-      maxWidth: 54,
+      maxWidth: isCompact ? 58 : 66,
       minHeight: 30,
     },
     streakIcon: {
