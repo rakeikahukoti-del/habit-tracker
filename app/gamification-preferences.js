@@ -38,11 +38,21 @@ export default function GamificationPreferencesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
       async function loadPreferences() {
-        setPreferences(await getAppPreferences());
+        const savedPreferences = await getAppPreferences();
+
+        if (isActive) {
+          setPreferences(savedPreferences);
+        }
       }
 
       loadPreferences();
+
+      return () => {
+        isActive = false;
+      };
     }, [])
   );
 

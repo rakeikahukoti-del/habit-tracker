@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import * as Haptics from "expo-haptics";
 import {
   Animated,
@@ -58,6 +58,7 @@ function HabitCard({
   const swipeX = useRef(new Animated.Value(0)).current;
   const swipeHapticTriggered = useRef(false);
   const tapBlockedBySwipe = useRef(false);
+  const tapBlockTimeoutRef = useRef(null);
   const completeProgressWidth = swipeX.interpolate({
     inputRange: [0, SWIPE_THRESHOLD, SWIPE_LIMIT],
     outputRange: ["0%", "58%", "100%"],
@@ -228,9 +229,25 @@ function HabitCard({
   const swipeActionBackground = SWIPE_COMPLETE_COLOR;
   const undoActionBackground = SWIPE_UNDO_COLOR;
 
+  useEffect(
+    () => () => {
+      if (tapBlockTimeoutRef.current) {
+        clearTimeout(tapBlockTimeoutRef.current);
+      }
+
+      swipeX.stopAnimation();
+    },
+    [swipeX]
+  );
+
   function resetTapBlock() {
-    setTimeout(() => {
+    if (tapBlockTimeoutRef.current) {
+      clearTimeout(tapBlockTimeoutRef.current);
+    }
+
+    tapBlockTimeoutRef.current = setTimeout(() => {
       tapBlockedBySwipe.current = false;
+      tapBlockTimeoutRef.current = null;
     }, 90);
   }
 

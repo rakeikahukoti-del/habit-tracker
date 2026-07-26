@@ -21,21 +21,29 @@ export function ThemeProvider({ children }) {
   const [themeLoaded, setThemeLoaded] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadThemePreference() {
       try {
         const savedPreference = await AsyncStorage.getItem(THEME_PREFERENCE_KEY);
 
-        if (isValidThemePreference(savedPreference)) {
+        if (isMounted && isValidThemePreference(savedPreference)) {
           setThemePreferenceState(savedPreference);
         }
       } catch (error) {
         logStorageError("Could not read theme preference.", error);
       } finally {
-        setThemeLoaded(true);
+        if (isMounted) {
+          setThemeLoaded(true);
+        }
       }
     }
 
     loadThemePreference();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const setThemePreference = useCallback(async (nextPreference) => {

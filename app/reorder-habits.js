@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   LayoutAnimation,
@@ -55,6 +55,13 @@ export default function ReorderHabitsScreen() {
     lastIndex: 0,
     startIndex: 0,
   });
+
+  useEffect(
+    () => () => {
+      activeDragY.stopAnimation();
+    },
+    [activeDragY]
+  );
 
   useFocusEffect(
     useCallback(() => {

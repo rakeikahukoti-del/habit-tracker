@@ -66,9 +66,13 @@ export default function HabitDetailsScreen() {
   const deletePendingRef = useRef(false);
   const savingRef = useRef(false);
 
-  const loadHabit = useCallback(async () => {
+  const loadHabit = useCallback(async (isActive = () => true) => {
     const habits = await getHabits();
     const foundHabit = habits.find((item) => item.id === id);
+
+    if (!isActive()) {
+      return;
+    }
 
     if (!foundHabit) {
       setHabit(null);
@@ -89,7 +93,13 @@ export default function HabitDetailsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadHabit();
+      let isActive = true;
+
+      loadHabit(() => isActive);
+
+      return () => {
+        isActive = false;
+      };
     }, [loadHabit])
   );
 

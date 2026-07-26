@@ -45,6 +45,8 @@ export default function StatsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
       async function loadHabits() {
         try {
           setError("");
@@ -53,16 +55,28 @@ export default function StatsScreen() {
             getGamification(),
           ]);
 
+          if (!isActive) {
+            return;
+          }
+
           setHabits(storedHabits);
           setGamification(storedGamification);
         } catch {
-          setError("Could not load stats. Go back and try again.");
+          if (isActive) {
+            setError("Could not load stats. Go back and try again.");
+          }
         } finally {
-          setLoading(false);
+          if (isActive) {
+            setLoading(false);
+          }
         }
       }
 
       loadHabits();
+
+      return () => {
+        isActive = false;
+      };
     }, [])
   );
 

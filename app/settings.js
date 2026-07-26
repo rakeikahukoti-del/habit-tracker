@@ -63,9 +63,15 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
       async function loadGamification() {
         const storedGamification = await getGamification();
         const levelInfo = getGamificationLevelInfo(storedGamification);
+
+        if (!isActive) {
+          return;
+        }
 
         setLevel(levelInfo.level);
 
@@ -75,6 +81,10 @@ export default function SettingsScreen() {
       }
 
       loadGamification();
+
+      return () => {
+        isActive = false;
+      };
     }, [setThemePreference, themePreference])
   );
 

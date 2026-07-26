@@ -21,11 +21,15 @@ export default function ConfettiBurst({ trigger }) {
     }
 
     animation.setValue(0);
-    Animated.timing(animation, {
+    const animationHandle = Animated.timing(animation, {
       duration: 1200,
       toValue: 1,
       useNativeDriver: true,
-    }).start();
+    });
+
+    animationHandle.start();
+
+    return () => animationHandle.stop();
   }, [animation, trigger]);
 
   if (!trigger) {

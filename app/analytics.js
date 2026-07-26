@@ -39,6 +39,8 @@ export default function AnalyticsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
       async function loadAnalytics() {
         try {
           setError("");
@@ -47,15 +49,27 @@ export default function AnalyticsScreen() {
             getGamification(),
           ]);
 
+          if (!isActive) {
+            return;
+          }
+
           setAnalytics(getAnalyticsSummary(storedHabits, storedGamification));
         } catch {
-          setError("Could not load analytics. Please try again.");
+          if (isActive) {
+            setError("Could not load analytics. Please try again.");
+          }
         } finally {
-          setLoading(false);
+          if (isActive) {
+            setLoading(false);
+          }
         }
       }
 
       loadAnalytics();
+
+      return () => {
+        isActive = false;
+      };
     }, [])
   );
 

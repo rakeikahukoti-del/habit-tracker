@@ -86,10 +86,18 @@ export default function HomeScreen() {
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
 
-  const loadHabits = useCallback(async () => {
+  const loadHabits = useCallback(async ({ isActive = () => true } = {}) => {
     try {
+      if (!isActive()) {
+        return;
+      }
+
       setError("");
       const completedOnboarding = await hasCompletedOnboarding();
+
+      if (!isActive()) {
+        return;
+      }
 
       if (!completedOnboarding) {
         router.replace("/onboarding");
@@ -107,6 +115,10 @@ export default function HomeScreen() {
         consumeGamificationMessages(),
         getGamification(),
       ]);
+
+      if (!isActive()) {
+        return;
+      }
 
       setHabits(storedHabits);
       setMoveCompletedToBottom(storedPreferences.moveCompletedToBottom);
@@ -135,15 +147,27 @@ export default function HomeScreen() {
         }
       }
     } catch {
-      setError("Could not load habits. Pull to refresh and try again.");
+      if (isActive()) {
+        setError("Could not load habits. Pull to refresh and try again.");
+      }
     } finally {
-      setLoading(false);
+      if (isActive()) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadHabits();
+      let isActive = true;
+
+      loadHabits({
+        isActive: () => isActive,
+      });
+
+      return () => {
+        isActive = false;
+      };
     }, [loadHabits])
   );
 

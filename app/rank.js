@@ -53,14 +53,27 @@ export default function RankScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      async function loadRank() {
-        const storedGamification = await getGamification();
+      let isActive = true;
 
-        setGamification(storedGamification);
-        setLoading(false);
+      async function loadRank() {
+        try {
+          const storedGamification = await getGamification();
+
+          if (isActive) {
+            setGamification(storedGamification);
+          }
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
+        }
       }
 
       loadRank();
+
+      return () => {
+        isActive = false;
+      };
     }, [])
   );
 
