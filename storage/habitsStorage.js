@@ -4,6 +4,7 @@ import {
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
   DEFAULT_HABIT_FREQUENCY,
+  weekDayOptions,
 } from "../constants/habitOptions";
 import { getAppPreferences, setLastShownLevel } from "./appPreferences";
 import {
@@ -372,7 +373,7 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
     category: safeHabit.category || DEFAULT_HABIT_CATEGORY,
     color: safeHabit.color || DEFAULT_HABIT_COLOR,
     frequency: safeHabit.frequency || DEFAULT_HABIT_FREQUENCY,
-    customDays: Array.isArray(safeHabit.customDays) ? safeHabit.customDays : [],
+    customDays: getSafeCustomDays(safeHabit.customDays),
     reminderTime:
       typeof safeHabit.reminderTime === "string" ? safeHabit.reminderTime : "",
     notificationIds: Array.isArray(safeHabit.notificationIds)
@@ -439,6 +440,16 @@ function getSafeDateKeys(dateKeys) {
       )
     )
   ).sort();
+}
+
+function getSafeCustomDays(customDays) {
+  if (!Array.isArray(customDays)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(customDays.filter((day) => weekDayOptions.includes(day)))
+  );
 }
 
 function getNextTopOrder(habits) {

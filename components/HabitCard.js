@@ -52,7 +52,7 @@ function HabitCard({
     [colors, isCompact]
   );
   const completedToday = wasCompletedToday(habit);
-  const currentStreak = getCurrentStreak(habit.completedDates);
+  const currentStreak = getCurrentStreak(habit.completedDates, habit);
   const weeklyProgress = getWeeklyProgress(habit);
   const icon = habit.emoji || DEFAULT_HABIT_EMOJI;
   const accentColor = habit.color || DEFAULT_HABIT_COLOR;

@@ -46,11 +46,12 @@ export function getStatsSummary(habits) {
   const completedToday = safeHabits.filter(wasCompletedToday).length;
   const currentLongestStreak = safeHabits.reduce(
     (longest, habit) =>
-      Math.max(longest, getCurrentStreak(getCompletedDates(habit))),
+      Math.max(longest, getCurrentStreak(getCompletedDates(habit), habit)),
     0
   );
   const bestAllTimeStreak = safeHabits.reduce(
-    (best, habit) => Math.max(best, getBestStreak(getCompletedDates(habit))),
+    (best, habit) =>
+      Math.max(best, getBestStreak(getCompletedDates(habit), habit)),
     0
   );
   const weeklySummary = getWeeklyCompletionSummary(safeHabits, weekDays);
@@ -148,12 +149,13 @@ export function getProgressOverview(habits, period = "month", gamification = nul
         ? 0
         : Number((completionSummary.completedCount / periodDays.length).toFixed(1)),
     bestAllTimeStreak: safeHabits.reduce(
-      (best, habit) => Math.max(best, getBestStreak(getCompletedDates(habit))),
+      (best, habit) =>
+        Math.max(best, getBestStreak(getCompletedDates(habit), habit)),
       0
     ),
     currentLongestStreak: safeHabits.reduce(
       (longest, habit) =>
-        Math.max(longest, getCurrentStreak(getCompletedDates(habit))),
+        Math.max(longest, getCurrentStreak(getCompletedDates(habit), habit)),
       0
     ),
     habitCount: safeHabits.length,
@@ -216,11 +218,11 @@ export function getHabitPerformance(habit, period = "month") {
   const latestRate = trend[trend.length - 1]?.percentage || 0;
 
   return {
-    bestStreak: getBestStreak(getCompletedDates(safeHabit)),
+    bestStreak: getBestStreak(getCompletedDates(safeHabit), safeHabit),
     category: safeHabit.category || "General",
     completedCount,
     completionRate,
-    currentStreak: getCurrentStreak(getCompletedDates(safeHabit)),
+    currentStreak: getCurrentStreak(getCompletedDates(safeHabit), safeHabit),
     habit: safeHabit,
     possibleCount,
     trend,
@@ -244,10 +246,10 @@ export function getHabitAnalytics(habit) {
   );
 
   return {
-    bestStreak: getBestStreak(completedDates),
+    bestStreak: getBestStreak(completedDates, habit),
     category: habit.category || "General",
     completionRate,
-    currentStreak: getCurrentStreak(completedDates),
+    currentStreak: getCurrentStreak(completedDates, habit),
     habit,
     monthlyCompletionPercentage,
     trend: getHabitTrend(habit),
@@ -255,22 +257,26 @@ export function getHabitAnalytics(habit) {
   };
 }
 
-export function getCurrentStreak(completedDates) {
+export function getCurrentStreak(completedDates, habit = null) {
   const completedSet = new Set(getSafeDateKeys(completedDates));
   const today = startOfDay(new Date());
-  let cursor = completedSet.has(toDateKey(today)) ? today : addDays(today, -1);
+  let cursor = completedSet.has(toDateKey(today))
+    ? today
+    : getPreviousScheduledDate(today, habit);
   let streak = 0;
 
-  while (completedSet.has(toDateKey(cursor))) {
+  while (cursor && completedSet.has(toDateKey(cursor))) {
     streak += 1;
-    cursor = addDays(cursor, -1);
+    cursor = getPreviousScheduledDate(cursor, habit);
   }
 
   return streak;
 }
 
-export function getBestStreak(completedDates) {
-  const sortedDates = getSortedUniqueDateKeys(completedDates);
+export function getBestStreak(completedDates, habit = null) {
+  const sortedDates = getSortedUniqueDateKeys(completedDates).filter((dateKey) =>
+    isScheduledDate(dateKeyToLocalDate(dateKey), habit)
+  );
 
   if (sortedDates.length === 0) {
     return 0;
@@ -280,11 +286,13 @@ export function getBestStreak(completedDates) {
   let current = 1;
 
   for (let index = 1; index < sortedDates.length; index += 1) {
-    const previous = dateKeyToLocalDate(sortedDates[index - 1]);
     const currentDate = dateKeyToLocalDate(sortedDates[index]);
-    const differenceInDays = Math.round((currentDate - previous) / MS_PER_DAY);
+    const previousScheduledDate = getPreviousScheduledDate(currentDate, habit);
 
-    if (differenceInDays === 1) {
+    if (
+      previousScheduledDate &&
+      toDateKey(previousScheduledDate) === sortedDates[index - 1]
+    ) {
       current += 1;
     } else {
       current = 1;
@@ -389,6 +397,56 @@ function getSafeDateKeys(completedDates) {
       )
     )
   ).sort();
+}
+
+function getPreviousScheduledDate(date, habit) {
+  let cursor = addDays(date, -1);
+
+  for (let attempts = 0; attempts < 14; attempts += 1) {
+    if (isScheduledDate(cursor, habit)) {
+      return cursor;
+    }
+
+    cursor = addDays(cursor, -1);
+  }
+
+  return null;
+}
+
+function isScheduledDate(date, habit) {
+  const scheduledWeekdays = getScheduledWeekdays(habit);
+
+  if (!scheduledWeekdays) {
+    return true;
+  }
+
+  return scheduledWeekdays.has(getWeekdayLabel(date));
+}
+
+function getScheduledWeekdays(habit) {
+  if (!habit || typeof habit !== "object") {
+    return null;
+  }
+
+  if (habit.frequency === "Weekdays") {
+    return new Set(["Mon", "Tue", "Wed", "Thu", "Fri"]);
+  }
+
+  if (habit.frequency === "Custom") {
+    const customDays = Array.isArray(habit.customDays) ? habit.customDays : [];
+
+    return new Set(
+      customDays.filter((day) =>
+        ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].includes(day)
+      )
+    );
+  }
+
+  return null;
+}
+
+function getWeekdayLabel(date) {
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
 }
 
 function getDateKeysForLastDays(numberOfDays) {

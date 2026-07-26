@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   LayoutAnimation,
   Modal,
@@ -56,6 +57,7 @@ import {
 } from "../storage/habitsStorage";
 import {
   getCurrentStreak,
+  getTodayKey,
   wasCompletedToday,
 } from "../utils/habitStats";
 
@@ -88,6 +90,7 @@ export default function HomeScreen() {
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
   const habitActionInProgressRef = useRef(new Set());
+  const todayKeyRef = useRef(getTodayKey());
 
   const loadHabits = useCallback(async ({ isActive = () => true } = {}) => {
     try {
@@ -173,6 +176,31 @@ export default function HomeScreen() {
       };
     }, [loadHabits])
   );
+
+  useEffect(() => {
+    function refreshIfDateChanged() {
+      const nextTodayKey = getTodayKey();
+
+      if (todayKeyRef.current === nextTodayKey) {
+        return;
+      }
+
+      todayKeyRef.current = nextTodayKey;
+      loadHabits();
+    }
+
+    const intervalId = setInterval(refreshIfDateChanged, 60 * 1000);
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        refreshIfDateChanged();
+      }
+    });
+
+    return () => {
+      clearInterval(intervalId);
+      subscription.remove();
+    };
+  }, [loadHabits]);
 
   useEffect(() => {
     if (!completionReward) {
@@ -271,7 +299,7 @@ export default function HomeScreen() {
         rank: rewardRank,
         rankProgress: rewardLevelInfo.currentLevelXp,
         source: options.source || "tap",
-        streak: getCurrentStreak(savedHabit.completedDates),
+        streak: getCurrentStreak(savedHabit.completedDates, savedHabit),
         xpEarned,
       });
       setBadgeUnlock(
@@ -335,7 +363,7 @@ export default function HomeScreen() {
       levelInfo,
       longestCurrentStreak: habits.reduce(
         (longest, habit) =>
-          Math.max(longest, getCurrentStreak(habit.completedDates)),
+          Math.max(longest, getCurrentStreak(habit.completedDates, habit)),
         0
       ),
       motivation: getProgressMessage(completionPercentage, habits.length),

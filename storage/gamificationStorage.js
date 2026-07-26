@@ -571,8 +571,8 @@ function getEarnedBadgeIds({ habits, perfectDayBonusDates, xp }) {
     (longest, habit) =>
       Math.max(
         longest,
-        getCurrentStreak(getCompletedDates(habit)),
-        getBestStreak(getCompletedDates(habit))
+        getCurrentStreak(getCompletedDates(habit), habit),
+        getBestStreak(getCompletedDates(habit), habit)
       ),
     0
   );

@@ -3,7 +3,7 @@ const fs = require("fs");
 const vm = require("vm");
 const babel = require("@babel/core");
 
-function loadModule(filePath) {
+function loadModule(filePath, customRequire = require) {
   const source = fs.readFileSync(filePath, "utf8");
   const { code } = babel.transformSync(source, {
     filename: filePath,
@@ -13,7 +13,7 @@ function loadModule(filePath) {
   const context = {
     module,
     exports: module.exports,
-    require,
+    require: customRequire,
     console,
     Date,
     Math,
@@ -21,6 +21,7 @@ function loadModule(filePath) {
     Set,
     String,
     Array,
+    Object,
   };
 
   vm.runInNewContext(code, context, { filename: filePath });
@@ -29,6 +30,24 @@ function loadModule(filePath) {
 }
 
 const habitStats = loadModule("utils/habitStats.js");
+const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
+  if (moduleName === "react-native") {
+    return { Platform: { OS: "ios" } };
+  }
+
+  if (moduleName === "expo-notifications") {
+    return {
+      IosAuthorizationStatus: { PROVISIONAL: "provisional" },
+      SchedulableTriggerInputTypes: {
+        DAILY: "daily",
+        WEEKLY: "weekly",
+      },
+      setNotificationHandler: () => {},
+    };
+  }
+
+  return require(moduleName);
+});
 
 function dateKeyForOffset(offset) {
   const date = new Date();
@@ -36,6 +55,27 @@ function dateKeyForOffset(offset) {
   date.setDate(date.getDate() + offset);
 
   return habitStats.toDateKey(date);
+}
+
+function getPreviousScheduledDateKeys(count, allowedWeekdays) {
+  const keys = [];
+  const cursor = new Date();
+
+  cursor.setDate(cursor.getDate() - 1);
+
+  while (keys.length < count) {
+    if (allowedWeekdays.includes(getWeekdayLabel(cursor))) {
+      keys.push(habitStats.toDateKey(cursor));
+    }
+
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return keys.reverse();
+}
+
+function getWeekdayLabel(date) {
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
 }
 
 assert.match(habitStats.getTodayKey(), /^\d{4}-\d{2}-\d{2}$/);
@@ -54,11 +94,54 @@ assert.strictEqual(
   habitStats.getBestStreak([
     "2026-01-01",
     "2026-01-02",
+    "2026-01-02",
+    "not-a-date",
     "2026-01-04",
     "2026-01-05",
     "2026-01-06",
   ]),
   3
+);
+assert.strictEqual(
+  habitStats.wasCompletedToday({
+    completedDates: [habitStats.getTodayKey(), habitStats.getTodayKey(), "bad"],
+  }),
+  true
+);
+assert.strictEqual(habitNotifications.parseReminderTime("09:30").hour, 9);
+assert.strictEqual(habitNotifications.parseReminderTime("24:00"), null);
+assert.deepStrictEqual(
+  habitNotifications.getUniqueValidWeekdays(["Mon", "Mon", "Bad", "Fri"]),
+  ["Mon", "Fri"]
+);
+
+const previousWeekdays = getPreviousScheduledDateKeys(2, [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+]);
+assert.strictEqual(
+  habitStats.getCurrentStreak(previousWeekdays, { frequency: "Weekdays" }),
+  2,
+  "weekday streaks should skip unscheduled weekend days"
+);
+assert.strictEqual(
+  habitStats.getBestStreak(previousWeekdays, { frequency: "Weekdays" }),
+  2,
+  "best streaks should count consecutive scheduled weekdays"
+);
+
+const customDays = ["Mon", "Wed", "Fri"];
+const previousCustomDays = getPreviousScheduledDateKeys(2, customDays);
+assert.strictEqual(
+  habitStats.getCurrentStreak(previousCustomDays, {
+    customDays,
+    frequency: "Custom",
+  }),
+  2,
+  "custom streaks should skip days outside the custom schedule"
 );
 
 const emptyOverview = habitStats.getProgressOverview([], "month", { xp: 0 });

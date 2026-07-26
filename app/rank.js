@@ -526,8 +526,8 @@ function getProgressionSnapshot({ gamification, habits, level }) {
     (longest, habit) =>
       Math.max(
         longest,
-        getCurrentStreak(habit.completedDates),
-        getBestStreak(habit.completedDates)
+        getCurrentStreak(habit.completedDates, habit),
+        getBestStreak(habit.completedDates, habit)
       ),
     0
   );

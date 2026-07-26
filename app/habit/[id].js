@@ -256,8 +256,8 @@ export default function HabitDetailsScreen() {
     );
   }
 
-  const currentStreak = getCurrentStreak(habit.completedDates);
-  const bestStreak = getBestStreak(habit.completedDates);
+  const currentStreak = getCurrentStreak(habit.completedDates, habit);
+  const bestStreak = getBestStreak(habit.completedDates, habit);
   const weeklyProgress = getWeeklyProgress(habit);
   const completedToday = wasCompletedToday(habit);
   const icon = emoji || habit.emoji || DEFAULT_HABIT_EMOJI;

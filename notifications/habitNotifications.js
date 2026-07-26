@@ -11,6 +11,7 @@ const WEEKDAY_TO_EXPO_DAY = {
   Fri: 6,
   Sat: 7,
 };
+const VALID_WEEKDAYS = Object.keys(WEEKDAY_TO_EXPO_DAY);
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -71,7 +72,10 @@ export async function scheduleHabitReminder(habit) {
 
 export async function cancelHabitReminders(habit) {
   const notificationIds = Array.isArray(habit.notificationIds)
-    ? habit.notificationIds
+    ? habit.notificationIds.filter(
+        (notificationId) =>
+          typeof notificationId === "string" && notificationId.trim().length > 0
+      )
     : [];
 
   for (const notificationId of notificationIds) {
@@ -176,7 +180,7 @@ function getReminderTriggers(habit, time) {
   }
 
   if (habit.frequency === "Custom") {
-    return (habit.customDays || [])
+    return getUniqueValidWeekdays(habit.customDays)
       .map((day) => createWeeklyTrigger(day, time))
       .filter(Boolean);
   }
@@ -189,6 +193,16 @@ function getReminderTriggers(habit, time) {
       channelId: ANDROID_CHANNEL_ID,
     },
   ];
+}
+
+export function getUniqueValidWeekdays(days) {
+  if (!Array.isArray(days)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(days.filter((day) => VALID_WEEKDAYS.includes(day)))
+  );
 }
 
 function createWeeklyTrigger(day, time) {
