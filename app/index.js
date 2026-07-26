@@ -21,6 +21,7 @@ import { MomentumWolfMark } from "../components/brand";
 import ConfettiBurst from "../components/ConfettiBurst";
 import EmptyState from "../components/EmptyState";
 import HabitCard from "../components/HabitCard";
+import { BadgeMedal } from "../components/progression";
 import { themes } from "../constants/colors";
 import {
   fontSize,
@@ -516,19 +517,19 @@ export default function HomeScreen() {
               pressed && styles.cardPressed,
             ]}
           >
-            <View style={styles.badgeUnlockTop}>
-              <Text style={styles.badgeUnlockEyebrow}>Badge unlocked</Text>
-              <Text style={styles.badgeUnlockRarity}>
-                {badgeUnlock.rarity}
+            <BadgeMedal badge={badgeUnlock} earned large />
+            <View style={styles.badgeUnlockContent}>
+              <Text style={styles.badgeUnlockEyebrow}>Badge earned</Text>
+              <Text style={styles.badgeUnlockTitle}>{badgeUnlock.label}</Text>
+              <Text style={styles.badgeUnlockDescription}>
+                {badgeUnlock.description}
               </Text>
-            </View>
-            <Text style={styles.badgeUnlockTitle}>{badgeUnlock.label}</Text>
-            <Text style={styles.badgeUnlockDescription}>
-              {badgeUnlock.description}
-            </Text>
-            <View style={styles.badgeUnlockFooter}>
-              <Text style={styles.badgeUnlockTier}>{badgeUnlock.tier}</Text>
-              <Text style={styles.badgeUnlockHint}>Tap to dismiss</Text>
+              <View style={styles.badgeUnlockFooter}>
+                <Text style={styles.badgeUnlockTier}>{badgeUnlock.tier}</Text>
+                <Text style={styles.badgeUnlockRarity}>
+                  {badgeUnlock.rarity}
+                </Text>
+              </View>
             </View>
           </Pressable>
         ) : null}
@@ -1229,63 +1230,78 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     marginTop: 5,
   },
   badgeUnlockPopup: {
-    backgroundColor: colors.primaryDark,
+    alignItems: "center",
+    backgroundColor: colors.card,
     borderColor: colors.accent,
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    gap: 7,
+    gap: 14,
     marginBottom: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
     shadowColor: colors.accent,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
     shadowRadius: 20,
     elevation: 7,
   },
-  badgeUnlockTop: {
+  badgeUnlockContent: {
     alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 7,
+    width: "100%",
   },
   badgeUnlockEyebrow: {
-    color: colors.heroMuted,
+    color: colors.accent,
     fontSize: 11,
     fontWeight: fontWeight.bold,
+    letterSpacing: 0.6,
     textTransform: "uppercase",
   },
   badgeUnlockRarity: {
-    color: colors.accent,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.round,
+    borderWidth: 1,
+    color: colors.text,
     fontSize: 12,
     fontWeight: fontWeight.bold,
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     textTransform: "uppercase",
   },
   badgeUnlockTitle: {
-    color: colors.inverseText,
+    color: colors.text,
     fontSize: 18,
     fontWeight: fontWeight.bold,
+    textAlign: "center",
   },
   badgeUnlockDescription: {
-    color: colors.heroSoftText,
+    color: colors.muted,
     fontSize: fontSize.label,
     fontWeight: fontWeight.medium,
     lineHeight: 18,
+    textAlign: "center",
   },
   badgeUnlockFooter: {
     alignItems: "center",
     flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
     justifyContent: "space-between",
-    marginTop: 2,
+    marginTop: 4,
   },
   badgeUnlockTier: {
-    color: colors.inverseText,
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.border,
+    borderRadius: radius.round,
+    borderWidth: 1,
+    color: colors.text,
     fontSize: 12,
     fontWeight: fontWeight.bold,
-  },
-  badgeUnlockHint: {
-    color: colors.heroMuted,
-    fontSize: 11,
-    fontWeight: fontWeight.medium,
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   errorBanner: {
     backgroundColor: colors.dangerSoft,
