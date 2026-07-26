@@ -1,15 +1,17 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   useWindowDimensions,
-  View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import {
+  SettingsRow,
+  SettingsSection,
+  SettingsToggleRow,
+} from "../components/settings";
 import { BackIcon, IconButton } from "../components/ui";
 import {
   fontSize,
@@ -18,10 +20,10 @@ import {
   lineHeight,
   pageTitleLineHeight,
   pageTitleSize,
-  radius,
   spacing,
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
+import { getNotificationPermissionState } from "../notifications/habitNotifications";
 import {
   defaultAppPreferences,
   getAppPreferences,
@@ -34,8 +36,12 @@ export default function NotificationPreferencesScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
   const [preferences, setPreferences] = useState(defaultAppPreferences);
+  const [permissionState, setPermissionState] = useState("not-requested");
   const [message, setMessage] = useState("");
   const preferenceUpdatingRef = useRef(false);
 
@@ -44,10 +50,14 @@ export default function NotificationPreferencesScreen() {
       let isActive = true;
 
       async function loadPreferences() {
-        const savedPreferences = await getAppPreferences();
+        const [savedPreferences, savedPermissionState] = await Promise.all([
+          getAppPreferences(),
+          getNotificationPermissionState(),
+        ]);
 
         if (isActive) {
           setPreferences(savedPreferences);
+          setPermissionState(savedPermissionState);
         }
       }
 
@@ -76,8 +86,10 @@ export default function NotificationPreferencesScreen() {
         "enableDailyReminders",
         value
       );
+
       await applyDailyReminderPreference(value);
       setPreferences(savedPreferences);
+      setPermissionState(await getNotificationPermissionState());
     } catch {
       setMessage("Could not update reminders. Please try again.");
       setPreferences(await getAppPreferences());
@@ -103,38 +115,66 @@ export default function NotificationPreferencesScreen() {
         <Text style={styles.eyebrow}>Settings</Text>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.subtitle}>
-          Reminders are optional. Momentum works normally if you leave them off.
+          Reminders are optional. Momentum works normally if they are off.
         </Text>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
 
-        <View style={styles.section}>
-          <View style={styles.switchRow}>
-            <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Daily reminders</Text>
-              <Text style={styles.settingHelper}>
-                We ask permission only when a habit has a reminder time.
-              </Text>
-            </View>
-            <Switch
-              accessibilityLabel="Daily reminders"
-              accessibilityRole="switch"
-              accessibilityState={{
-                checked: preferences.enableDailyReminders,
-              }}
-              ios_backgroundColor={colors.border}
-              onValueChange={handleDailyReminderChange}
-              thumbColor={
-                preferences.enableDailyReminders ? colors.primary : colors.surface
-              }
-              trackColor={{ false: colors.border, true: colors.primarySoft }}
-              value={preferences.enableDailyReminders}
-            />
-          </View>
-        </View>
+        <SettingsSection title="Permission">
+          <SettingsRow
+            description={getPermissionDescription(permissionState)}
+            showChevron={false}
+            title="Notification access"
+            value={getPermissionLabel(permissionState)}
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          footer="Momentum asks permission only when reminders need to be scheduled."
+          title="Reminders"
+        >
+          <SettingsToggleRow
+            description="Allow scheduled reminders for habits with reminder times."
+            onValueChange={handleDailyReminderChange}
+            title="Daily reminders"
+            value={preferences.enableDailyReminders}
+          />
+        </SettingsSection>
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function getPermissionLabel(state) {
+  if (state === "granted") {
+    return "Allowed";
+  }
+
+  if (state === "blocked") {
+    return "Blocked";
+  }
+
+  if (state === "unavailable") {
+    return "Unavailable";
+  }
+
+  return "Not asked";
+}
+
+function getPermissionDescription(state) {
+  if (state === "granted") {
+    return "Habit reminders can be scheduled on this device.";
+  }
+
+  if (state === "blocked") {
+    return "Enable notifications in device settings to receive reminders.";
+  }
+
+  if (state === "unavailable") {
+    return "Notifications are unavailable in this environment.";
+  }
+
+  return "Permission is requested only when a reminder is scheduled.";
 }
 
 function createStyles(colors, { isSmallScreen, isTablet }) {
@@ -158,7 +198,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       color: colors.primary,
       fontSize: fontSize.label,
       fontWeight: fontWeight.bold,
-      marginBottom: 6,
+      marginBottom: spacing.xs,
       textTransform: "uppercase",
     },
     title: {
@@ -166,57 +206,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontSize: pageTitleSize(isSmallScreen),
       fontWeight: fontWeight.bold,
       lineHeight: pageTitleLineHeight(isSmallScreen),
-      marginBottom: spacing.sm,
     },
     subtitle: {
       color: colors.muted,
       fontSize: fontSize.body,
-      fontWeight: fontWeight.regular,
       lineHeight: lineHeight.body,
-      marginBottom: spacing.lg,
+      marginBottom: spacing.xl,
+      marginTop: spacing.sm,
     },
     message: {
-      backgroundColor: colors.dangerSoft,
-      borderRadius: radius.sm,
       color: colors.danger,
-      fontSize: fontSize.label,
+      fontSize: fontSize.body,
       fontWeight: fontWeight.medium,
+      lineHeight: lineHeight.body,
       marginBottom: spacing.lg,
-      padding: spacing.md,
-    },
-    section: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      padding: spacing.lg,
-    },
-    switchRow: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: spacing.md,
-      justifyContent: "space-between",
-      minHeight: 58,
-    },
-    settingText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    settingLabel: {
-      color: colors.text,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
-    },
-    settingHelper: {
-      color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.caption,
-      marginTop: spacing.xs,
-    },
-    buttonPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
     },
   });
 }

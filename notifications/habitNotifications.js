@@ -111,6 +111,28 @@ export function parseReminderTime(reminderTime) {
   };
 }
 
+export async function getNotificationPermissionState() {
+  try {
+    const permission = await Notifications.getPermissionsAsync();
+
+    if (
+      permission.granted ||
+      permission.ios?.status ===
+        Notifications.IosAuthorizationStatus.PROVISIONAL
+    ) {
+      return "granted";
+    }
+
+    if (permission.canAskAgain === false) {
+      return "blocked";
+    }
+
+    return "not-requested";
+  } catch {
+    return "unavailable";
+  }
+}
+
 async function requestNotificationPermission() {
   try {
     const existingPermission = await Notifications.getPermissionsAsync();

@@ -1,23 +1,21 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   useWindowDimensions,
-  View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { SettingsSection, SettingsToggleRow } from "../components/settings";
 import { BackIcon, IconButton } from "../components/ui";
 import {
   fontSize,
   fontWeight,
   layout,
+  lineHeight,
   pageTitleLineHeight,
   pageTitleSize,
-  radius,
   spacing,
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
@@ -32,7 +30,10 @@ export default function GamificationPreferencesScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [message, setMessage] = useState("");
   const preferenceUpdatingRef = useRef(false);
@@ -82,91 +83,69 @@ export default function GamificationPreferencesScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <BackButton styles={styles} />
+        <IconButton
+          accessibilityLabel="Back to Settings"
+          onPress={() => router.replace("/settings")}
+          style={styles.backButton}
+        >
+          <BackIcon />
+        </IconButton>
+
         <Text style={styles.eyebrow}>Settings</Text>
         <Text style={styles.title}>Gamification</Text>
+        <Text style={styles.subtitle}>
+          Control reward presentation without resetting progress.
+        </Text>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
 
-        <View style={styles.section}>
-          <PreferenceSwitch
-            colors={colors}
-            label="Progress card on Home"
+        <SettingsSection title="Home">
+          <SettingsToggleRow
+            description="Shows your daily progress summary on Home."
             onValueChange={(value) =>
               handlePreferenceChange("showProgressCard", value)
             }
-            styles={styles}
+            title="Progress card"
             value={preferences.showProgressCard}
           />
-          <PreferenceSwitch
-            colors={colors}
-            label="Show rank on Home"
+          <SettingsToggleRow
+            description="Shows XP, level, and rank details on Home."
             onValueChange={(value) =>
               handlePreferenceChange("showXpRankOnHome", value)
             }
-            styles={styles}
+            title="Show rank on Home"
             value={preferences.showXpRankOnHome}
           />
-          <PreferenceSwitch
-            colors={colors}
-            label="Badge popups"
+        </SettingsSection>
+
+        <SettingsSection title="Rewards">
+          <SettingsToggleRow
+            description="Future badge unlocks can show a short popup."
             onValueChange={(value) =>
               handlePreferenceChange("showBadgePopups", value)
             }
-            styles={styles}
+            title="Badge popups"
             value={preferences.showBadgePopups}
           />
-          <PreferenceSwitch
-            colors={colors}
-            label="Level-up popup"
+          <SettingsToggleRow
+            description="Future level changes can show a short popup."
             onValueChange={(value) =>
               handlePreferenceChange("showLevelUpPopup", value)
             }
-            styles={styles}
+            title="Level-up popup"
             value={preferences.showLevelUpPopup}
           />
-          <PreferenceSwitch
-            colors={colors}
-            label="Reward haptics"
+          <SettingsToggleRow
+            description="Uses subtle haptics for reward moments."
             onValueChange={(value) =>
               handlePreferenceChange("enableRewardHaptics", value)
             }
-            styles={styles}
+            title="Reward haptics"
             value={preferences.enableRewardHaptics}
           />
-        </View>
+        </SettingsSection>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function BackButton({ styles }) {
-  return (
-    <IconButton
-      accessibilityLabel="Back to Settings"
-      onPress={() => router.replace("/settings")}
-      style={styles.backButton}
-    >
-      <BackIcon />
-    </IconButton>
-  );
-}
-
-function PreferenceSwitch({ colors, label, onValueChange, styles, value }) {
-  return (
-    <View style={styles.switchRow}>
-      <Text style={styles.settingLabel}>{label}</Text>
-      <Switch
-        accessibilityLabel={label}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: value }}
-        ios_backgroundColor={colors.border}
-        onValueChange={onValueChange}
-        thumbColor={value ? colors.primary : colors.surface}
-        trackColor={{ false: colors.border, true: colors.primarySoft }}
-        value={value}
-      />
-    </View>
   );
 }
 
@@ -191,7 +170,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       color: colors.primary,
       fontSize: fontSize.label,
       fontWeight: fontWeight.bold,
-      marginBottom: 6,
+      marginBottom: spacing.xs,
       textTransform: "uppercase",
     },
     title: {
@@ -199,40 +178,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontSize: pageTitleSize(isSmallScreen),
       fontWeight: fontWeight.bold,
       lineHeight: pageTitleLineHeight(isSmallScreen),
+    },
+    subtitle: {
+      color: colors.muted,
+      fontSize: fontSize.body,
+      lineHeight: lineHeight.body,
       marginBottom: spacing.xl,
+      marginTop: spacing.sm,
     },
     message: {
       color: colors.primary,
       fontSize: fontSize.body,
-      fontWeight: fontWeight.semibold,
-      marginBottom: spacing.md,
-    },
-    section: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      padding: spacing.lg,
-    },
-    switchRow: {
-      alignItems: "center",
-      borderBottomColor: colors.border,
-      borderBottomWidth: 1,
-      flexDirection: "row",
-      gap: spacing.md,
-      justifyContent: "space-between",
-      minHeight: 54,
-      paddingVertical: 10,
-    },
-    settingLabel: {
-      color: colors.text,
-      flex: 1,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
-    },
-    buttonPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
+      fontWeight: fontWeight.medium,
+      lineHeight: lineHeight.body,
+      marginBottom: spacing.lg,
     },
   });
 }

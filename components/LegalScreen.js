@@ -15,7 +15,6 @@ import {
   lineHeight,
   pageTitleLineHeight,
   pageTitleSize,
-  radius,
   spacing,
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
@@ -40,14 +39,18 @@ export default function LegalScreen({ title, body }) {
         >
           <BackIcon />
         </IconButton>
-        <Text style={styles.eyebrow}>Momentum</Text>
+        <Text style={styles.eyebrow}>Legal</Text>
         <Text style={styles.title}>{title}</Text>
+        <Text style={styles.subtitle}>
+          Simple terms for personal, offline habit tracking.
+        </Text>
 
-        <View style={styles.card}>
-          {body.map((paragraph) => (
-            <Text key={paragraph} style={styles.paragraph}>
-              {paragraph}
-            </Text>
+        <View style={styles.document}>
+          {body.map((paragraph, index) => (
+            <View key={paragraph} style={styles.paragraphBlock}>
+              <Text style={styles.sectionNumber}>{String(index + 1).padStart(2, "0")}</Text>
+              <Text style={styles.paragraph}>{paragraph}</Text>
+            </View>
           ))}
         </View>
       </ScrollView>
@@ -88,21 +91,38 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontSize: pageTitleSize(isSmallScreen),
     fontWeight: fontWeight.bold,
     lineHeight: pageTitleLineHeight(isSmallScreen),
-    marginBottom: spacing.xl,
   },
-  card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    padding: spacing.xl,
+  subtitle: {
+    color: colors.muted,
+    fontSize: fontSize.body,
+    lineHeight: lineHeight.body,
+    marginBottom: spacing.xl,
+    marginTop: spacing.sm,
+  },
+  document: {
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+  },
+  paragraphBlock: {
+    borderBottomColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+  },
+  sectionNumber: {
+    color: colors.softText,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.bold,
+    lineHeight: lineHeight.caption,
+    minWidth: 24,
   },
   paragraph: {
     color: colors.muted,
+    flex: 1,
     fontSize: fontSize.bodyLarge,
     fontWeight: fontWeight.regular,
-    lineHeight: 23,
-    marginBottom: spacing.lg,
+    lineHeight: 24,
   },
   });
 }

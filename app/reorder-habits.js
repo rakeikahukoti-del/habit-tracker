@@ -192,7 +192,7 @@ export default function ReorderHabitsScreen() {
         <Text style={styles.eyebrow}>Habits</Text>
         <Text style={styles.title}>Reorder habits</Text>
         <Text style={styles.subtitle}>
-          Hold and drag a habit to set the Home order.
+          Hold a row, then drag it up or down.
         </Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -293,9 +293,6 @@ function HabitOrderRow({
         <View style={styles.habitText}>
           <Text numberOfLines={1} style={styles.habitName}>
             {habit.name}
-          </Text>
-          <Text numberOfLines={1} style={styles.habitCategory}>
-            {habit.category || "General"}
           </Text>
         </View>
 
@@ -415,13 +412,6 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontSize: fontSize.bodyLarge,
       fontWeight: fontWeight.bold,
       lineHeight: lineHeight.bodyLarge,
-    },
-    habitCategory: {
-      color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.caption,
-      marginTop: spacing.xs,
     },
     dragHandle: {
       alignItems: "center",

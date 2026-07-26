@@ -1,15 +1,13 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   useWindowDimensions,
-  View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { SettingsRow, SettingsSection, SettingsToggleRow } from "../components/settings";
 import { BackIcon, IconButton } from "../components/ui";
 import {
   fontSize,
@@ -18,7 +16,6 @@ import {
   lineHeight,
   pageTitleLineHeight,
   pageTitleSize,
-  radius,
   spacing,
 } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
@@ -33,7 +30,10 @@ export default function HabitPreferencesScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [message, setMessage] = useState("");
   const preferenceUpdatingRef = useRef(false);
@@ -68,9 +68,7 @@ export default function HabitPreferencesScreen() {
     try {
       setMessage("");
       setPreferences((current) => ({ ...current, [key]: value }));
-      const savedPreferences = await setAppPreference(key, value);
-
-      setPreferences(savedPreferences);
+      setPreferences(await setAppPreference(key, value));
     } catch {
       setMessage("Could not save that preference. Please try again.");
       setPreferences(await getAppPreferences());
@@ -85,90 +83,58 @@ export default function HabitPreferencesScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <BackButton styles={styles} />
+        <IconButton
+          accessibilityLabel="Back to Settings"
+          onPress={() => router.replace("/settings")}
+          style={styles.backButton}
+        >
+          <BackIcon />
+        </IconButton>
+
         <Text style={styles.eyebrow}>Settings</Text>
-        <Text style={styles.title}>Habits</Text>
+        <Text style={styles.title}>Habit preferences</Text>
+        <Text style={styles.subtitle}>
+          Control how habits behave on Home.
+        </Text>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
 
-        <View style={styles.section}>
-          <Pressable
-            accessibilityLabel="Open reorder habits"
-            accessibilityRole="button"
+        <SettingsSection title="Order">
+          <SettingsRow
+            description="Drag habits into your preferred order."
             onPress={() => router.push("/reorder-habits")}
-            style={({ pressed }) => [
-              styles.navigationRow,
-              pressed && styles.rowPressed,
-            ]}
-          >
-            <View style={styles.navigationText}>
-              <Text style={styles.settingLabel}>Reorder habits</Text>
-              <Text style={styles.settingHelper}>
-                Change the order on Home.
-              </Text>
-            </View>
-            <Text style={styles.navigationArrow}>›</Text>
-          </Pressable>
-          <PreferenceSwitch
-            colors={colors}
-            label="Completed habits last"
+            title="Reorder habits"
+          />
+          <SettingsToggleRow
+            description="Keeps unfinished habits at the top of Today."
             onValueChange={(value) =>
               handlePreferenceChange("moveCompletedToBottom", value)
             }
-            styles={styles}
+            title="Move completed habits to bottom"
             value={preferences.moveCompletedToBottom}
           />
-          <PreferenceSwitch
-            colors={colors}
-            label="Swipe to complete"
+        </SettingsSection>
+
+        <SettingsSection title="Interactions">
+          <SettingsToggleRow
+            description="Swipe right to complete and left to undo."
             onValueChange={(value) =>
               handlePreferenceChange("enableSwipeToComplete", value)
             }
-            styles={styles}
+            title="Swipe actions"
             value={preferences.enableSwipeToComplete}
           />
-          <PreferenceSwitch
-            colors={colors}
-            label="Long-press reorder"
+          <SettingsToggleRow
+            description="Allows drag reordering where supported."
             onValueChange={(value) =>
               handlePreferenceChange("enableLongPressReorder", value)
             }
-            styles={styles}
+            title="Long-press reorder"
             value={preferences.enableLongPressReorder}
           />
-        </View>
+        </SettingsSection>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function BackButton({ styles }) {
-  return (
-    <IconButton
-      accessibilityLabel="Back to Settings"
-      onPress={() => router.replace("/settings")}
-      style={styles.backButton}
-    >
-      <BackIcon />
-    </IconButton>
-  );
-}
-
-function PreferenceSwitch({ colors, label, onValueChange, styles, value }) {
-  return (
-    <View style={styles.switchRow}>
-      <Text style={styles.settingLabel}>{label}</Text>
-      <Switch
-        accessibilityLabel={label}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: value }}
-        ios_backgroundColor={colors.border}
-        onValueChange={onValueChange}
-        thumbColor={value ? colors.primary : colors.surface}
-        trackColor={{ false: colors.border, true: colors.primarySoft }}
-        value={value}
-      />
-    </View>
   );
 }
 
@@ -193,7 +159,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       color: colors.primary,
       fontSize: fontSize.label,
       fontWeight: fontWeight.bold,
-      marginBottom: 6,
+      marginBottom: spacing.xs,
       textTransform: "uppercase",
     },
     title: {
@@ -201,70 +167,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       fontSize: pageTitleSize(isSmallScreen),
       fontWeight: fontWeight.bold,
       lineHeight: pageTitleLineHeight(isSmallScreen),
+    },
+    subtitle: {
+      color: colors.muted,
+      fontSize: fontSize.body,
+      lineHeight: lineHeight.body,
       marginBottom: spacing.xl,
+      marginTop: spacing.sm,
     },
     message: {
       color: colors.primary,
       fontSize: fontSize.body,
-      fontWeight: fontWeight.semibold,
+      fontWeight: fontWeight.medium,
       lineHeight: lineHeight.body,
-      marginBottom: spacing.md,
-    },
-    section: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      padding: spacing.lg,
-    },
-    switchRow: {
-      alignItems: "center",
-      borderBottomColor: colors.border,
-      borderBottomWidth: 1,
-      flexDirection: "row",
-      gap: spacing.md,
-      justifyContent: "space-between",
-      minHeight: 54,
-      paddingVertical: 10,
-    },
-    settingLabel: {
-      color: colors.text,
-      flex: 1,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
-    },
-    settingHelper: {
-      color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.caption,
-      marginTop: spacing.xs,
-    },
-    navigationRow: {
-      alignItems: "center",
-      borderBottomColor: colors.border,
-      borderBottomWidth: 1,
-      flexDirection: "row",
-      gap: spacing.md,
-      justifyContent: "space-between",
-      minHeight: 58,
-      paddingVertical: 10,
-    },
-    navigationText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    navigationArrow: {
-      color: colors.primary,
-      fontSize: 22,
-      fontWeight: fontWeight.bold,
-    },
-    buttonPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
-    },
-    rowPressed: {
-      opacity: 0.78,
+      marginBottom: spacing.lg,
     },
   });
 }

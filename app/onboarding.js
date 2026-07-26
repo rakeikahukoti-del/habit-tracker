@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { router } from "expo-router";
+import { MomentumWolfMark, MomentumWordmark } from "../components/brand";
 import {
   fontSize,
   fontWeight,
@@ -32,19 +33,21 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.heroIcon}>
-          <Text style={styles.heroEmoji}>⚡</Text>
+        <View style={styles.brand}>
+          <MomentumWolfMark size={94} />
+          <MomentumWordmark width={190} />
         </View>
-        <Text style={styles.eyebrow}>Welcome to Momentum</Text>
-        <Text style={styles.title}>Make today's habits clear</Text>
+        <Text style={styles.eyebrow}>Welcome</Text>
+        <Text style={styles.title}>Build discipline through consistency.</Text>
         <Text style={styles.subtitle}>
-          Create a habit, swipe to complete it, and watch your progress build.
+          Choose the habits that matter. Complete them each day. Momentum tracks
+          the progress you build.
         </Text>
 
         <View style={styles.points}>
-          <Text style={styles.point}>Home shows what to do today</Text>
-          <Text style={styles.point}>Progress and Rank show what you have built</Text>
-          <Text style={styles.point}>Your habit data stays on this device</Text>
+          <Text style={styles.point}>Today shows the habits in front of you.</Text>
+          <Text style={styles.point}>Progress and Rank show consistency over time.</Text>
+          <Text style={styles.point}>Your habit data stays on this device.</Text>
         </View>
 
         <Pressable
@@ -78,17 +81,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       padding: isSmallScreen ? 20 : 26,
       width: "100%",
     },
-    heroIcon: {
-      alignItems: "center",
-      backgroundColor: colors.primarySoft,
-      borderRadius: 28,
-      height: 72,
-      justifyContent: "center",
-      marginBottom: 22,
-      width: 72,
-    },
-    heroEmoji: {
-      fontSize: 36,
+    brand: {
+      alignItems: "flex-start",
+      gap: spacing.lg,
+      marginBottom: spacing.xxl,
     },
     eyebrow: {
       color: colors.primary,
