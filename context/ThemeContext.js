@@ -17,7 +17,7 @@ const BASE_THEME_KEYS = ["light", "dark", "system"];
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
-  const [themePreference, setThemePreferenceState] = useState("system");
+  const [themePreference, setThemePreferenceState] = useState("dark");
   const [themeLoaded, setThemeLoaded] = useState(false);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export function ThemeProvider({ children }) {
 
   const resolvedTheme =
     themePreference === "system" ? systemScheme || "light" : themePreference;
-  const colors = themes[resolvedTheme] || themes.light;
+  const colors = themes[resolvedTheme] || themes.dark;
 
   const value = useMemo(
     () => ({
