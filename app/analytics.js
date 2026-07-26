@@ -297,7 +297,7 @@ function HabitPerformanceRow({ item, styles }) {
         <Text numberOfLines={1} style={styles.habitName}>
           {item.habit.name}
         </Text>
-        <Text numberOfLines={1} style={styles.habitMeta}>
+        <Text numberOfLines={2} style={styles.habitMeta}>
           {item.category} · {item.currentStreak} day streak · {trendLabel}
         </Text>
         <View style={styles.habitTrack}>
@@ -592,7 +592,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       flexShrink: 0,
       gap: spacing.sm,
       justifyContent: "space-between",
-      maxWidth: 96,
+      maxWidth: 104,
     },
     habitRateValue: {
       color: colors.text,

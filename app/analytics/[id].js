@@ -197,7 +197,14 @@ function MetricRow({ label, styles, value }) {
   return (
     <View style={styles.metricRow}>
       <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricValue}>{value}</Text>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.78}
+        numberOfLines={1}
+        style={styles.metricValue}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -390,13 +397,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     metricLabel: {
       color: colors.muted,
+      flex: 1,
       fontSize: fontSize.body,
       fontWeight: fontWeight.medium,
+      minWidth: 0,
     },
     metricValue: {
       color: colors.text,
+      flexShrink: 0,
       fontSize: fontSize.bodyLarge,
       fontWeight: fontWeight.bold,
+      maxWidth: "52%",
+      textAlign: "right",
     },
     section: {
       gap: spacing.md,

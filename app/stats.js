@@ -280,7 +280,12 @@ function MetricRow({ label, styles, value }) {
   return (
     <View style={styles.metricRow}>
       <Text style={styles.metricLabel}>{label}</Text>
-      <Text numberOfLines={1} style={styles.metricValue}>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.78}
+        numberOfLines={1}
+        style={styles.metricValue}
+      >
         {value}
       </Text>
     </View>
@@ -527,13 +532,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       flex: 1,
       fontSize: fontSize.body,
       fontWeight: fontWeight.medium,
+      minWidth: 0,
     },
     metricValue: {
       color: colors.text,
       flexShrink: 0,
       fontSize: fontSize.bodyLarge,
       fontWeight: fontWeight.bold,
-      maxWidth: "45%",
+      maxWidth: "52%",
       textAlign: "right",
     },
     textAction: {

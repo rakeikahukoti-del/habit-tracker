@@ -64,8 +64,17 @@ export function SettingsRow({
           </Text>
         ) : null}
       </View>
-      {right}
-      {value ? <Text style={styles.value}>{value}</Text> : null}
+      {right ? <View style={styles.trailingControl}>{right}</View> : null}
+      {value ? (
+        <Text
+          adjustsFontSizeToFit
+          minimumFontScale={0.82}
+          numberOfLines={2}
+          style={styles.value}
+        >
+          {value}
+        </Text>
+      ) : null}
       {showChevron ? <Text style={styles.chevron}>›</Text> : null}
     </Pressable>
   );
@@ -206,6 +215,9 @@ function createStyles(colors) {
       flex: 1,
       minWidth: 0,
     },
+    trailingControl: {
+      flexShrink: 0,
+    },
     rowTitle: {
       color: colors.text,
       fontSize: fontSize.bodyLarge,
@@ -224,10 +236,13 @@ function createStyles(colors) {
       flexShrink: 1,
       fontSize: fontSize.label,
       fontWeight: fontWeight.bold,
+      maxWidth: "36%",
+      minWidth: 0,
       textAlign: "right",
     },
     chevron: {
       color: colors.muted,
+      flexShrink: 0,
       fontSize: 22,
       fontWeight: fontWeight.bold,
       lineHeight: 22,
@@ -264,6 +279,7 @@ function createStyles(colors) {
     },
     swatches: {
       flexDirection: "row",
+      flexShrink: 0,
       gap: 4,
     },
     swatch: {

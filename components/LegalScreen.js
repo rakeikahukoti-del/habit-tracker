@@ -106,6 +106,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   paragraphBlock: {
     borderBottomColor: colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: spacing.md,
     paddingVertical: spacing.lg,
@@ -120,9 +121,11 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   paragraph: {
     color: colors.muted,
     flex: 1,
+    flexShrink: 1,
     fontSize: fontSize.bodyLarge,
     fontWeight: fontWeight.regular,
     lineHeight: 24,
+    minWidth: 0,
   },
   });
 }

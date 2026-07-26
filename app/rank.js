@@ -363,7 +363,7 @@ function BadgeTile({ badge, earned, onPress, progress, styles }) {
             {badge.rarity}
           </Text>
         </View>
-        <Text numberOfLines={1} style={styles.badgeMeta}>
+        <Text numberOfLines={2} style={styles.badgeMeta}>
           {earned ? badge.tier : getProgressLabel(progress)}
         </Text>
         {!earned && progress?.max ? (
@@ -398,7 +398,7 @@ function AchievementRow({ achievement, onPress, styles }) {
         </Text>
       </View>
       <View style={styles.achievementText}>
-        <Text numberOfLines={1} style={styles.achievementTitle}>
+        <Text numberOfLines={2} style={styles.achievementTitle}>
           {achievement.title}
         </Text>
         <Text numberOfLines={2} style={styles.achievementDescription}>
@@ -426,38 +426,43 @@ function BadgeDetailModal({ badge, earned, onClose, progress, styles, visible })
     >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
-          <BadgeMedal badge={badge} earned={earned} large />
-          <Text style={styles.modalEyebrow}>
-            {earned ? "Badge earned" : "Locked badge"}
-          </Text>
-          <Text style={styles.modalTitle}>{badge.label}</Text>
-          <Text style={styles.modalDescription}>{badge.description}</Text>
-          <View style={styles.modalMetaRow}>
-            <Text style={styles.modalMeta}>{badge.tier}</Text>
-            <Text style={styles.modalMeta}>{badge.rarity}</Text>
-          </View>
-          {!earned ? (
-            <View style={styles.requirementBox}>
-              <Text style={styles.requirementLabel}>Requirement</Text>
-              <Text style={styles.requirementText}>{badge.description}</Text>
-              {progress?.max ? (
-                <Text style={styles.requirementText}>
-                  Progress: {progress.value} / {progress.max}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
-          <Pressable
-            accessibilityLabel="Close badge details"
-            accessibilityRole="button"
-            onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalButton,
-              pressed && styles.pressed,
-            ]}
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalButtonText}>Close</Text>
-          </Pressable>
+            <BadgeMedal badge={badge} earned={earned} large />
+            <Text style={styles.modalEyebrow}>
+              {earned ? "Badge earned" : "Locked badge"}
+            </Text>
+            <Text style={styles.modalTitle}>{badge.label}</Text>
+            <Text style={styles.modalDescription}>{badge.description}</Text>
+            <View style={styles.modalMetaRow}>
+              <Text style={styles.modalMeta}>{badge.tier}</Text>
+              <Text style={styles.modalMeta}>{badge.rarity}</Text>
+            </View>
+            {!earned ? (
+              <View style={styles.requirementBox}>
+                <Text style={styles.requirementLabel}>Requirement</Text>
+                <Text style={styles.requirementText}>{badge.description}</Text>
+                {progress?.max ? (
+                  <Text style={styles.requirementText}>
+                    Progress: {progress.value} / {progress.max}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+            <Pressable
+              accessibilityLabel="Close badge details"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.modalButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -478,39 +483,44 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
     >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
-          <View style={styles.achievementModalMark}>
-            <Text style={styles.achievementModalMarkText}>
-              {getAchievementMark(achievement.type)}
-            </Text>
-          </View>
-          <Text style={styles.modalEyebrow}>Recent achievement</Text>
-          <Text style={styles.modalTitle}>{achievement.title}</Text>
-          <Text style={styles.modalDescription}>{achievement.description}</Text>
-          <View style={styles.modalMetaRow}>
-            <Text style={styles.modalMeta}>
-              {formatAchievementType(achievement.type)}
-            </Text>
-            <Text style={styles.modalMeta}>
-              {formatAchievementDate(achievement.unlockedAt)}
-            </Text>
-          </View>
-          {achievement.habitName ? (
-            <Text style={styles.requirementText}>Habit: {achievement.habitName}</Text>
-          ) : null}
-          {achievement.xp ? (
-            <Text style={styles.requirementText}>Reward: +{achievement.xp} XP</Text>
-          ) : null}
-          <Pressable
-            accessibilityLabel="Close achievement details"
-            accessibilityRole="button"
-            onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalButton,
-              pressed && styles.pressed,
-            ]}
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalButtonText}>Close</Text>
-          </Pressable>
+            <View style={styles.achievementModalMark}>
+              <Text style={styles.achievementModalMarkText}>
+                {getAchievementMark(achievement.type)}
+              </Text>
+            </View>
+            <Text style={styles.modalEyebrow}>Recent achievement</Text>
+            <Text style={styles.modalTitle}>{achievement.title}</Text>
+            <Text style={styles.modalDescription}>{achievement.description}</Text>
+            <View style={styles.modalMetaRow}>
+              <Text style={styles.modalMeta}>
+                {formatAchievementType(achievement.type)}
+              </Text>
+              <Text style={styles.modalMeta}>
+                {formatAchievementDate(achievement.unlockedAt)}
+              </Text>
+            </View>
+            {achievement.habitName ? (
+              <Text style={styles.requirementText}>Habit: {achievement.habitName}</Text>
+            ) : null}
+            {achievement.xp ? (
+              <Text style={styles.requirementText}>Reward: +{achievement.xp} XP</Text>
+            ) : null}
+            <Pressable
+              accessibilityLabel="Close achievement details"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.modalButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -890,6 +900,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     badgeTopLine: {
       alignItems: "flex-start",
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: spacing.sm,
       justifyContent: "space-between",
     },
@@ -909,6 +920,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderRadius: 999,
       borderWidth: 1,
       color: colors.muted,
+      flexShrink: 0,
       fontSize: 9,
       fontWeight: fontWeight.bold,
       overflow: "hidden",
@@ -985,8 +997,11 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     achievementDate: {
       color: colors.muted,
+      flexShrink: 0,
       fontSize: fontSize.caption,
       fontWeight: fontWeight.bold,
+      maxWidth: 82,
+      textAlign: "right",
     },
     modalBackdrop: {
       alignItems: "center",
@@ -1001,6 +1016,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderColor: colors.border,
       borderRadius: radius.lg,
       borderWidth: 1,
+      maxHeight: "82%",
       maxWidth: 390,
       padding: spacing.xl,
       shadowColor: colors.shadow,
@@ -1008,6 +1024,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       shadowOpacity: 0.18,
       shadowRadius: 24,
       elevation: 8,
+      width: "100%",
+    },
+    modalScrollContent: {
+      alignItems: "center",
       width: "100%",
     },
     modalEyebrow: {

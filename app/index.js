@@ -534,7 +534,7 @@ export default function HomeScreen() {
                 +{completionReward.xpEarned} XP
               </Text>
             </View>
-            <Text style={styles.completionPopupTitle} numberOfLines={1}>
+            <Text style={styles.completionPopupTitle} numberOfLines={2}>
               {completionReward.habitName}
             </Text>
             <Text style={styles.completionPopupMeta}>

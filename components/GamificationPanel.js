@@ -4,6 +4,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   UIManager,
@@ -169,31 +170,36 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
     >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
-          <Text style={styles.modalEyebrow}>
-            {earned ? "Earned badge" : "Locked badge"}
-          </Text>
-          <Text style={styles.modalTitle}>{badge.label}</Text>
-          <Text style={styles.modalDescription}>{badge.description}</Text>
-          <View style={styles.modalMetaRow}>
-            <Text style={styles.modalMeta}>{badge.tier}</Text>
-            <Text style={styles.modalMeta}>{badge.rarity}</Text>
-          </View>
-          {!earned ? (
-            <Text style={styles.modalRequirement}>
-              Unlock requirement: {badge.description}
-            </Text>
-          ) : null}
-          <Pressable
-            accessibilityLabel="Close badge details"
-            accessibilityRole="button"
-            onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalButton,
-              pressed && styles.buttonPressed,
-            ]}
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalButtonText}>Close</Text>
-          </Pressable>
+            <Text style={styles.modalEyebrow}>
+              {earned ? "Earned badge" : "Locked badge"}
+            </Text>
+            <Text style={styles.modalTitle}>{badge.label}</Text>
+            <Text style={styles.modalDescription}>{badge.description}</Text>
+            <View style={styles.modalMetaRow}>
+              <Text style={styles.modalMeta}>{badge.tier}</Text>
+              <Text style={styles.modalMeta}>{badge.rarity}</Text>
+            </View>
+            {!earned ? (
+              <Text style={styles.modalRequirement}>
+                Unlock requirement: {badge.description}
+              </Text>
+            ) : null}
+            <Pressable
+              accessibilityLabel="Close badge details"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.modalButton,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -297,6 +303,7 @@ function createStyles(colors) {
     badgeTop: {
       alignItems: "flex-start",
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: spacing.sm,
       justifyContent: "space-between",
     },
@@ -321,6 +328,7 @@ function createStyles(colors) {
     badgeRarity: {
       alignSelf: "flex-start",
       borderRadius: 999,
+      flexShrink: 0,
       overflow: "hidden",
       paddingHorizontal: 9,
       paddingVertical: 3,
@@ -361,6 +369,7 @@ function createStyles(colors) {
       borderRadius: radius.lg,
       borderWidth: 1,
       gap: spacing.sm,
+      maxHeight: "82%",
       maxWidth: 380,
       padding: 20,
       shadowColor: colors.shadow,
@@ -368,6 +377,10 @@ function createStyles(colors) {
       shadowOpacity: 0.18,
       shadowRadius: 24,
       elevation: 8,
+      width: "100%",
+    },
+    modalScrollContent: {
+      alignItems: "center",
       width: "100%",
     },
     modalEyebrow: {
