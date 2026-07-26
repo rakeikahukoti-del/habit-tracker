@@ -275,11 +275,16 @@ export default function HabitDetailsScreen() {
           </View>
 
           <View style={styles.pageHeader}>
-            <View style={[styles.iconBadge, { backgroundColor: color }]}>
+            <View
+              style={[
+                styles.iconBadge,
+                { backgroundColor: color, borderColor: colors.border },
+              ]}
+            >
               <Text style={styles.icon}>{icon}</Text>
             </View>
             <View style={styles.pageHeaderText}>
-              <Text style={styles.eyebrow}>Habit</Text>
+              <Text style={styles.eyebrow}>Edit Habit</Text>
               <Text style={styles.pageTitle} numberOfLines={2}>
                 {habit.name}
               </Text>
@@ -289,23 +294,19 @@ export default function HabitDetailsScreen() {
           <View style={styles.statsCard}>
             <View style={styles.statsHeader}>
               <View>
-                <Text style={styles.cardLabel}>Status</Text>
+                <Text style={styles.cardLabel}>Today</Text>
                 <Text style={styles.statusText}>
-                  {completedToday ? "Completed today" : "Open today"}
+                  {completedToday ? "Complete" : "Open"}
                 </Text>
               </View>
               <ProgressDots days={weeklyProgress} compact />
             </View>
 
             <View style={styles.statsGrid}>
+              <StatBlock label="Current streak" value={currentStreak} styles={styles} />
+              <StatBlock label="Best streak" value={bestStreak} styles={styles} />
               <StatBlock
-                label="Current"
-                value={currentStreak}
-                styles={styles}
-              />
-              <StatBlock label="Best" value={bestStreak} styles={styles} />
-              <StatBlock
-                label="Total"
+                label="Total completions"
                 value={habit.completedDates.length}
                 styles={styles}
               />
@@ -398,16 +399,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignSelf: "center",
     maxWidth: isTablet ? layout.formMaxWidth : "100%",
     padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-    paddingBottom: 28,
+    paddingBottom: 34,
     width: "100%",
   },
   pageHeader: {
     alignItems: "center",
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: spacing.md,
-    marginBottom: spacing.xl,
-    paddingTop: spacing.sm,
+    marginBottom: 22,
+    paddingTop: spacing.md,
   },
   topActions: {
     alignItems: "flex-start",
@@ -419,23 +419,24 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   iconBadge: {
     alignItems: "center",
-    borderRadius: radius.xl,
-    height: 60,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    height: 58,
     justifyContent: "center",
-    width: 60,
+    width: 58,
   },
   icon: {
     fontSize: 31,
   },
   pageHeaderText: {
     flex: 1,
+    minWidth: 0,
   },
   eyebrow: {
     color: colors.primary,
     fontSize: fontSize.caption,
     fontWeight: fontWeight.bold,
     marginBottom: 4,
-    textTransform: "uppercase",
   },
   pageTitle: {
     color: colors.text,
@@ -446,15 +447,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   statsCard: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.xxl,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    marginBottom: spacing.xl,
-    padding: spacing.xl,
+    marginBottom: 18,
+    padding: isSmallScreen ? spacing.lg : spacing.xl,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 1,
   },
   statsHeader: {
     alignItems: "flex-start",
@@ -462,7 +463,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     flexWrap: "wrap",
     gap: 14,
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 18,
   },
   cardLabel: {
     color: colors.muted,
@@ -483,7 +484,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   statBlock: {
     backgroundColor: colors.inputBackground,
-    borderRadius: radius.lg,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
     flexBasis: isSmallScreen ? "100%" : "30%",
     flexGrow: 1,
     padding: 14,
@@ -500,7 +503,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     marginTop: 4,
   },
   form: {
-    gap: 10,
+    gap: spacing.md,
   },
   error: {
     color: colors.danger,
@@ -512,7 +515,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignSelf: "center",
     backgroundColor: colors.background,
     borderTopColor: colors.border,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     gap: 12,
     maxWidth: isTablet ? 760 : "100%",
@@ -522,7 +525,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   deleteButton: {
     alignItems: "center",
     backgroundColor: colors.dangerSoft,
-    borderRadius: radius.lg,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
     flex: 1,
     minHeight: 50,
     justifyContent: "center",
@@ -536,7 +541,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   saveButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     flex: 1,
     minHeight: 50,
     justifyContent: "center",

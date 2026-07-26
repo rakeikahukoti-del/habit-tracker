@@ -30,9 +30,9 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { router } from "expo-router";
 
-const SWIPE_COMPLETE_COLOR = "#3A8B5A";
-const SWIPE_UNDO_COLOR = "#A94C50";
-const SWIPE_THRESHOLD = 38;
+const SWIPE_COMPLETE_COLOR = "#557A60";
+const SWIPE_UNDO_COLOR = "#8A4D50";
+const SWIPE_THRESHOLD = 32;
 const SWIPE_LIMIT = 112;
 
 function HabitCard({
@@ -353,7 +353,7 @@ function HabitCard({
           styles.cardLayer,
         ]}
       >
-      <View style={styles.topRow}>
+        <View style={styles.topRow}>
           <Pressable
             accessibilityActions={[
               { name: "activate", label: "Open details" },
@@ -391,35 +391,40 @@ function HabitCard({
               pressed && styles.cardMainPressed,
             ]}
           >
-          <View style={styles.identity}>
-            <View
-              style={[
-                styles.iconBadge,
-                {
-                  backgroundColor: withAlpha(accentColor, 0.08),
-                  borderColor: withAlpha(accentColor, 0.22),
-                },
-              ]}
-            >
-              <Text style={styles.icon}>{icon}</Text>
-            </View>
+            <View style={styles.identity}>
+              <View
+                style={[
+                  styles.iconBadge,
+                  {
+                    backgroundColor: withAlpha(accentColor, 0.1),
+                    borderColor: withAlpha(accentColor, 0.28),
+                  },
+                ]}
+              >
+                <Text style={styles.icon}>{icon}</Text>
+              </View>
 
-            <View style={styles.titleGroup}>
-              <Text style={styles.name} numberOfLines={1}>
-                {habit.name}
-              </Text>
-              <Text style={styles.category} numberOfLines={1}>
-                {habit.category || "General"}
-              </Text>
+              <View style={styles.titleGroup}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {habit.name}
+                </Text>
+                <Text style={styles.category} numberOfLines={1}>
+                  {habit.category || "General"} · 10 XP
+                </Text>
+              </View>
             </View>
-          </View>
-
           </Pressable>
 
-          <View
-            style={styles.rightActions}
-            pointerEvents="none"
-          >
+          <View style={styles.rightActions} pointerEvents="none">
+            <View
+              style={[
+                styles.completionDot,
+                completedToday && {
+                  backgroundColor: themeAccent,
+                  borderColor: themeAccent,
+                },
+              ]}
+            />
             <View
               accessibilityLabel={`${currentStreak} day streak`}
               style={styles.streakBadge}
@@ -433,11 +438,11 @@ function HabitCard({
               </Text>
             </View>
           </View>
-      </View>
+        </View>
 
-      <View style={styles.weekRow}>
-        <ProgressDots days={weeklyProgress} compact />
-      </View>
+        <View style={styles.weekRow}>
+          <ProgressDots days={weeklyProgress} compact />
+        </View>
       </Animated.View>
     </View>
   );
@@ -457,10 +462,10 @@ function createStyles(colors, isCompact) {
     swipeAction: {
       alignItems: "center",
       borderRadius: radius.lg,
-      borderWidth: 1,
+      borderWidth: 0,
       bottom: 0,
       flexDirection: "row",
-      gap: spacing.sm,
+      gap: spacing.md,
       justifyContent: "flex-start",
       left: 0,
       paddingHorizontal: spacing.xl,
@@ -491,33 +496,35 @@ function createStyles(colors, isCompact) {
     },
     swipeIndicator: {
       alignItems: "center",
-      backgroundColor: "rgba(255, 255, 255, 0.92)",
+      backgroundColor: "rgba(243, 243, 243, 0.92)",
       borderRadius: radius.round,
-      height: 34,
+      height: 32,
       justifyContent: "center",
-      width: 34,
+      width: 32,
     },
     swipeIcon: {
-      color: "#173024",
+      color: "#111111",
       fontSize: fontSize.section,
       fontWeight: fontWeight.bold,
     },
     swipeText: {
-      color: colors.inverseText,
+      color: "#F3F3F3",
       fontSize: fontSize.body,
       fontWeight: fontWeight.bold,
     },
     card: {
       backgroundColor: colors.card,
       borderColor: colors.habitCardBorder || colors.border,
-      borderRadius: radius.xl,
+      borderRadius: radius.lg,
       borderWidth: 1,
       maxWidth: "100%",
-      padding: isCompact ? spacing.md : spacing.lg,
+      minHeight: isCompact ? 86 : 94,
+      paddingHorizontal: isCompact ? spacing.md : spacing.lg,
+      paddingVertical: isCompact ? spacing.md : 15,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.055,
-      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.08,
+      shadowRadius: 16,
       elevation: 1,
       width: "100%",
     },
@@ -525,10 +532,10 @@ function createStyles(colors, isCompact) {
       zIndex: 2,
     },
     cardCompleted: {
-      borderWidth: 2,
-      elevation: 3,
-      shadowOpacity: 0.12,
-      shadowRadius: 14,
+      borderWidth: 1.5,
+      elevation: 2,
+      shadowOpacity: 0.16,
+      shadowRadius: 18,
     },
     topRow: {
       alignItems: "center",
@@ -544,7 +551,7 @@ function createStyles(colors, isCompact) {
       flexShrink: 1,
       gap: spacing.md,
       justifyContent: "space-between",
-      minHeight: 52,
+      minHeight: 50,
       minWidth: 0,
     },
     cardMainPressed: {
@@ -560,11 +567,11 @@ function createStyles(colors, isCompact) {
     },
     iconBadge: {
       alignItems: "center",
-      borderRadius: radius.lg,
+      borderRadius: radius.md,
       borderWidth: 1,
-      height: isCompact ? 42 : 46,
+      height: isCompact ? 42 : 44,
       justifyContent: "center",
-      width: isCompact ? 42 : 46,
+      width: isCompact ? 42 : 44,
     },
     icon: {
       fontSize: isCompact ? 21 : 23,
@@ -576,7 +583,7 @@ function createStyles(colors, isCompact) {
     },
     name: {
       color: colors.text,
-      fontSize: isCompact ? fontSize.bodyLarge : fontSize.cardTitle,
+      fontSize: isCompact ? fontSize.bodyLarge : 17,
       fontWeight: fontWeight.bold,
       letterSpacing: 0,
     },
@@ -584,19 +591,27 @@ function createStyles(colors, isCompact) {
       color: colors.muted,
       fontSize: fontSize.caption,
       fontWeight: fontWeight.regular,
-      marginTop: spacing.xs,
+      marginTop: 3,
     },
     rightActions: {
       alignItems: "center",
       flexDirection: "row",
       flexShrink: 0,
-      gap: spacing.sm,
+      gap: 10,
     },
     weekRow: {
-      marginTop: spacing.md,
+      marginTop: 12,
       maxWidth: "100%",
       paddingTop: 2,
       width: "100%",
+    },
+    completionDot: {
+      backgroundColor: "transparent",
+      borderColor: colors.border,
+      borderRadius: radius.round,
+      borderWidth: 1.5,
+      height: 15,
+      width: 15,
     },
     streakBadge: {
       alignItems: "center",

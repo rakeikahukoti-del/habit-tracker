@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import BottomNav from "../components/BottomNav";
+import { MomentumWolfMark } from "../components/brand";
 import ConfettiBurst from "../components/ConfettiBurst";
 import EmptyState from "../components/EmptyState";
 import HabitCard from "../components/HabitCard";
@@ -392,86 +393,75 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ConfettiBurst trigger={confettiKey} />
       <View style={styles.container}>
+        <View style={styles.todayHeader}>
+          <View>
+            <Text style={styles.todayTitle}>Today</Text>
+            <Text style={styles.todayDate}>{formatTodayDate()}</Text>
+          </View>
+          <MomentumWolfMark
+            color={colors.text}
+            cutoutColor={colors.background}
+            size={34}
+          />
+        </View>
+
         {preferences.showProgressCard ? (
-          <View style={styles.summaryCard}>
-          <View style={styles.summaryTop}>
-            <View>
-              <Text style={styles.summaryLabel}>Today's progress</Text>
-              <Text style={styles.summaryValue}>
-                {completedTodayCount}/{habits.length} complete
+          <View style={styles.progressPanel}>
+            <View style={styles.progressHeader}>
+              <View>
+                <Text style={styles.progressLabel}>Daily progress</Text>
+                <Text style={styles.progressValue}>{completionLabel}</Text>
+              </View>
+              <Text style={styles.progressCount}>
+                {completedTodayCount}/{habits.length}
               </Text>
             </View>
 
-            <View style={styles.percentBadge}>
-              <Text style={styles.percentText}>{completionLabel}</Text>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${completionPercentage}%` },
+                ]}
+              />
             </View>
-          </View>
 
-          <View style={styles.compactSummary}>
-            {preferences.showXpRankOnHome ? (
-              <>
-                <Text style={styles.compactSummaryText}>
-                  Level {levelInfo.level} • {rank}
-                </Text>
-                <Text style={styles.compactSummaryText}>{todayXp} XP today</Text>
-              </>
-            ) : null}
-          </View>
-
-          {progressExpanded ? (
-            <View style={styles.progressDetails}>
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${completionPercentage}%` },
-                  ]}
-                />
-              </View>
-
-              <Text style={styles.motivationText}>{motivation}</Text>
-
-              <View style={styles.summaryStats}>
-                {preferences.showXpRankOnHome ? (
-                  <>
-                    <View style={styles.summaryStat}>
-                      <Text style={styles.summaryStatValue}>{todayXp}</Text>
-                      <Text style={styles.summaryStatLabel}>XP today</Text>
-                    </View>
-                    <View style={styles.summaryStat}>
-                      <Text style={styles.summaryStatValue}>{rank}</Text>
-                      <Text style={styles.summaryStatLabel}>Rank</Text>
-                    </View>
-                  </>
-                ) : null}
-                <View style={styles.summaryStat}>
-                  <Text style={styles.summaryStatValue}>
-                    {longestCurrentStreak}
+            <View style={styles.progressMetaRow}>
+              {preferences.showXpRankOnHome ? (
+                <>
+                  <Text style={styles.progressMeta}>
+                    Level {levelInfo.level}
                   </Text>
-                  <Text style={styles.summaryStatLabel}>Streak</Text>
-                </View>
-              </View>
+                  <Text style={styles.progressMeta}>{todayXp} XP today</Text>
+                </>
+              ) : null}
+              <Text style={styles.progressMeta}>🔥 {longestCurrentStreak}</Text>
             </View>
-          ) : null}
+          </View>
+        ) : null}
 
-          <View style={styles.summaryFooter}>
-            <Pressable
-              accessibilityLabel={
-                progressExpanded ? "Hide progress" : "Show progress"
-              }
-              accessibilityRole="button"
-              onPress={toggleProgressExpanded}
-              style={({ pressed }) => [
-                styles.progressToggle,
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <Text style={styles.progressToggleText}>
-                {progressExpanded ? "Hide progress" : "Show progress"}
-              </Text>
-            </Pressable>
+        {progressExpanded && preferences.showProgressCard ? (
+          <View style={styles.focusNote}>
+            <Text style={styles.focusNoteText}>{motivation}</Text>
           </View>
-          </View>
+        ) : null}
+
+        {preferences.showProgressCard ? (
+          <Pressable
+            accessibilityLabel={
+              progressExpanded ? "Hide progress detail" : "Show progress detail"
+            }
+            accessibilityRole="button"
+            onPress={toggleProgressExpanded}
+            style={({ pressed }) => [
+              styles.progressTextButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.progressTextButtonLabel}>
+              {progressExpanded ? "Hide focus note" : "Show focus note"}
+            </Text>
+          </Pressable>
         ) : null}
 
         {celebration ? (
@@ -548,12 +538,10 @@ export default function HomeScreen() {
         <View style={styles.listHeader}>
           <View style={styles.listHeaderText}>
             <View style={styles.listTitleRow}>
-              <Text style={styles.listTitle}>Today's Habits</Text>
-              <View style={styles.doneBadge}>
-                <Text style={styles.doneBadgeText}>
-                  {completedTodayCount}/{habits.length} done
-                </Text>
-              </View>
+              <Text style={styles.listTitle}>Habits</Text>
+              <Text style={styles.doneBadgeText}>
+                {completedTodayCount}/{habits.length} done
+              </Text>
             </View>
             <Text style={styles.listSubtitle}>{habitsSectionMessage}</Text>
           </View>
@@ -567,7 +555,7 @@ export default function HomeScreen() {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.inlineAddText}>Add</Text>
+            <Text style={styles.inlineAddText}>+ Add</Text>
           </Pressable>
         </View>
 
@@ -789,6 +777,14 @@ function getTodayHabitsMessage(percentage) {
   return "Perfect day complete.";
 }
 
+function formatTodayDate() {
+  return new Date().toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+  });
+}
+
 function getQueuedRewardsFromMessages(messages, gamification, preferences) {
   const levelInfo = getGamificationLevelInfo(gamification);
   const levelMessage = messages.find((message) => message.type === "level");
@@ -961,6 +957,96 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     paddingHorizontal: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
     overflow: "hidden",
     width: "100%",
+  },
+  todayHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 18,
+    paddingTop: isSmallScreen ? 8 : 14,
+  },
+  todayTitle: {
+    color: colors.text,
+    fontSize: isSmallScreen ? 26 : 30,
+    fontWeight: fontWeight.bold,
+    lineHeight: isSmallScreen ? 31 : 36,
+  },
+  todayDate: {
+    color: colors.muted,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+    marginTop: 3,
+  },
+  progressPanel: {
+    borderBottomColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+    marginBottom: 10,
+    paddingVertical: 16,
+  },
+  progressHeader: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  progressLabel: {
+    color: colors.muted,
+    fontSize: fontSize.label,
+    fontWeight: fontWeight.medium,
+    marginBottom: 4,
+  },
+  progressValue: {
+    color: colors.text,
+    fontSize: isSmallScreen ? 30 : 36,
+    fontWeight: fontWeight.bold,
+    lineHeight: isSmallScreen ? 35 : 42,
+  },
+  progressCount: {
+    color: colors.text,
+    fontSize: fontSize.section,
+    fontWeight: fontWeight.bold,
+    paddingBottom: 5,
+  },
+  progressMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  progressMeta: {
+    color: colors.muted,
+    fontSize: fontSize.label,
+    fontWeight: fontWeight.medium,
+  },
+  focusNote: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  focusNoteText: {
+    color: colors.muted,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+    lineHeight: lineHeight.body,
+  },
+  progressTextButton: {
+    alignSelf: "flex-start",
+    marginBottom: 10,
+    minHeight: 34,
+    paddingRight: 12,
+    paddingVertical: 6,
+  },
+  progressTextButtonLabel: {
+    color: colors.primary,
+    fontSize: fontSize.label,
+    fontWeight: fontWeight.bold,
   },
   summaryCard: {
     backgroundColor: colors.card,
@@ -1216,8 +1302,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     flexDirection: "row",
     gap: 12,
     justifyContent: "space-between",
-    paddingBottom: 8,
-    paddingTop: 4,
+    paddingBottom: 10,
+    paddingTop: 10,
     width: "100%",
   },
   listHeaderText: {
@@ -1233,7 +1319,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   listTitle: {
     color: colors.text,
-    fontSize: fontSize.section,
+    fontSize: isSmallScreen ? fontSize.cardTitle : fontSize.section,
     fontWeight: fontWeight.bold,
   },
   listSubtitle: {
@@ -1252,23 +1338,23 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     paddingVertical: 5,
   },
   doneBadgeText: {
-    color: colors.primary,
+    color: colors.muted,
     fontSize: fontSize.caption,
     fontWeight: fontWeight.bold,
   },
   inlineAddButton: {
     alignItems: "center",
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.round,
+    borderRadius: radius.lg,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 42,
-    minWidth: 64,
+    minHeight: 44,
+    minWidth: 76,
     paddingHorizontal: 14,
   },
   inlineAddText: {
-    color: colors.primary,
+    color: colors.text,
     fontSize: fontSize.label,
     fontWeight: fontWeight.bold,
   },

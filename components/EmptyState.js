@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
+import { MomentumWolfMark } from "./brand";
 import {
   fontSize,
   fontWeight,
@@ -15,13 +16,15 @@ export default function EmptyState() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.iconBadge}>
-        <Text style={styles.icon}>🌱</Text>
-      </View>
+      <MomentumWolfMark
+        color={colors.text}
+        cutoutColor={colors.card}
+        size={72}
+        style={styles.mark}
+      />
       <Text style={styles.title}>No habits yet</Text>
       <Text style={styles.message}>
-        Add one small habit to start your daily check-in. After that, swipe it
-        complete from Home.
+        Start with one small promise to yourself.
       </Text>
       <Link href="/add" asChild>
         <Pressable
@@ -33,7 +36,7 @@ export default function EmptyState() {
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.buttonText}>Create habit</Text>
+          <Text style={styles.buttonText}>Create First Habit</Text>
         </Pressable>
       </Link>
     </View>
@@ -46,27 +49,19 @@ function createStyles(colors) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.xxl,
+      borderRadius: radius.lg,
       borderWidth: 1,
-      marginTop: spacing.xxl,
-      padding: spacing.xxl,
+      marginTop: spacing.xl,
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: 36,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.06,
-      shadowRadius: 18,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.08,
+      shadowRadius: 16,
+      elevation: 1,
     },
-    iconBadge: {
-      alignItems: "center",
-      backgroundColor: colors.accentSoft,
-      borderRadius: radius.xxl,
-      height: 64,
-      justifyContent: "center",
+    mark: {
       marginBottom: spacing.xl,
-      width: 64,
-    },
-    icon: {
-      fontSize: fontSize.display,
     },
     title: {
       color: colors.text,
@@ -79,6 +74,7 @@ function createStyles(colors) {
       fontSize: fontSize.bodyLarge,
       lineHeight: lineHeight.bodyLarge,
       marginBottom: spacing.xl,
+      maxWidth: 260,
       textAlign: "center",
     },
     button: {

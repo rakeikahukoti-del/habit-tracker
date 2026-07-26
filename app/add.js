@@ -145,10 +145,10 @@ export default function AddHabitScreen() {
           </View>
 
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>New habit</Text>
-            <Text style={styles.title}>Create habit</Text>
+            <Text style={styles.eyebrow}>New Habit</Text>
+            <Text style={styles.title}>Create a habit</Text>
             <Text style={styles.subtitle}>
-              Pick something small enough to repeat tomorrow.
+              Choose one promise you can repeat tomorrow.
             </Text>
           </View>
 
@@ -215,13 +215,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "flex-end",
-    paddingTop: 6,
+    paddingTop: 4,
   },
   cancelButton: {
     alignItems: "center",
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.round,
+    borderRadius: radius.lg,
     borderWidth: 1,
     justifyContent: "center",
     minHeight: layout.minTapTarget,
@@ -233,15 +233,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontWeight: fontWeight.bold,
   },
   header: {
-    marginBottom: spacing.xxl,
-    paddingTop: spacing.sm,
+    marginBottom: spacing.xl,
+    paddingTop: spacing.md,
   },
   eyebrow: {
     color: colors.primary,
     fontSize: fontSize.label,
     fontWeight: fontWeight.bold,
     marginBottom: 6,
-    textTransform: "uppercase",
   },
   title: {
     color: colors.text,
@@ -265,7 +264,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   saveButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     justifyContent: "center",
     minHeight: 52,
     paddingVertical: 16,

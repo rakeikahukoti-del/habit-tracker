@@ -60,8 +60,8 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
         <View style={styles.headerText}>
           <Text style={styles.title}>Calendar</Text>
           <Text style={styles.subtitle}>
-            {completedCount} days complete
-            {onToggleDate ? " • tap days to edit" : ""}
+            {completedCount} complete this month
+            {onToggleDate ? " · tap to edit" : ""}
           </Text>
         </View>
 
@@ -76,7 +76,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.monthButtonText}>‹</Text>
+          <Text style={styles.monthButtonText}>{"<"}</Text>
           </Pressable>
           <Text numberOfLines={1} style={styles.monthTitle}>
             {visibleMonth.toLocaleDateString(undefined, {
@@ -97,7 +97,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               pressed && canGoNext && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.monthButtonText}>›</Text>
+            <Text style={styles.monthButtonText}>{">"}</Text>
           </Pressable>
         </View>
       </View>
@@ -193,7 +193,7 @@ function createStyles(colors, isSmallScreen) {
     card: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.xxl,
+      borderRadius: radius.lg,
       borderWidth: 1,
       marginBottom: spacing.xl,
       padding: isSmallScreen ? spacing.lg : spacing.xl,
@@ -207,7 +207,7 @@ function createStyles(colors, isSmallScreen) {
     },
     title: {
       color: colors.text,
-      fontSize: fontSize.section,
+      fontSize: fontSize.cardTitle,
       fontWeight: fontWeight.bold,
     },
     subtitle: {
@@ -228,7 +228,7 @@ function createStyles(colors, isSmallScreen) {
       alignItems: "center",
       backgroundColor: colors.inputBackground,
       borderColor: colors.border,
-      borderRadius: radius.round,
+      borderRadius: radius.md,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: 44,
@@ -242,15 +242,15 @@ function createStyles(colors, isSmallScreen) {
       transform: [{ scale: 0.96 }],
     },
     monthButtonText: {
-      color: colors.primary,
-      fontSize: 24,
+      color: colors.text,
+      fontSize: 18,
       fontWeight: fontWeight.bold,
       lineHeight: 26,
     },
     monthTitle: {
       color: colors.text,
       flex: 1,
-      fontSize: fontSize.bodyLarge,
+      fontSize: fontSize.body,
       fontWeight: fontWeight.bold,
       textAlign: "center",
     },
@@ -278,20 +278,20 @@ function createStyles(colors, isSmallScreen) {
     dayCell: {
       alignItems: "center",
       aspectRatio: 1,
-      backgroundColor: colors.inputBackground,
+      backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.sm,
+      borderRadius: radius.md,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: isSmallScreen ? 40 : 44,
       width: "100%",
     },
     dayCompleted: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primarySoft,
       borderColor: colors.primary,
     },
     todayCell: {
-      borderColor: colors.warning,
+      borderColor: colors.text,
       borderWidth: 2,
     },
     futureCell: {
@@ -303,7 +303,7 @@ function createStyles(colors, isSmallScreen) {
       fontWeight: fontWeight.bold,
     },
     dayNumberCompleted: {
-      color: colors.inverseText,
+      color: colors.text,
     },
     todayNumber: {
       color: colors.text,
