@@ -9,7 +9,8 @@
     "start:high-files": "ulimit -n 65536 && expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "node scripts/logic-smoke-test.cjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

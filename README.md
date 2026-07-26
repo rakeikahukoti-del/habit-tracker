@@ -1,22 +1,20 @@
 # Momentum
 
-Momentum is a polished mobile habit tracker built with React Native and Expo. It is designed as a simple portfolio-ready MVP: fast to run, easy to understand, and fully local with no backend.
+Momentum is an offline-first mobile habit tracker built with React Native and Expo. It is designed for personal habit tracking, daily completion, progress review, and portfolio/demo use without a backend or account system.
 
 ## Features
 
-- Create, edit, and delete habits
-- Mark habits complete for today
-- Prevent duplicate completions on the same day
-- Track current streak and best streak
-- Show weekly progress on each habit card
-- View a 30-day history grid for each habit
-- View app-wide stats, including weekly completion percentage
-- Add habit emoji, category, color, frequency, and optional reminder time
-- Schedule local daily/weekly habit reminders with Expo Notifications
-- Load demo data for presentations
-- Reset all local data with confirmation
-- Light, dark, and system theme preferences
-- Works entirely with local storage
+- Create, edit, delete, complete, and undo habits
+- Emoji, category, color, frequency, custom days, and optional reminder time
+- Swipe completion, monthly history editing, and manual habit reordering
+- Current streak, best streak, weekly progress, monthly calendar, and analytics
+- XP, levels, ranks, badges, recent achievements, and rank theme unlocks
+- Progress dashboard, Analytics, Rank, Settings, Appearance, and Legal screens
+- Local notifications for habit reminders with permission-safe fallback
+- Light, Dark, System, and unlockable rank themes
+- Demo data and Master demo data for portfolio walkthroughs
+- JSON export/import for local backup transfer
+- Fully local AsyncStorage persistence
 
 ## Tech Stack
 
@@ -25,43 +23,8 @@ Momentum is a polished mobile habit tracker built with React Native and Expo. It
 - Expo Router
 - AsyncStorage
 - Expo Notifications
+- Expo Haptics
 - JavaScript
-
-## Project Structure
-
-```text
-app/
-  index.js           Home screen
-  add.js             Add habit screen
-  stats.js           Stats screen
-  settings.js        Settings screen
-  privacy.js         Privacy Policy screen
-  terms.js           Terms of Use screen
-  disclaimer.js      Disclaimer screen
-  habit/[id].js      Habit details and edit screen
-
-components/
-  EmptyState.js
-  HabitCard.js
-  HabitFormFields.js
-  HabitHistoryGrid.js
-  LegalScreen.js
-  ProgressDots.js
-
-constants/
-  appConfig.js
-  colors.js
-  habitOptions.js
-
-notifications/
-  habitNotifications.js
-
-storage/
-  habitsStorage.js
-
-utils/
-  habitStats.js
-```
 
 ## Setup
 
@@ -74,44 +37,110 @@ npm install
 Start the app:
 
 ```sh
-watchman watch-del-all
 npm run start:clear
 ```
 
-Then open it with Expo Go, an iOS Simulator, or an Android Emulator.
+If your machine hits file watcher limits, use:
 
-## Configuration
+```sh
+npm run start:high-files
+```
 
-Demo controls are enabled from:
+Then open the app with Expo Go, an iOS Simulator, an Android Emulator, or a native development build.
+
+## Verification
+
+Run the lightweight logic smoke tests:
+
+```sh
+npm test
+```
+
+Run the Expo export check:
+
+```sh
+npx expo export --platform ios --output-dir /private/tmp/momentum-export
+```
+
+There is no lint script configured yet.
+
+## Project Structure
+
+```text
+app/                         Expo Router screens
+components/                  Reusable app, habit, brand, progression, settings, and UI components
+constants/                   App config, colors, habit options, quotes, typography
+context/                     Theme provider and theme persistence
+docs/                        QA and release documentation
+notifications/               Expo Notifications scheduling helpers
+scripts/                     Local verification scripts
+src/design/                  Momentum v2 design tokens
+storage/                     AsyncStorage helpers and data normalization
+utils/                       Habit stats, analytics, and color utilities
+```
+
+## Local Data Model
+
+Momentum stores data only on the user's device.
+
+| Storage key | Owner | Data | Fallback |
+| --- | --- | --- | --- |
+| `habit-tracker:habits` | Habits | Habit array with completion dates, order, and notification metadata | Invalid JSON is backed up and the app uses an empty list |
+| `habit-tracker:habits-backup` | Recovery | Raw unreadable habits JSON | Kept for manual recovery |
+| `habit-tracker:gamification` | Rewards | XP, earned badge IDs, perfect-day dates, pending messages, recent achievements | Invalid data normalizes to empty progress |
+| `momentum:app-preferences` | Preferences | Boolean app preferences | Missing/invalid values use defaults |
+| `momentum:move-completed-to-bottom` | Legacy preference | Legacy completed-order fallback | Preserved for older installs |
+| `momentum:theme-preference` | Appearance | Theme key | Unknown values fall back through the theme provider |
+| `momentum:onboarding-complete` | Onboarding | Completion flag | Missing value shows onboarding |
+| `momentum:last-shown-level` | Rewards | Last displayed level-up popup | Invalid value falls back to level 1 |
+
+## Notifications
+
+Momentum uses Expo Notifications for local habit reminders.
+
+- Permission is requested only when a habit reminder needs scheduling.
+- If permission is denied or blocked, habits still save and the app remains usable.
+- Updating habit reminder fields cancels stale notifications before scheduling new ones.
+- Deleting habits or resetting data cancels scheduled reminders.
+- Expo Go notification behavior can vary by platform. Use a development build or native build for final notification QA.
+
+## Demo Data
+
+Settings includes demo controls when `SHOW_DEMO_TOOLS` is enabled in:
 
 ```text
 constants/appConfig.js
 ```
 
-Set `SHOW_DEMO_TOOLS` to `false` before using the app as a non-demo build.
+Demo data replaces current habits after confirmation. Export JSON first if you need a backup.
 
-## Demo Tips
+## Known Limitations
 
-Use the **Demo data** button on the Settings screen to quickly populate the app with sample habits and progress. Use **Reset all data** to clear all local habits and scheduled reminders.
+- Data is local to one device.
+- There is no cloud sync, account system, or automatic backup.
+- Uninstalling the app or clearing app data can remove habits and history.
+- Notifications depend on device permissions, OS settings, and platform behavior.
+- Store bundle identifiers, support contact details, and final legal review require owner input before public release.
 
-Reminder times use 24-hour format, for example:
+## QA and Release Checklist
 
-```text
-08:30
-19:15
-```
+Use [docs/production-qa-matrix.md](docs/production-qa-matrix.md) before demos or releases.
 
-If notification permission is denied, the app still saves habits and works normally.
+Owner-confirmed items before App Store or Play Store release:
 
-For the most accurate notification testing, use a development build or native build. Expo Go is useful for UI demos, but notification behavior can vary by platform and Expo Go version.
-
-The Settings screen includes Light, Dark, and System theme options. Theme preference is saved locally with AsyncStorage.
+- Version and build number
+- Bundle identifiers
+- App icon and splash assets
+- Privacy, Terms, and Disclaimer review
+- Notification behavior on physical iOS and Android devices
+- Accessibility pass with large text and screen reader
+- Store screenshots and copy
+- Support/contact information
+- Backup branch or tag
 
 ## Future Improvements
 
-- Add searchable habit lists
-- Add habit archive instead of permanent delete
-- Add richer frequency logic for completion eligibility
-- Add charts for monthly progress
-- Add import/export for local data backup
-- Add automated tests for streak and stats utilities
+- Add automated unit coverage for more storage and progression helpers
+- Add optional archive flow instead of permanent habit deletion
+- Add native build profiles when bundle identifiers are confirmed
+- Add screenshot assets after final device QA

@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import AppErrorBoundary from "../components/AppErrorBoundary";
 import { MomentumLogo } from "../components/brand";
 import { fontWeight } from "../constants/typography";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
@@ -10,9 +11,11 @@ import { v2Colors, v2Spacing } from "../src/design";
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <ThemedStack />
-      </ThemeProvider>
+      <AppErrorBoundary>
+        <ThemeProvider>
+          <ThemedStack />
+        </ThemeProvider>
+      </AppErrorBoundary>
     </SafeAreaProvider>
   );
 }
@@ -50,6 +53,7 @@ function ThemedStack() {
         <Stack.Screen name="analytics/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="rank" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
+        <Stack.Screen name="appearance" options={{ headerShown: false }} />
         <Stack.Screen name="habit-preferences" options={{ headerShown: false }} />
         <Stack.Screen name="reorder-habits" options={{ headerShown: false }} />
         <Stack.Screen
