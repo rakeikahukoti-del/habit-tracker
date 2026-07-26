@@ -12,6 +12,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import ProgressDots from "../components/ProgressDots";
+import { BackIcon, IconButton } from "../components/ui";
 import {
   fontSize,
   fontWeight,
@@ -79,15 +80,13 @@ export default function AnalyticsScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
+        <IconButton
           accessibilityLabel="Back to Progress"
-          accessibilityRole="button"
-          hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={goBackToStats}
           style={styles.backButton}
         >
-          <Text style={styles.backButtonText}>← Progress</Text>
-        </Pressable>
+          <BackIcon />
+        </IconButton>
 
         <View style={styles.header}>
           <Text style={styles.eyebrow}>Analytics</Text>
@@ -287,21 +286,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       paddingTop: spacing.sm,
     },
     backButton: {
-      alignItems: "center",
       alignSelf: "flex-start",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.round,
-      borderWidth: 1,
-      justifyContent: "center",
       marginBottom: spacing.lg,
-      minHeight: layout.minTapTarget,
-      paddingHorizontal: spacing.lg,
-    },
-    backButtonText: {
-      color: colors.primary,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
     },
     eyebrow: {
       color: colors.primary,

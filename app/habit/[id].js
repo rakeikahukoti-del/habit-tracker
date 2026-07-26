@@ -15,6 +15,7 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import HabitFormFields from "../../components/HabitFormFields";
 import HabitHistoryGrid from "../../components/HabitHistoryGrid";
 import ProgressDots from "../../components/ProgressDots";
+import { BackIcon, IconButton } from "../../components/ui";
 import {
   DEFAULT_HABIT_CATEGORY,
   DEFAULT_HABIT_COLOR,
@@ -264,18 +265,13 @@ export default function HabitDetailsScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.topActions}>
-            <Pressable
+            <IconButton
               accessibilityLabel="Back to Home"
-              accessibilityRole="button"
-              hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
               onPress={() => router.replace("/")}
-              style={({ pressed }) => [
-                styles.homeButton,
-                pressed && styles.buttonPressed,
-              ]}
+              style={styles.homeButton}
             >
-              <Text style={styles.homeButtonText}>← Home</Text>
-            </Pressable>
+              <BackIcon />
+            </IconButton>
           </View>
 
           <View style={styles.pageHeader}>
@@ -419,20 +415,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     zIndex: 3,
   },
   homeButton: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: radius.round,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  homeButtonText: {
-    color: colors.primary,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    alignSelf: "flex-start",
   },
   iconBadge: {
     alignItems: "center",

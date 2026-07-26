@@ -5,15 +5,27 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "habittracker",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0D0D0D",
+    "icon": "./assets/momentum-icon.png",
     "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/momentum-splash.png",
+      "backgroundColor": "#0D0D0D",
+      "resizeMode": "contain"
+    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F7F3EA"
+        "foregroundImage": "./assets/momentum-adaptive-icon.png",
+        "backgroundColor": "#0D0D0D"
       }
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#0D0D0D",
+      "barStyle": "light-content"
     },
     "web": {
       "bundler": "metro"

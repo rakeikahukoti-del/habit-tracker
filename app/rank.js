@@ -431,7 +431,12 @@ function BadgeDetailModal({ badge, earned, onClose, styles, visible }) {
   }
 
   return (
-    <Modal transparent animationType="fade" visible={visible}>
+    <Modal
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      visible={visible}
+    >
       <View style={styles.badgeModalBackdrop}>
         <View style={styles.badgeModalCard}>
           <View style={[styles.badgeModalIcon, getBadgeIconStyle(badge.tier)]}>
@@ -534,7 +539,12 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
   }
 
   return (
-    <Modal transparent animationType="fade" visible={visible}>
+    <Modal
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      visible={visible}
+    >
       <View style={styles.badgeModalBackdrop}>
         <View style={styles.badgeModalCard}>
           <View style={styles.achievementModalIcon}>
@@ -918,10 +928,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.xxl,
+      borderRadius: radius.lg,
       borderWidth: 1,
       maxWidth: 390,
       padding: 20,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 14 },
+      shadowOpacity: 0.18,
+      shadowRadius: 24,
+      elevation: 8,
       width: "100%",
     },
     badgeModalIcon: {

@@ -1,5 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import { v2Colors, v2Layout, v2Spacing } from "../../src/design";
+import BackIcon from "./BackIcon";
 import AppText from "./AppText";
 import IconButton from "./IconButton";
 
@@ -15,7 +16,7 @@ export default function AppHeader({
       <View style={styles.side}>
         {onBack ? (
           <IconButton accessibilityLabel={backLabel} onPress={onBack}>
-            {"<"}
+            <BackIcon />
           </IconButton>
         ) : null}
       </View>

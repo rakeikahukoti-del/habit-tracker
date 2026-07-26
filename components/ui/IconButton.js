@@ -16,6 +16,8 @@ export default function IconButton({
   style,
   ...props
 }) {
+  const isTextIcon = typeof children === "string" || typeof children === "number";
+
   return (
     <PressableScale
       {...props}
@@ -33,13 +35,17 @@ export default function IconButton({
         style,
       ]}
     >
-      <AppText
-        align="center"
-        color={disabled ? v2Colors.textDisabled : color}
-        style={styles.icon}
-      >
-        {children}
-      </AppText>
+      {isTextIcon ? (
+        <AppText
+          align="center"
+          color={disabled ? v2Colors.textDisabled : color}
+          style={styles.icon}
+        >
+          {children}
+        </AppText>
+      ) : (
+        children
+      )}
     </PressableScale>
   );
 }

@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { BackIcon, IconButton } from "../components/ui";
 import {
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
@@ -180,18 +181,13 @@ export default function ReorderHabitsScreen() {
         scrollEnabled={!draggingId}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
+        <IconButton
           accessibilityLabel="Back to Habit Preferences"
-          accessibilityRole="button"
-          hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={() => router.replace("/habit-preferences")}
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.buttonPressed,
-          ]}
+          style={styles.backButton}
         >
-          <Text style={styles.backButtonText}>← Habits</Text>
-        </Pressable>
+          <BackIcon />
+        </IconButton>
 
         <Text style={styles.eyebrow}>Habits</Text>
         <Text style={styles.title}>Reorder habits</Text>
@@ -328,21 +324,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       width: "100%",
     },
     backButton: {
-      alignItems: "center",
       alignSelf: "flex-start",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: radius.round,
-      borderWidth: 1,
-      justifyContent: "center",
       marginBottom: spacing.lg,
-      minHeight: layout.minTapTarget,
-      paddingHorizontal: spacing.lg,
-    },
-    backButtonText: {
-      color: colors.primary,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
     },
     eyebrow: {
       color: colors.primary,

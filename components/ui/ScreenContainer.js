@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { v2Colors, v2Layout } from "../../src/design";
@@ -9,7 +8,6 @@ export default function ScreenContainer({
   children,
   contentStyle,
   scroll = false,
-  statusBarStyle = "light",
   style,
 }) {
   const Body = scroll ? ScrollView : View;
@@ -33,7 +31,6 @@ export default function ScreenContainer({
       };
   const screen = (
     <SafeAreaView style={[styles.safeArea, style]}>
-      <StatusBar style={statusBarStyle} />
       <Body {...bodyProps}>{children}</Body>
     </SafeAreaView>
   );

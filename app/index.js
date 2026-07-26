@@ -604,6 +604,7 @@ export default function HomeScreen() {
       <Modal
         transparent
         animationType="fade"
+        onRequestClose={() => setLevelUp(null)}
         visible={Boolean(levelUp) && !completionReward && !perfectDay}
       >
         <View style={styles.levelModalBackdrop}>
@@ -646,6 +647,7 @@ export default function HomeScreen() {
       <Modal
         transparent
         animationType="fade"
+        onRequestClose={() => setThemeUnlock(null)}
         visible={Boolean(themeUnlock) && !completionReward && !perfectDay && !levelUp}
       >
         <View style={styles.levelModalBackdrop}>
@@ -696,6 +698,7 @@ export default function HomeScreen() {
       <Modal
         transparent
         animationType="fade"
+        onRequestClose={() => setPerfectDay(null)}
         visible={Boolean(perfectDay) && !completionReward}
       >
         <View style={styles.levelModalBackdrop}>
@@ -1310,13 +1313,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     padding: 24,
   },
   levelModalCard: {
+    alignItems: "stretch",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.xxl,
+    borderRadius: radius.lg,
     borderWidth: 1,
     maxWidth: 360,
-    alignItems: "stretch",
     padding: 22,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
     width: "100%",
   },
   rankIcon: {

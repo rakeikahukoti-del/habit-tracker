@@ -1,6 +1,5 @@
 import {
   SafeAreaView,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { router } from "expo-router";
+import { BackIcon, IconButton } from "./ui";
 import {
   fontSize,
   fontWeight,
@@ -33,15 +33,13 @@ export default function LegalScreen({ title, body }) {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
+        <IconButton
           accessibilityLabel="Back to Settings"
-          accessibilityRole="button"
-          hitSlop={{ bottom: 10, left: 10, right: 10, top: 10 }}
           onPress={goBackSafely}
           style={styles.backButton}
         >
-          <Text style={styles.backButtonText}>← Settings</Text>
-        </Pressable>
+          <BackIcon />
+        </IconButton>
         <Text style={styles.eyebrow}>Momentum</Text>
         <Text style={styles.title}>{title}</Text>
 
@@ -75,21 +73,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     width: "100%",
   },
   backButton: {
-    alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: radius.round,
-    borderWidth: 1,
-    justifyContent: "center",
     marginBottom: spacing.lg,
-    minHeight: layout.minTapTarget,
-    paddingHorizontal: 14,
-  },
-  backButtonText: {
-    color: colors.primary,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
   },
   eyebrow: {
     color: colors.primary,

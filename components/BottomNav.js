@@ -1,12 +1,15 @@
+import * as Haptics from "expo-haptics";
 import { router, usePathname } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { fontWeight } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
+import { v2Layout } from "../src/design";
 
 const navItems = [
-  { href: "/", key: "home", label: "Home" },
-  { href: "/stats", key: "stats", label: "Stats" },
-  { href: "/add", key: "add", label: "Add" },
+  { href: "/", key: "today", label: "Today" },
+  { href: "/stats", key: "progress", label: "Progress" },
+  { href: "/analytics", key: "analytics", label: "Analytics" },
   { href: "/rank", key: "rank", label: "Rank" },
   { href: "/settings", key: "settings", label: "Settings" },
 ];
@@ -19,40 +22,48 @@ export default function BottomNav() {
 
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>
-      <View style={styles.nav}>
+      <View accessibilityRole="tablist" style={styles.nav}>
         {navItems.map((item) => {
           const active = isActiveRoute(pathname, item.href);
-          const isAdd = item.key === "add";
 
           return (
-            <View key={item.key} style={styles.slot}>
-              <Pressable
-                accessibilityLabel={`${item.label}${active ? ", selected" : ""}`}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                android_ripple={{ color: colors.primarySoft, borderless: true }}
-                hitSlop={{ bottom: 12, left: 10, right: 10, top: 12 }}
-                onPress={() => {
-                  if (!active) {
-                    router.push(item.href);
-                  }
-                }}
-                style={({ pressed }) => [
-                  styles.item,
-                  active && styles.itemActive,
-                  isAdd && styles.addItem,
-                  pressed &&
-                    (active ? styles.itemActivePressed : styles.itemPressed),
-                ]}
+            <Pressable
+              accessibilityLabel={`${item.label}${active ? ", selected" : ""}`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              android_ripple={{ color: colors.primarySoft, borderless: false }}
+              hitSlop={{ bottom: 8, left: 4, right: 4, top: 8 }}
+              key={item.key}
+              onPress={() => {
+                if (!active) {
+                  triggerNavigationFeedback();
+                  router.push(item.href);
+                }
+              }}
+              style={({ pressed }) => [
+                styles.item,
+                pressed && styles.itemPressed,
+              ]}
+            >
+              <View
+                style={[styles.indicator, active && styles.indicatorActive]}
+              />
+              <NavIcon
+                active={active}
+                colors={colors}
+                name={item.key}
+                styles={styles}
+              />
+              <Text
+                adjustsFontSizeToFit
+                maxFontSizeMultiplier={1.2}
+                minimumFontScale={0.86}
+                numberOfLines={1}
+                style={[styles.label, active && styles.labelActive]}
               >
-                <NavIcon
-                  active={active}
-                  colors={colors}
-                  name={item.key}
-                  styles={styles}
-                />
-              </Pressable>
-            </View>
+                {item.label}
+              </Text>
+            </Pressable>
           );
         })}
       </View>
@@ -61,48 +72,40 @@ export default function BottomNav() {
 }
 
 function NavIcon({ active, colors, name, styles }) {
-  const iconColor = active ? colors.primary : colors.softText;
+  const iconColor = active ? colors.text : colors.softText;
+  const stroke = active ? styles.strokeActive : styles.stroke;
 
-  if (name === "home") {
+  if (name === "today") {
     return (
       <View style={styles.iconBox}>
-        <View style={[styles.homeRoof, { borderColor: iconColor }]} />
-        <View style={[styles.homeBody, { borderColor: iconColor }]} />
+        <View style={[styles.calendar, stroke, { borderColor: iconColor }]}>
+          <View style={[styles.calendarLine, { backgroundColor: iconColor }]} />
+          <View style={[styles.calendarDot, { backgroundColor: iconColor }]} />
+        </View>
       </View>
     );
   }
 
-  if (name === "stats") {
+  if (name === "progress") {
     return (
-      <View style={[styles.iconBox, styles.chartBox]}>
-        {[10, 16, 22].map((height, index) => (
+      <View style={[styles.iconBox, styles.progressIcon]}>
+        {[8, 14, 20].map((height) => (
           <View
             key={height}
-            style={[
-              styles.chartBar,
-              {
-                backgroundColor: iconColor,
-                height,
-                opacity: index === 0 && !active ? 0.72 : 1,
-              },
-            ]}
+            style={[styles.bar, { backgroundColor: iconColor, height }]}
           />
         ))}
       </View>
     );
   }
 
-  if (name === "add") {
+  if (name === "analytics") {
     return (
       <View style={styles.iconBox}>
-        <View style={[styles.plusLine, { backgroundColor: iconColor }]} />
-        <View
-          style={[
-            styles.plusLine,
-            styles.plusLineVertical,
-            { backgroundColor: iconColor },
-          ]}
-        />
+        <View style={[styles.axisVertical, { backgroundColor: iconColor }]} />
+        <View style={[styles.axisHorizontal, { backgroundColor: iconColor }]} />
+        <View style={[styles.trendA, { backgroundColor: iconColor }]} />
+        <View style={[styles.trendB, { backgroundColor: iconColor }]} />
       </View>
     );
   }
@@ -110,7 +113,7 @@ function NavIcon({ active, colors, name, styles }) {
   if (name === "rank") {
     return (
       <View style={styles.iconBox}>
-        <View style={[styles.trophyCup, { borderColor: iconColor }]} />
+        <View style={[styles.trophyCup, stroke, { borderColor: iconColor }]} />
         <View style={[styles.trophyStem, { backgroundColor: iconColor }]} />
         <View style={[styles.trophyBase, { backgroundColor: iconColor }]} />
       </View>
@@ -119,14 +122,14 @@ function NavIcon({ active, colors, name, styles }) {
 
   return (
     <View style={styles.iconBox}>
-      <View style={[styles.gearCircle, { borderColor: iconColor }]}>
-        <View style={[styles.gearDot, { backgroundColor: iconColor }]} />
+      <View style={[styles.gearOuter, stroke, { borderColor: iconColor }]}>
+        <View style={[styles.gearInner, { backgroundColor: iconColor }]} />
       </View>
       <View style={[styles.gearTick, { backgroundColor: iconColor }]} />
       <View
         style={[
           styles.gearTick,
-          styles.gearTickHorizontal,
+          styles.gearTickCross,
           { backgroundColor: iconColor },
         ]}
       />
@@ -134,167 +137,196 @@ function NavIcon({ active, colors, name, styles }) {
   );
 }
 
+function triggerNavigationFeedback() {
+  Haptics.selectionAsync().catch(() => {
+    // Haptics are optional shell feedback and should never affect navigation.
+  });
+}
+
 function isActiveRoute(pathname, href) {
   if (href === "/") {
     return pathname === "/";
-  }
-
-  if (href === "/stats" && pathname === "/analytics") {
-    return true;
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function createStyles(colors, bottomInset) {
+  const bottomPadding = Math.max(10, bottomInset);
+
   return StyleSheet.create({
     wrapper: {
-      alignSelf: "center",
-      maxWidth: 760,
-      paddingBottom: Math.max(10, bottomInset),
-      paddingHorizontal: 12,
-      paddingTop: 4,
+      backgroundColor: colors.background,
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      paddingBottom: bottomPadding,
+      paddingHorizontal: 8,
+      paddingTop: 6,
       width: "100%",
       zIndex: 50,
     },
     nav: {
-      alignItems: "center",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 30,
-      borderWidth: 1,
+      alignSelf: "center",
+      backgroundColor: colors.background,
       flexDirection: "row",
       justifyContent: "space-between",
-      minHeight: 76,
-      paddingHorizontal: 8,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.14,
-      shadowRadius: 22,
-      elevation: 12,
-    },
-    slot: {
-      alignItems: "center",
-      flex: 1,
-      height: 76,
-      justifyContent: "center",
-      minWidth: 58,
+      maxWidth: 760,
+      minHeight: 64,
+      width: "100%",
     },
     item: {
       alignItems: "center",
-      borderRadius: 24,
-      height: 56,
+      flex: 1,
+      gap: 3,
       justifyContent: "center",
-      minWidth: 56,
+      minHeight: 58,
+      minWidth: v2Layout.minTapTarget,
+      paddingHorizontal: 2,
       transform: [{ scale: 1 }],
     },
-    itemActive: {
-      backgroundColor: colors.primarySoft,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 5 },
-      shadowOpacity: 0.18,
-      shadowRadius: 12,
-      elevation: 4,
-      transform: [{ scale: 1.06 }],
-    },
     itemPressed: {
-      opacity: 0.82,
-      transform: [{ scale: 0.96 }],
+      opacity: 0.72,
+      transform: [{ scale: 0.98 }],
     },
-    itemActivePressed: {
-      opacity: 0.9,
-      transform: [{ scale: 1.02 }],
+    indicator: {
+      backgroundColor: colors.border,
+      borderRadius: 999,
+      height: 2,
+      marginBottom: 3,
+      opacity: 0,
+      width: 18,
     },
-    addItem: {
-      height: 56,
-      marginTop: 0,
-      minWidth: 56,
+    indicatorActive: {
+      backgroundColor: colors.text,
+      opacity: 1,
+    },
+    label: {
+      color: colors.softText,
+      fontSize: 11,
+      fontWeight: fontWeight.medium,
+      lineHeight: 14,
+      textAlign: "center",
+    },
+    labelActive: {
+      color: colors.text,
+      fontWeight: fontWeight.bold,
     },
     iconBox: {
       alignItems: "center",
-      height: 28,
+      height: 24,
       justifyContent: "center",
       position: "relative",
-      width: 28,
+      width: 24,
     },
-    homeRoof: {
-      borderLeftWidth: 2.5,
-      borderTopWidth: 2.5,
-      height: 15,
+    stroke: {
+      borderWidth: 1.8,
+    },
+    strokeActive: {
+      borderWidth: 2.2,
+    },
+    calendar: {
+      borderRadius: 4,
+      height: 19,
+      overflow: "hidden",
+      width: 18,
+    },
+    calendarLine: {
+      height: 2,
+      left: 0,
+      opacity: 0.9,
       position: "absolute",
-      top: 4,
-      transform: [{ rotate: "45deg" }],
-      width: 15,
+      right: 0,
+      top: 5,
     },
-    homeBody: {
-      borderBottomWidth: 2.5,
-      borderLeftWidth: 2.5,
-      borderRightWidth: 2.5,
-      borderTopWidth: 0,
-      borderRadius: 2,
+    calendarDot: {
+      borderRadius: 999,
       bottom: 4,
-      height: 13,
+      height: 4,
+      position: "absolute",
+      right: 4,
+      width: 4,
+    },
+    progressIcon: {
+      alignItems: "flex-end",
+      flexDirection: "row",
+      gap: 3,
+    },
+    bar: {
+      borderRadius: 999,
+      width: 4,
+    },
+    axisVertical: {
+      borderRadius: 999,
+      bottom: 4,
+      height: 17,
+      left: 4,
+      position: "absolute",
+      width: 2,
+    },
+    axisHorizontal: {
+      borderRadius: 999,
+      bottom: 4,
+      height: 2,
+      left: 4,
       position: "absolute",
       width: 17,
     },
-    chartBox: {
-      alignItems: "flex-end",
-      flexDirection: "row",
-      gap: 4,
-    },
-    chartBar: {
+    trendA: {
       borderRadius: 999,
-      width: 5,
-    },
-    plusLine: {
-      borderRadius: 999,
-      height: 4,
+      height: 2,
+      left: 8,
       position: "absolute",
-      width: 26,
+      top: 13,
+      transform: [{ rotate: "-28deg" }],
+      width: 8,
     },
-    plusLineVertical: {
-      transform: [{ rotate: "90deg" }],
+    trendB: {
+      borderRadius: 999,
+      height: 2,
+      position: "absolute",
+      right: 4,
+      top: 9,
+      transform: [{ rotate: "32deg" }],
+      width: 8,
     },
     trophyCup: {
-      borderRadius: 6,
-      borderWidth: 2.5,
-      height: 15,
-      top: 3,
-      width: 19,
+      borderRadius: 5,
+      height: 13,
+      top: 2,
+      width: 17,
     },
     trophyStem: {
       borderRadius: 999,
-      height: 8,
-      marginTop: 2,
-      width: 4,
+      height: 6,
+      marginTop: 3,
+      width: 3,
     },
     trophyBase: {
       borderRadius: 999,
-      height: 3,
+      height: 2,
       marginTop: 1,
-      width: 16,
+      width: 14,
     },
-    gearCircle: {
+    gearOuter: {
       alignItems: "center",
       borderRadius: 999,
-      borderWidth: 2.5,
-      height: 20,
+      height: 17,
       justifyContent: "center",
-      width: 20,
+      width: 17,
     },
-    gearDot: {
+    gearInner: {
       borderRadius: 999,
-      height: 5,
-      width: 5,
+      height: 4,
+      width: 4,
     },
     gearTick: {
       borderRadius: 999,
-      height: 28,
-      opacity: 0.9,
+      height: 23,
+      opacity: 0.86,
       position: "absolute",
-      width: 2.5,
+      width: 2,
     },
-    gearTickHorizontal: {
+    gearTickCross: {
       transform: [{ rotate: "90deg" }],
     },
   });
