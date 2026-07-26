@@ -10,6 +10,7 @@ import {
   Pressable,
   RefreshControl,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   UIManager,
@@ -635,37 +636,42 @@ export default function HomeScreen() {
       >
         <View style={styles.levelModalBackdrop}>
           <View style={styles.levelModalCard}>
-            <Text style={styles.rankIcon}>{getRankIcon(levelUp?.rank)}</Text>
-            <Text style={styles.levelModalEyebrow}>Rank up</Text>
-            <Text style={styles.levelModalTitle}>Level {levelUp?.level}</Text>
-            <Text style={styles.levelModalRank}>{levelUp?.rank} Rank</Text>
-            <Text style={styles.levelModalMessage}>
-              Your consistency is turning into momentum.
-            </Text>
-            {levelUp?.themeUnlock ? (
-              <Text style={styles.levelModalUnlock}>
-                Theme unlocked: {levelUp.themeUnlock.label}
-              </Text>
-            ) : null}
-            <View style={styles.levelModalTrack}>
-              <View
-                style={[
-                  styles.levelModalFill,
-                  { width: `${levelUp?.progress || 0}%` },
-                ]}
-              />
-            </View>
-            <Pressable
-              accessibilityLabel="Close level up message"
-              accessibilityRole="button"
-              onPress={() => setLevelUp(null)}
-              style={({ pressed }) => [
-                styles.levelModalButton,
-                pressed && styles.buttonPressed,
-              ]}
+            <ScrollView
+              contentContainerStyle={styles.levelModalScrollContent}
+              showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.levelModalButtonText}>Keep Going</Text>
-            </Pressable>
+              <Text style={styles.rankIcon}>{getRankIcon(levelUp?.rank)}</Text>
+              <Text style={styles.levelModalEyebrow}>Rank up</Text>
+              <Text style={styles.levelModalTitle}>Level {levelUp?.level}</Text>
+              <Text style={styles.levelModalRank}>{levelUp?.rank} Rank</Text>
+              <Text style={styles.levelModalMessage}>
+                Your consistency is turning into momentum.
+              </Text>
+              {levelUp?.themeUnlock ? (
+                <Text style={styles.levelModalUnlock}>
+                  Theme unlocked: {levelUp.themeUnlock.label}
+                </Text>
+              ) : null}
+              <View style={styles.levelModalTrack}>
+                <View
+                  style={[
+                    styles.levelModalFill,
+                    { width: `${levelUp?.progress || 0}%` },
+                  ]}
+                />
+              </View>
+              <Pressable
+                accessibilityLabel="Close level up message"
+                accessibilityRole="button"
+                onPress={() => setLevelUp(null)}
+                style={({ pressed }) => [
+                  styles.levelModalButton,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                <Text style={styles.levelModalButtonText}>Keep Going</Text>
+              </Pressable>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -678,45 +684,50 @@ export default function HomeScreen() {
       >
         <View style={styles.levelModalBackdrop}>
           <View style={styles.levelModalCard}>
-            <Text style={styles.levelModalEyebrow}>Theme unlocked</Text>
-            <Text style={styles.levelModalTitle}>
-              {getThemeUnlockLabel(themeUnlock)} Theme
-            </Text>
-            <ThemePreview achievement={themeUnlock} styles={styles} />
-            <Text style={styles.levelModalMessage}>
-              Preview your new rank theme and equip it instantly.
-            </Text>
-            <View style={styles.modalButtonRow}>
-              <Pressable
-                accessibilityLabel="Equip unlocked theme later"
-                accessibilityRole="button"
-                onPress={() => setThemeUnlock(null)}
-                style={({ pressed }) => [
-                  styles.levelModalSecondaryButton,
-                  styles.modalButtonFlex,
-                  pressed && styles.buttonPressed,
-                ]}
-              >
-                <Text style={styles.levelModalSecondaryText}>Later</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel="Equip unlocked theme"
-                accessibilityRole="button"
-                onPress={() => {
-                  if (themeUnlock?.themeKey) {
-                    setThemePreference(themeUnlock.themeKey);
-                  }
-                  setThemeUnlock(null);
-                }}
-                style={({ pressed }) => [
-                  styles.levelModalButton,
-                  styles.modalButtonFlex,
-                  pressed && styles.buttonPressed,
-                ]}
-              >
-                <Text style={styles.levelModalButtonText}>Equip</Text>
-              </Pressable>
-            </View>
+            <ScrollView
+              contentContainerStyle={styles.levelModalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.levelModalEyebrow}>Theme unlocked</Text>
+              <Text style={styles.levelModalTitle}>
+                {getThemeUnlockLabel(themeUnlock)} Theme
+              </Text>
+              <ThemePreview achievement={themeUnlock} styles={styles} />
+              <Text style={styles.levelModalMessage}>
+                Preview your new rank theme and equip it instantly.
+              </Text>
+              <View style={styles.modalButtonRow}>
+                <Pressable
+                  accessibilityLabel="Equip unlocked theme later"
+                  accessibilityRole="button"
+                  onPress={() => setThemeUnlock(null)}
+                  style={({ pressed }) => [
+                    styles.levelModalSecondaryButton,
+                    styles.modalButtonFlex,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text style={styles.levelModalSecondaryText}>Later</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Equip unlocked theme"
+                  accessibilityRole="button"
+                  onPress={() => {
+                    if (themeUnlock?.themeKey) {
+                      setThemePreference(themeUnlock.themeKey);
+                    }
+                    setThemeUnlock(null);
+                  }}
+                  style={({ pressed }) => [
+                    styles.levelModalButton,
+                    styles.modalButtonFlex,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text style={styles.levelModalButtonText}>Equip</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -729,24 +740,29 @@ export default function HomeScreen() {
       >
         <View style={styles.levelModalBackdrop}>
           <View style={styles.levelModalCard}>
-            <Text style={styles.rankIcon}>★</Text>
-            <Text style={styles.levelModalEyebrow}>Perfect day</Text>
-            <Text style={styles.levelModalTitle}>All habits complete</Text>
-            <Text style={styles.levelModalMessage}>
-              You cleared every habit today and earned the perfect day bonus.
-            </Text>
-            <Text style={styles.levelModalUnlock}>+25 bonus XP</Text>
-            <Pressable
-              accessibilityLabel="Close perfect day message"
-              accessibilityRole="button"
-              onPress={() => setPerfectDay(null)}
-              style={({ pressed }) => [
-                styles.levelModalButton,
-                pressed && styles.buttonPressed,
-              ]}
+            <ScrollView
+              contentContainerStyle={styles.levelModalScrollContent}
+              showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.levelModalButtonText}>Nice</Text>
-            </Pressable>
+              <Text style={styles.rankIcon}>★</Text>
+              <Text style={styles.levelModalEyebrow}>Perfect day</Text>
+              <Text style={styles.levelModalTitle}>All habits complete</Text>
+              <Text style={styles.levelModalMessage}>
+                You cleared every habit today and earned the perfect day bonus.
+              </Text>
+              <Text style={styles.levelModalUnlock}>+25 bonus XP</Text>
+              <Pressable
+                accessibilityLabel="Close perfect day message"
+                accessibilityRole="button"
+                onPress={() => setPerfectDay(null)}
+                style={({ pressed }) => [
+                  styles.levelModalButton,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                <Text style={styles.levelModalButtonText}>Nice</Text>
+              </Pressable>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1457,6 +1473,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     borderColor: colors.border,
     borderRadius: radius.lg,
     borderWidth: 1,
+    maxHeight: "82%",
     maxWidth: 360,
     padding: 22,
     shadowColor: colors.shadow,
@@ -1465,6 +1482,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     shadowRadius: 24,
     elevation: 8,
     width: "100%",
+  },
+  levelModalScrollContent: {
+    alignItems: "stretch",
   },
   rankIcon: {
     color: colors.accent,
@@ -1552,10 +1572,12 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   modalButtonRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   modalButtonFlex: {
     flex: 1,
+    minWidth: 120,
   },
   buttonPressed: {
     opacity: 0.78,

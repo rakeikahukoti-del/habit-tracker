@@ -22,7 +22,7 @@ export default function AppHeader({
       </View>
 
       <View style={styles.titleGroup}>
-        <AppText align="center" numberOfLines={1} variant="screenTitle">
+        <AppText align="center" numberOfLines={2} variant="screenTitle">
           {title}
         </AppText>
         {subtitle ? (
@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
   },
   side: {
     alignItems: "center",
+    flexShrink: 0,
     minWidth: 44,
   },
   titleGroup: {

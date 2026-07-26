@@ -4,6 +4,10 @@
     "slug": "mobile-habit-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "scheme": "habittracker",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0D0D0D",
