@@ -74,6 +74,22 @@ function getPreviousScheduledDateKeys(count, allowedWeekdays) {
   return keys.reverse();
 }
 
+function countScheduledDaysInLastDays(numberOfDays, allowedWeekdays) {
+  let count = 0;
+
+  for (let offset = -(numberOfDays - 1); offset <= 0; offset += 1) {
+    const date = new Date();
+
+    date.setDate(date.getDate() + offset);
+
+    if (allowedWeekdays.includes(getWeekdayLabel(date))) {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
 function getWeekdayLabel(date) {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
 }
@@ -96,6 +112,7 @@ assert.strictEqual(
     "2026-01-02",
     "2026-01-02",
     "not-a-date",
+    "2026-99-99",
     "2026-01-04",
     "2026-01-05",
     "2026-01-06",
@@ -142,6 +159,51 @@ assert.strictEqual(
   }),
   2,
   "custom streaks should skip days outside the custom schedule"
+);
+
+const weekdayHabit = {
+  completedDates: previousWeekdays,
+  createdAt: dateKeyForOffset(-29),
+  frequency: "Weekdays",
+};
+const weekdayPerformance = habitStats.getHabitPerformance(weekdayHabit, "week");
+assert.strictEqual(
+  weekdayPerformance.possibleCount,
+  countScheduledDaysInLastDays(7, ["Mon", "Tue", "Wed", "Thu", "Fri"]),
+  "weekday analytics should count scheduled opportunities only"
+);
+
+const createdTodayHabit = {
+  completedDates: [],
+  createdAt: habitStats.getTodayKey(),
+  frequency: "Daily",
+};
+assert.strictEqual(
+  habitStats.getHabitPerformance(createdTodayHabit, "month").possibleCount,
+  1,
+  "new habits should not be counted as missed before creation"
+);
+assert.strictEqual(
+  habitStats.getHabitPerformance(
+    { completedDates: [], frequency: "Daily" },
+    "month"
+  ).possibleCount,
+  1,
+  "legacy habits without dates should fall back to today for analytics"
+);
+
+const futureDate = dateKeyForOffset(1);
+assert.strictEqual(
+  habitStats.getHabitPerformance(
+    {
+      completedDates: [habitStats.getTodayKey(), futureDate],
+      createdAt: habitStats.getTodayKey(),
+      frequency: "Daily",
+    },
+    "week"
+  ).completedCount,
+  1,
+  "future completions should not be counted in current analytics periods"
 );
 
 const emptyOverview = habitStats.getProgressOverview([], "month", { xp: 0 });

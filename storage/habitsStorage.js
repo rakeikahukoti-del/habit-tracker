@@ -436,10 +436,25 @@ function getSafeDateKeys(dateKeys) {
     new Set(
       dateKeys.filter(
         (dateKey) =>
-          typeof dateKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+          typeof dateKey === "string" && isValidDateKey(dateKey)
       )
     )
   ).sort();
+}
+
+function isValidDateKey(dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    return false;
+  }
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }
 
 function getSafeCustomDays(customDays) {

@@ -55,7 +55,10 @@ export function getStatsSummary(habits) {
     0
   );
   const weeklySummary = getWeeklyCompletionSummary(safeHabits, weekDays);
-  const totalPossibleCompletions = totalHabits * weekDays.length;
+  const totalPossibleCompletions = weeklySummary.reduce(
+    (sum, day) => sum + day.totalHabits,
+    0
+  );
   const totalWeeklyCompletions = weeklySummary.reduce(
     (sum, day) => sum + day.completedCount,
     0
@@ -76,21 +79,25 @@ export function getStatsSummary(habits) {
 }
 
 export function getWeeklyCompletionSummary(habits, weekDays = getWeekDays()) {
-  const safeHabits = getSafeHabits(habits);
+  const habitProfiles = getHabitProfiles(habits);
 
   return weekDays.map((day) => {
-    const completedCount = safeHabits.filter((habit) =>
-      getCompletedDates(habit).includes(day.dateKey)
+    const date = dateKeyToLocalDate(day.dateKey);
+    const scheduledHabits = habitProfiles.filter((profile) =>
+      isScheduledOpportunity(profile.habit, date, profile.startDate)
+    );
+    const completedCount = scheduledHabits.filter((profile) =>
+      profile.completedSet.has(day.dateKey)
     ).length;
     const percentage =
-      safeHabits.length === 0
+      scheduledHabits.length === 0
         ? 0
-        : Math.round((completedCount / safeHabits.length) * 100);
+        : Math.round((completedCount / scheduledHabits.length) * 100);
 
     return {
       ...day,
       completedCount,
-      totalHabits: safeHabits.length,
+      totalHabits: scheduledHabits.length,
       percentage,
     };
   });
@@ -208,9 +215,17 @@ export function getDeepAnalytics(habits, period = "month", gamification = null) 
 export function getHabitPerformance(habit, period = "month") {
   const safeHabit = habit && typeof habit === "object" ? habit : {};
   const days = getPeriodDays([safeHabit], period);
-  const completedSet = new Set(getCompletedDates(safeHabit));
-  const completedCount = days.filter((day) => completedSet.has(day.dateKey)).length;
-  const possibleCount = days.length;
+  const completedDates = getCompletedDates(safeHabit);
+  const completedSet = new Set(completedDates);
+  const startDate =
+    getHabitStartDate(safeHabit, completedDates) || startOfDay(new Date());
+  const scheduledDays = days.filter((day) =>
+    isScheduledOpportunity(safeHabit, day, startDate)
+  );
+  const completedCount = scheduledDays.filter((day) =>
+    completedSet.has(toDateKey(day))
+  ).length;
+  const possibleCount = scheduledDays.length;
   const completionRate =
     possibleCount === 0 ? 0 : Math.round((completedCount / possibleCount) * 100);
   const trend = getHabitTrendForPeriod(safeHabit, period);
@@ -218,11 +233,11 @@ export function getHabitPerformance(habit, period = "month") {
   const latestRate = trend[trend.length - 1]?.percentage || 0;
 
   return {
-    bestStreak: getBestStreak(getCompletedDates(safeHabit), safeHabit),
+    bestStreak: getBestStreak(completedDates, safeHabit),
     category: safeHabit.category || "General",
     completedCount,
     completionRate,
-    currentStreak: getCurrentStreak(getCompletedDates(safeHabit), safeHabit),
+    currentStreak: getCurrentStreak(completedDates, safeHabit),
     habit: safeHabit,
     possibleCount,
     trend,
@@ -260,12 +275,17 @@ export function getHabitAnalytics(habit) {
 export function getCurrentStreak(completedDates, habit = null) {
   const completedSet = new Set(getSafeDateKeys(completedDates));
   const today = startOfDay(new Date());
-  let cursor = completedSet.has(toDateKey(today))
-    ? today
-    : getPreviousScheduledDate(today, habit);
+  let cursor =
+    completedSet.has(toDateKey(today)) && isScheduledOpportunity(habit, today)
+      ? today
+      : getPreviousScheduledDate(today, habit);
   let streak = 0;
 
-  while (cursor && completedSet.has(toDateKey(cursor))) {
+  while (
+    cursor &&
+    isScheduledOpportunity(habit, cursor) &&
+    completedSet.has(toDateKey(cursor))
+  ) {
     streak += 1;
     cursor = getPreviousScheduledDate(cursor, habit);
   }
@@ -275,7 +295,7 @@ export function getCurrentStreak(completedDates, habit = null) {
 
 export function getBestStreak(completedDates, habit = null) {
   const sortedDates = getSortedUniqueDateKeys(completedDates).filter((dateKey) =>
-    isScheduledDate(dateKeyToLocalDate(dateKey), habit)
+    isScheduledOpportunity(habit, dateKeyToLocalDate(dateKey))
   );
 
   if (sortedDates.length === 0) {
@@ -309,45 +329,67 @@ function getSortedUniqueDateKeys(completedDates) {
 }
 
 function getHabitCompletionRate(habit) {
-  const createdAt = habit.createdAt ? new Date(habit.createdAt) : new Date();
   const today = startOfDay(new Date());
-  const createdDate =
-    Number.isNaN(createdAt.getTime()) ? today : startOfDay(createdAt);
-  const daysSinceCreated =
-    Math.max(1, Math.round((today - createdDate) / MS_PER_DAY) + 1);
-  const completedCount = new Set(habit.completedDates || []).size;
+  const createdDate = getHabitStartDate(habit) || today;
+  const days = getDateRangeDays(createdDate, today).filter((date) =>
+    isScheduledOpportunity(habit, date)
+  );
+  const completedSet = new Set(getCompletedDates(habit));
+  const completedCount = days.filter((date) =>
+    completedSet.has(toDateKey(date))
+  ).length;
 
-  return Math.min(100, Math.round((completedCount / daysSinceCreated) * 100));
+  return days.length === 0
+    ? 0
+    : Math.min(100, Math.round((completedCount / days.length) * 100));
 }
 
 function getHabitCompletionPercentageForDays(habit, numberOfDays) {
-  const completedSet = new Set(habit.completedDates || []);
+  const completedSet = new Set(getCompletedDates(habit));
   const today = startOfDay(new Date());
+  const startDate = getHabitStartDate(habit) || today;
+  let possibleCount = 0;
   let completedCount = 0;
 
   for (let index = 0; index < numberOfDays; index += 1) {
     const date = addDays(today, -index);
+
+    if (!isScheduledOpportunity(habit, date, startDate)) {
+      continue;
+    }
+
+    possibleCount += 1;
 
     if (completedSet.has(toDateKey(date))) {
       completedCount += 1;
     }
   }
 
-  return Math.round((completedCount / numberOfDays) * 100);
+  return possibleCount === 0
+    ? 0
+    : Math.round((completedCount / possibleCount) * 100);
 }
 
 function getHabitTrend(habit) {
-  const completedSet = new Set(habit.completedDates || []);
+  const completedSet = new Set(getCompletedDates(habit));
   const today = startOfDay(new Date());
+  const startDate = getHabitStartDate(habit) || today;
 
   return Array.from({ length: 4 }, (_, index) => {
     const weekOffset = 3 - index;
     const weekEnd = addDays(today, -(weekOffset * 7));
     const weekStart = addDays(weekEnd, -6);
+    let possibleCount = 0;
     let completedCount = 0;
 
     for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
       const date = addDays(weekStart, dayIndex);
+
+      if (!isScheduledOpportunity(habit, date, startDate)) {
+        continue;
+      }
+
+      possibleCount += 1;
 
       if (completedSet.has(toDateKey(date))) {
         completedCount += 1;
@@ -357,7 +399,10 @@ function getHabitTrend(habit) {
     return {
       completedCount,
       label: `W${index + 1}`,
-      percentage: Math.round((completedCount / 7) * 100),
+      percentage:
+        possibleCount === 0
+          ? 0
+          : Math.round((completedCount / possibleCount) * 100),
     };
   });
 }
@@ -384,6 +429,20 @@ function getCompletedDates(habit) {
   return getSafeDateKeys(habit?.completedDates);
 }
 
+function getHabitProfiles(habits) {
+  return getSafeHabits(habits).map((habit) => {
+    const completedDates = getCompletedDates(habit);
+
+    return {
+      completedDates,
+      completedSet: new Set(completedDates),
+      habit,
+      startDate:
+        getHabitStartDate(habit, completedDates) || startOfDay(new Date()),
+    };
+  });
+}
+
 function getSafeDateKeys(completedDates) {
   if (!Array.isArray(completedDates)) {
     return [];
@@ -393,7 +452,7 @@ function getSafeDateKeys(completedDates) {
     new Set(
       completedDates.filter(
         (dateKey) =>
-          typeof dateKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+          typeof dateKey === "string" && isValidDateKey(dateKey)
       )
     )
   ).sort();
@@ -411,6 +470,21 @@ function getPreviousScheduledDate(date, habit) {
   }
 
   return null;
+}
+
+function isScheduledOpportunity(
+  habit,
+  date,
+  startDate = getHabitStartDate(habit)
+) {
+  if (!habit || typeof habit !== "object") {
+    return true;
+  }
+
+  return (
+    (!startDate || startOfDay(date) >= startDate) &&
+    isScheduledDate(date, habit)
+  );
 }
 
 function isScheduledDate(date, habit) {
@@ -582,7 +656,9 @@ function getProgressInsights({
 
   if (Math.abs(delta) >= 8) {
     insights.push(
-      `Consistency ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)}% compared with the previous period.`
+      `Consistency ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(
+        delta
+      )}% compared with the previous period.`
     );
   }
 
@@ -603,7 +679,8 @@ function getProgressInsights({
   }
 
   if (overview.currentLongestStreak > 0 && overview.bestAllTimeStreak > 0) {
-    const daysToBest = overview.bestAllTimeStreak - overview.currentLongestStreak;
+    const daysToBest =
+      overview.bestAllTimeStreak - overview.currentLongestStreak;
 
     if (daysToBest > 0 && daysToBest <= 3) {
       insights.push(`${daysToBest} more days would match your best streak.`);
@@ -618,32 +695,42 @@ function getProgressInsights({
 }
 
 function getCompletionSummaryForDays(habits, days) {
-  const safeHabits = getSafeHabits(habits);
+  const habitProfiles = getHabitProfiles(habits);
   const daySummaries = days.map((date) => {
     const dateKey = toDateKey(date);
-    const completedCount = safeHabits.filter((habit) =>
-      getCompletedDates(habit).includes(dateKey)
+    const scheduledHabits = habitProfiles.filter((profile) =>
+      isScheduledOpportunity(profile.habit, date, profile.startDate)
+    );
+    const completedCount = scheduledHabits.filter((profile) =>
+      profile.completedSet.has(dateKey)
     ).length;
     const percentage =
-      safeHabits.length === 0
+      scheduledHabits.length === 0
         ? 0
-        : Math.round((completedCount / safeHabits.length) * 100);
+        : Math.round((completedCount / scheduledHabits.length) * 100);
 
     return {
       completedCount,
       dateKey,
-      label: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1),
+      label: date
+        .toLocaleDateString(undefined, { weekday: "short" })
+        .slice(0, 1),
       percentage,
-      totalHabits: safeHabits.length,
+      totalHabits: scheduledHabits.length,
     };
   });
   const completedCount = daySummaries.reduce(
     (sum, day) => sum + day.completedCount,
     0
   );
-  const possibleCount = safeHabits.length * days.length;
+  const possibleCount = daySummaries.reduce(
+    (sum, day) => sum + day.totalHabits,
+    0
+  );
   const completionRate =
-    possibleCount === 0 ? 0 : Math.round((completedCount / possibleCount) * 100);
+    possibleCount === 0
+      ? 0
+      : Math.round((completedCount / possibleCount) * 100);
 
   return {
     completedCount,
@@ -728,7 +815,7 @@ function getDateRangeDays(startDate, endDate) {
 
 function getOldestRelevantDate(habits) {
   const dates = getSafeHabits(habits).flatMap((habit) => {
-    const createdAt = habit.createdAt ? new Date(habit.createdAt) : null;
+    const createdAt = parseStoredDate(habit.createdAt);
     const safeCreatedAt =
       createdAt && !Number.isNaN(createdAt.getTime())
         ? [startOfDay(createdAt)]
@@ -741,6 +828,38 @@ function getOldestRelevantDate(habits) {
   return dates.length
     ? dates.reduce((oldest, date) => (date < oldest ? date : oldest), dates[0])
     : null;
+}
+
+function getHabitStartDate(habit, completedDates = getCompletedDates(habit)) {
+  const createdAt = parseStoredDate(habit?.createdAt);
+
+  if (createdAt) {
+    return startOfDay(createdAt);
+  }
+
+  const firstCompletion = completedDates[0];
+
+  return firstCompletion ? dateKeyToLocalDate(firstCompletion) : null;
+}
+
+function parseStoredDate(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? dateKeyToLocalDate(value)
+    : new Date(value);
+
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function isValidDateKey(dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    return false;
+  }
+
+  return toDateKey(dateKeyToLocalDate(dateKey)) === dateKey;
 }
 
 function dateKeyToLocalDate(dateKey) {

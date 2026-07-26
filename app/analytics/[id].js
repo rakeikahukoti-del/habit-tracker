@@ -228,21 +228,33 @@ function MiniTrend({ points, styles }) {
       accessible
       style={styles.trendCard}
     >
-      {points.map((point, index) => (
-        <View key={`${point.label}-${index}`} style={styles.trendColumn}>
-          <View style={styles.trendTrack}>
-            <View
-              style={[
-                styles.trendFill,
-                { height: `${Math.max(4, point.percentage)}%` },
-              ]}
-            />
+      {points.map((point, index) => {
+        const percentage = clampPercentage(point.percentage);
+
+        return (
+          <View key={`${point.label}-${index}`} style={styles.trendColumn}>
+            <View style={styles.trendTrack}>
+              <View
+                style={[
+                  styles.trendFill,
+                  { height: `${Math.max(4, percentage)}%` },
+                ]}
+              />
+            </View>
+            <Text style={styles.trendLabel}>{point.label}</Text>
           </View>
-          <Text style={styles.trendLabel}>{point.label}</Text>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
+}
+
+function clampPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
 }
 
 function getLastThirtyDays(habit) {

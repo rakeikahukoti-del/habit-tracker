@@ -132,11 +132,7 @@ export default function AnalyticsScreen() {
               <TrendChart
                 points={analytics.trendPoints}
                 styles={styles}
-                summary={`Completion trend ranges from ${Math.min(
-                  ...analytics.trendPoints.map((point) => point.percentage)
-                )}% to ${Math.max(
-                  ...analytics.trendPoints.map((point) => point.percentage)
-                )}% over ${getPeriodLabel(period).toLowerCase()}.`}
+                summary={getTrendSummary(analytics.trendPoints, period)}
               />
             </Section>
 
@@ -239,26 +235,31 @@ function Section({ children, styles, title }) {
 }
 
 function TrendChart({ points, styles, summary }) {
-  const safePoints = points.length > 0 ? points : [{ label: "Now", percentage: 0 }];
+  const safePoints =
+    points.length > 0 ? points : [{ label: "Now", percentage: 0 }];
 
   return (
     <View accessibilityLabel={summary} accessible style={styles.chart}>
       <View style={styles.chartBars}>
-        {safePoints.map((point, index) => (
-          <View key={`${point.label}-${index}`} style={styles.chartColumn}>
-            <View style={styles.chartTrack}>
-              <View
-                style={[
-                  styles.chartFill,
-                  { height: `${Math.max(4, point.percentage)}%` },
-                ]}
-              />
+        {safePoints.map((point, index) => {
+          const percentage = clampPercentage(point.percentage);
+
+          return (
+            <View key={`${point.label}-${index}`} style={styles.chartColumn}>
+              <View style={styles.chartTrack}>
+                <View
+                  style={[
+                    styles.chartFill,
+                    { height: `${Math.max(4, percentage)}%` },
+                  ]}
+                />
+              </View>
+              <Text numberOfLines={1} style={styles.chartLabel}>
+                {point.label}
+              </Text>
             </View>
-            <Text numberOfLines={1} style={styles.chartLabel}>
-              {point.label}
-            </Text>
-          </View>
-        ))}
+          );
+        })}
       </View>
     </View>
   );
@@ -303,7 +304,7 @@ function HabitPerformanceRow({ item, styles }) {
           <View
             style={[
               styles.habitFill,
-              { width: `${item.completionRate}%` },
+              { width: `${clampPercentage(item.completionRate)}%` },
             ]}
           />
         </View>
@@ -328,6 +329,10 @@ function EmptyAnalytics({ styles }) {
 }
 
 function formatTrendDelta(delta) {
+  if (!Number.isFinite(delta)) {
+    return "Not enough data to compare";
+  }
+
   if (delta > 0) {
     return `+${delta}% vs previous period`;
   }
@@ -337,6 +342,28 @@ function formatTrendDelta(delta) {
   }
 
   return "No change vs previous period";
+}
+
+function getTrendSummary(points, period) {
+  const percentages = points.map((point) => clampPercentage(point.percentage));
+
+  if (percentages.length === 0) {
+    return "No trend data available yet.";
+  }
+
+  return `Completion trend ranges from ${Math.min(
+    ...percentages
+  )}% to ${Math.max(...percentages)}% over ${getPeriodLabel(
+    period
+  ).toLowerCase()}.`;
+}
+
+function clampPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
 }
 
 function getPeriodLabel(period) {

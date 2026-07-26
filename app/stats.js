@@ -129,7 +129,7 @@ export default function StatsScreen() {
                 <View
                   style={[
                     styles.heroFill,
-                    { width: `${progress.completionRate}%` },
+                    { width: `${clampPercentage(progress.completionRate)}%` },
                   ]}
                 />
               </View>
@@ -319,6 +319,14 @@ function EmptyProgress({ styles }) {
 
 function getPeriodLabel(period) {
   return PERIODS.find((item) => item.key === period)?.label || "Month";
+}
+
+function clampPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
 }
 
 function createStyles(colors, { isSmallScreen, isTablet }) {
