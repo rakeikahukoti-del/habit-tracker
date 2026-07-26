@@ -62,6 +62,7 @@ export default function HabitDetailsScreen() {
   const [customDays, setCustomDays] = useState([]);
   const [reminderTime, setReminderTime] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const deleteInProgressRef = useRef(false);
   const deletePendingRef = useRef(false);
@@ -69,34 +70,47 @@ export default function HabitDetailsScreen() {
   const savingRef = useRef(false);
 
   const loadHabit = useCallback(async (isActive = () => true) => {
-    const habits = await getHabits();
-    const foundHabit = habits.find((item) => item.id === id);
+    try {
+      setError("");
+      const habits = await getHabits();
+      const foundHabit = habits.find((item) => item.id === id);
 
-    if (!isActive()) {
-      return;
+      if (!isActive()) {
+        return;
+      }
+
+      if (!foundHabit) {
+        setHabit(null);
+        return;
+      }
+
+      const safeHabit = normalizeHabit(foundHabit);
+
+      setHabit(safeHabit);
+      setName(safeHabit.name);
+      setEmoji(safeHabit.emoji);
+      setCategory(safeHabit.category);
+      setColor(safeHabit.color);
+      setFrequency(safeHabit.frequency);
+      setCustomDays(safeHabit.customDays);
+      setReminderTime(safeHabit.reminderTime);
+    } catch {
+      if (isActive()) {
+        setHabit(null);
+        setError("Could not load this habit. Please try again.");
+      }
+    } finally {
+      if (isActive()) {
+        setLoading(false);
+      }
     }
-
-    if (!foundHabit) {
-      setHabit(null);
-      return;
-    }
-
-    const safeHabit = normalizeHabit(foundHabit);
-
-    setHabit(safeHabit);
-    setName(safeHabit.name);
-    setEmoji(safeHabit.emoji);
-    setCategory(safeHabit.category);
-    setColor(safeHabit.color);
-    setFrequency(safeHabit.frequency);
-    setCustomDays(safeHabit.customDays);
-    setReminderTime(safeHabit.reminderTime);
   }, [id]);
 
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
 
+      setLoading(true);
       loadHabit(() => isActive);
 
       return () => {
@@ -232,6 +246,16 @@ export default function HabitDetailsScreen() {
     );
 
     updateCompletedDates(nextCompletedDates);
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.missingContainer}>
+          <Text style={styles.missingTitle}>Loading habit...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   if (!habit) {

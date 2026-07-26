@@ -99,7 +99,7 @@ export default function AddHabitScreen() {
     setSaving(true);
 
     try {
-      await addHabit({
+      const savedHabit = await addHabit({
         name,
         emoji,
         category,
@@ -108,8 +108,16 @@ export default function AddHabitScreen() {
         customDays,
         reminderTime,
       });
-      await awardHabitCreatedBadge();
-      router.back();
+
+      try {
+        await awardHabitCreatedBadge();
+      } catch {
+        // The habit is saved; reward recovery can happen during the next rebuild.
+      }
+
+      if (savedHabit) {
+        router.replace("/");
+      }
     } catch {
       setError("Could not save this habit. Please try again.");
     } finally {

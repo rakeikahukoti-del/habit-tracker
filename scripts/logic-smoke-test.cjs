@@ -48,6 +48,40 @@ const habitNotifications = loadModule("notifications/habitNotifications.js", (mo
 
   return require(moduleName);
 });
+const asyncStorageStore = {};
+const asyncStorageMock = {
+  getItem: async (key) => asyncStorageStore[key] ?? null,
+  removeItem: async (key) => {
+    delete asyncStorageStore[key];
+  },
+  setItem: async (key, value) => {
+    asyncStorageStore[key] = value;
+  },
+};
+const gamificationStorage = loadModule("storage/gamificationStorage.js", (moduleName) => {
+  if (moduleName === "@react-native-async-storage/async-storage") {
+    return {
+      __esModule: true,
+      default: asyncStorageMock,
+    };
+  }
+
+  if (moduleName === "../utils/habitStats") {
+    return habitStats;
+  }
+
+  if (moduleName === "./storageUtils") {
+    return {
+      isPlainObject: (value) =>
+        Boolean(value) &&
+        typeof value === "object" &&
+        !Array.isArray(value),
+      logStorageError: () => {},
+    };
+  }
+
+  return require(moduleName);
+});
 
 function dateKeyForOffset(offset) {
   const date = new Date();
@@ -212,4 +246,32 @@ assert.strictEqual(emptyOverview.habitCount, 0);
 assert.strictEqual(emptyOverview.completionRate, 0);
 assert.strictEqual(emptyOverview.totalXpEarned, 0);
 
-console.log("Logic smoke tests passed.");
+runAsyncTests()
+  .then(() => {
+    console.log("Logic smoke tests passed.");
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+
+async function runAsyncTests() {
+  await gamificationStorage.resetGamification();
+
+  const gamification = await gamificationStorage.rebuildGamificationFromHabits(
+    [
+      {
+        completedDates: ["2026-01-01", "2026-99-99"],
+        createdAt: "2026-01-01",
+        frequency: "Daily",
+      },
+    ],
+    { includeMessage: false }
+  );
+
+  assert.strictEqual(
+    gamification.xp,
+    35,
+    "gamification should ignore impossible date keys during recalculation"
+  );
+}

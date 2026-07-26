@@ -151,7 +151,7 @@ export default function SettingsScreen() {
   function confirmResetAllData() {
     Alert.alert(
       "Reset all data?",
-      "This permanently removes habits, history, progress, badges, preferences, and scheduled reminders from this device.",
+      "This permanently removes habits, history, progress, badges, and scheduled reminders from this device. Preferences stay unchanged.",
       [
         { text: "Cancel", style: "cancel" },
         {

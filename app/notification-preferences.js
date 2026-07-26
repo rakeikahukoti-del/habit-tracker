@@ -82,12 +82,11 @@ export default function NotificationPreferencesScreen() {
         ...current,
         enableDailyReminders: value,
       }));
+      await applyDailyReminderPreference(value);
       const savedPreferences = await setAppPreference(
         "enableDailyReminders",
         value
       );
-
-      await applyDailyReminderPreference(value);
       setPreferences(savedPreferences);
       setPermissionState(await getNotificationPermissionState());
     } catch {
