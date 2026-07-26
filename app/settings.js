@@ -3,32 +3,26 @@ import {
   Alert,
   Modal,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import BottomNav from "../components/BottomNav";
 import {
+  SettingsMessage,
   SettingsRow,
+  SettingsScreen as SettingsShell,
   SettingsSection,
 } from "../components/settings";
-import { MomentumWolfMark } from "../components/brand";
+import { AppText } from "../components/ui";
 import { SHOW_DEMO_TOOLS } from "../constants/appConfig";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  pageTitleLineHeight,
-  pageTitleSize,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import {
   getGamification,
@@ -45,13 +39,7 @@ import packageJson from "../package.json";
 
 export default function SettingsScreen() {
   const { colors, resolvedTheme } = useTheme();
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
-  const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
-  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [actionLoading, setActionLoading] = useState(false);
   const [backupText, setBackupText] = useState("");
   const [importText, setImportText] = useState("");
@@ -233,23 +221,13 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <MomentumWolfMark size={42} />
-          <View style={styles.headerText}>
-            <Text style={styles.eyebrow}>Momentum</Text>
-            <Text style={styles.title}>Settings</Text>
-            <Text style={styles.subtitle}>
-              Preferences, data, and app information.
-            </Text>
-          </View>
-        </View>
-
-        {message ? <Text style={styles.message}>{message}</Text> : null}
+    <SettingsShell
+      bottomNav
+      eyebrow="Momentum"
+      subtitle="Preferences, data, and app information."
+      title="Settings"
+    >
+      <SettingsMessage>{message}</SettingsMessage>
 
         <SettingsSection title="Habits">
           <SettingsRow
@@ -343,7 +321,6 @@ export default function SettingsScreen() {
             value={`Level ${level}`}
           />
         </SettingsSection>
-      </ScrollView>
 
       <Modal
         animationType="slide"
@@ -353,14 +330,14 @@ export default function SettingsScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
+            <AppText style={styles.modalTitle}>
               {modalMode === "export" ? "Export JSON" : "Import JSON"}
-            </Text>
-            <Text style={styles.modalHelper}>
+            </AppText>
+            <AppText style={styles.modalHelper}>
               {modalMode === "export"
                 ? "Store this backup somewhere safe."
                 : "Paste a Momentum JSON backup to replace current habits."}
-            </Text>
+            </AppText>
 
             <TextInput
               multiline
@@ -382,7 +359,7 @@ export default function SettingsScreen() {
                   pressed && styles.buttonPressed,
                 ]}
               >
-                <Text style={styles.modalCancelText}>Close</Text>
+                <AppText style={styles.modalCancelText}>Close</AppText>
               </Pressable>
 
               {modalMode === "import" ? (
@@ -400,15 +377,14 @@ export default function SettingsScreen() {
                       styles.buttonPressed,
                   ]}
                 >
-                  <Text style={styles.modalPrimaryText}>Import</Text>
+                  <AppText style={styles.modalPrimaryText}>Import</AppText>
                 </Pressable>
               ) : null}
             </View>
           </View>
         </View>
       </Modal>
-      <BottomNav />
-    </SafeAreaView>
+    </SettingsShell>
   );
 }
 
@@ -418,59 +394,8 @@ function formatThemeLabel(themeKey) {
     .toUpperCase() + String(themeKey || "dark").slice(1);
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors) {
   return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.formMaxWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding + 88,
-      width: "100%",
-    },
-    header: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: spacing.md,
-      marginBottom: spacing.xl,
-      paddingTop: spacing.sm,
-    },
-    headerText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    eyebrow: {
-      color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginBottom: 4,
-      textTransform: "uppercase",
-    },
-    title: {
-      color: colors.text,
-      fontSize: pageTitleSize(isSmallScreen),
-      fontWeight: fontWeight.bold,
-      lineHeight: pageTitleLineHeight(isSmallScreen),
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
-      marginTop: spacing.xs,
-    },
-    message: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: radius.sm,
-      color: colors.text,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
-      marginBottom: spacing.lg,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
     modalBackdrop: {
       backgroundColor: colors.modalBackdrop,
       flex: 1,
@@ -479,48 +404,47 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     modalCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
+      borderTopLeftRadius: v2Radius.large,
+      borderTopRightRadius: v2Radius.large,
       borderWidth: 1,
-      gap: 12,
+      gap: v2Spacing.md,
       maxHeight: "82%",
-      padding: 18,
+      padding: v2Spacing.lg,
+      ...v2Shadows.floating,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: -8 },
       shadowOpacity: 0.16,
-      shadowRadius: 18,
-      elevation: 8,
     },
     modalTitle: {
       color: colors.text,
-      fontSize: 20,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.sectionTitle.lineHeight,
     },
     modalHelper: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      lineHeight: 19,
+      fontSize: v2Typography.label.fontSize,
+      lineHeight: v2Typography.label.lineHeight,
     },
     jsonInput: {
       backgroundColor: colors.inputBackground,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 13,
+      fontSize: v2Typography.label.fontSize,
       minHeight: 220,
-      padding: 14,
+      padding: v2Spacing.md,
       textAlignVertical: "top",
     },
     modalActions: {
       flexDirection: "row",
-      gap: 10,
+      gap: v2Spacing.md,
     },
     modalCancelButton: {
       alignItems: "center",
       backgroundColor: colors.inputBackground,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flex: 1,
       justifyContent: "center",
@@ -528,21 +452,21 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     modalCancelText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.button.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     modalPrimaryButton: {
       alignItems: "center",
       backgroundColor: colors.primary,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       flex: 1,
       justifyContent: "center",
       minHeight: 50,
     },
     modalPrimaryText: {
       color: colors.inverseText,
-      fontSize: 15,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.button.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     disabledButton: {
       opacity: 0.55,

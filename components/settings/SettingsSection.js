@@ -1,22 +1,123 @@
-import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import {
-  fontSize,
-  fontWeight,
-  lineHeight,
-  radius,
-  spacing,
-} from "../../constants/typography";
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import BottomNav from "../BottomNav";
+import { BackIcon, IconButton, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
+import {
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../../src/design";
+
+export function SettingsScreen({
+  backLabel = "Back to Settings",
+  bottomNav = false,
+  children,
+  eyebrow = "Settings",
+  onBack,
+  scrollEnabled = true,
+  subtitle,
+  title,
+}) {
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 380;
+  const isTablet = width >= 768;
+  const styles = createStyles(colors, { isSmallScreen, isTablet });
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          bottomNav && styles.containerWithBottomNav,
+        ]}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={scrollEnabled}
+        showsVerticalScrollIndicator={false}
+      >
+        <SettingsHeader
+          backLabel={backLabel}
+          eyebrow={eyebrow}
+          onBack={onBack}
+          subtitle={subtitle}
+          title={title}
+        />
+        {children}
+      </ScrollView>
+      {bottomNav ? <BottomNav /> : null}
+    </SafeAreaView>
+  );
+}
+
+export function SettingsHeader({
+  backLabel = "Back",
+  eyebrow,
+  onBack,
+  subtitle,
+  title,
+}) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+
+  return (
+    <View style={styles.header}>
+      {onBack ? (
+        <IconButton
+          accessibilityLabel={backLabel}
+          onPress={onBack}
+          style={styles.backButton}
+        >
+          <BackIcon />
+        </IconButton>
+      ) : null}
+      {eyebrow ? <AppText style={styles.eyebrow}>{eyebrow}</AppText> : null}
+      <AppText style={styles.title}>{title}</AppText>
+      {subtitle ? <AppText style={styles.subtitle}>{subtitle}</AppText> : null}
+    </View>
+  );
+}
+
+export function SettingsMessage({ tone = "info", children }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+
+  if (!children) {
+    return null;
+  }
+
+  return (
+    <AppText
+      accessibilityRole="text"
+      style={[
+        styles.message,
+        tone === "danger" && styles.messageDanger,
+      ]}
+    >
+      {children}
+    </AppText>
+  );
+}
 
 export function SettingsSection({ children, footer, title }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <AppText style={styles.sectionTitle}>{title}</AppText>
       <View style={styles.group}>{children}</View>
-      {footer ? <Text style={styles.footer}>{footer}</Text> : null}
+      {footer ? <AppText style={styles.footer}>{footer}</AppText> : null}
     </View>
   );
 }
@@ -33,13 +134,15 @@ export function SettingsRow({
   value,
 }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel || title}
       accessibilityRole={onPress ? "button" : undefined}
       accessibilityState={{ disabled }}
       disabled={!onPress || disabled}
+      hitSlop={4}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
@@ -48,7 +151,7 @@ export function SettingsRow({
       ]}
     >
       <View style={styles.rowText}>
-        <Text
+        <AppText
           numberOfLines={2}
           style={[
             styles.rowTitle,
@@ -57,25 +160,25 @@ export function SettingsRow({
           ]}
         >
           {title}
-        </Text>
+        </AppText>
         {description ? (
-          <Text numberOfLines={3} style={styles.rowDescription}>
+          <AppText numberOfLines={3} style={styles.rowDescription}>
             {description}
-          </Text>
+          </AppText>
         ) : null}
       </View>
       {right ? <View style={styles.trailingControl}>{right}</View> : null}
       {value ? (
-        <Text
+        <AppText
           adjustsFontSizeToFit
           minimumFontScale={0.82}
           numberOfLines={2}
           style={styles.value}
         >
           {value}
-        </Text>
+        </AppText>
       ) : null}
-      {showChevron ? <Text style={styles.chevron}>›</Text> : null}
+      {showChevron ? <AppText style={styles.chevron}>›</AppText> : null}
     </Pressable>
   );
 }
@@ -99,7 +202,7 @@ export function SettingsToggleRow({
         <Switch
           accessibilityLabel={title}
           accessibilityRole="switch"
-          accessibilityState={{ checked: value, disabled }}
+          accessibilityState={{ checked: Boolean(value), disabled }}
           disabled={disabled}
           ios_backgroundColor={colors.border}
           onValueChange={onValueChange}
@@ -123,7 +226,7 @@ export function ThemePreviewRow({
   selected = false,
 }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
 
   return (
     <Pressable
@@ -131,6 +234,7 @@ export function ThemePreviewRow({
       accessibilityRole="button"
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
+      hitSlop={4}
       onPress={onPress}
       style={({ pressed }) => [
         styles.themeRow,
@@ -160,56 +264,119 @@ export function ThemePreviewRow({
         />
       </View>
       <View style={styles.rowText}>
-        <Text style={[styles.rowTitle, disabled && styles.disabledText]}>
+        <AppText style={[styles.rowTitle, disabled && styles.disabledText]}>
           {label}
-        </Text>
-        <Text style={styles.rowDescription}>
+        </AppText>
+        <AppText style={styles.rowDescription}>
           {disabled ? lockedText : selected ? "Selected" : "Available"}
-        </Text>
+        </AppText>
       </View>
-      <Text style={selected ? styles.selectedMark : styles.chevron}>
+      <AppText style={selected ? styles.selectedMark : styles.chevron}>
         {selected ? "✓" : ""}
-      </Text>
+      </AppText>
     </Pressable>
   );
 }
 
-function createStyles(colors) {
+function createStyles(colors, { isSmallScreen, isTablet }) {
   return StyleSheet.create({
+    safeArea: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    container: {
+      alignSelf: "center",
+      maxWidth: isTablet ? v2Layout.formMaxWidth : "100%",
+      padding: isSmallScreen
+        ? v2Layout.screenPaddingCompact
+        : v2Layout.screenPadding,
+      paddingBottom: v2Spacing.xxl,
+      width: "100%",
+    },
+    containerWithBottomNav: {
+      paddingBottom: v2Layout.bottomNavigationClearance,
+    },
+    header: {
+      paddingBottom: v2Spacing.xl,
+      paddingTop: v2Spacing.sm,
+    },
+    backButton: {
+      marginBottom: v2Spacing.lg,
+    },
+    eyebrow: {
+      color: colors.primary,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: v2Spacing.xs,
+      textTransform: "uppercase",
+    },
+    title: {
+      color: colors.text,
+      fontSize: isSmallScreen ? 26 : v2Typography.screenTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: isSmallScreen ? 32 : v2Typography.screenTitle.lineHeight,
+    },
+    subtitle: {
+      color: colors.muted,
+      fontSize: v2Typography.body.fontSize,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.sm,
+    },
+    message: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.border,
+      borderRadius: v2Radius.small,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
+      marginBottom: v2Spacing.lg,
+      overflow: "hidden",
+      paddingHorizontal: v2Spacing.md,
+      paddingVertical: v2Spacing.sm,
+    },
+    messageDanger: {
+      backgroundColor: colors.dangerSoft,
+      color: colors.danger,
+    },
     section: {
-      gap: spacing.sm,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.sm,
+      marginBottom: v2Spacing.xl,
     },
     sectionTitle: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
       letterSpacing: 0.5,
-      paddingHorizontal: spacing.xs,
+      paddingHorizontal: v2Spacing.xs,
       textTransform: "uppercase",
     },
     group: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       overflow: "hidden",
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.07,
     },
     footer: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      lineHeight: lineHeight.caption,
-      paddingHorizontal: spacing.xs,
+      fontSize: v2Typography.caption.fontSize,
+      lineHeight: v2Typography.caption.lineHeight,
+      paddingHorizontal: v2Spacing.xs,
     },
     row: {
       alignItems: "center",
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
-      gap: spacing.md,
-      minHeight: 56,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
+      gap: v2Spacing.md,
+      minHeight: 58,
+      paddingHorizontal: v2Spacing.lg,
+      paddingVertical: v2Spacing.md,
     },
     rowText: {
       flex: 1,
@@ -220,22 +387,22 @@ function createStyles(colors) {
     },
     rowTitle: {
       color: colors.text,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
-      lineHeight: lineHeight.bodyLarge,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.body.lineHeight,
     },
     rowDescription: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.caption,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.regular,
+      lineHeight: v2Typography.caption.lineHeight,
       marginTop: 3,
     },
     value: {
       color: colors.muted,
       flexShrink: 1,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
       maxWidth: "36%",
       minWidth: 0,
       textAlign: "right",
@@ -244,13 +411,13 @@ function createStyles(colors) {
       color: colors.muted,
       flexShrink: 0,
       fontSize: 22,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       lineHeight: 22,
     },
     selectedMark: {
       color: colors.primary,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     destructiveText: {
       color: colors.danger,
@@ -269,10 +436,10 @@ function createStyles(colors) {
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       minHeight: 68,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
+      paddingHorizontal: v2Spacing.lg,
+      paddingVertical: v2Spacing.md,
     },
     themeSelected: {
       backgroundColor: colors.surface,
@@ -280,11 +447,11 @@ function createStyles(colors) {
     swatches: {
       flexDirection: "row",
       flexShrink: 0,
-      gap: 4,
+      gap: v2Spacing.xs,
     },
     swatch: {
       borderColor: colors.border,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       height: 18,
       width: 18,

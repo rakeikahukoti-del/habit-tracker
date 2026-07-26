@@ -1,28 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-} from "react-native";
+import { useCallback, useRef, useState } from "react";
 import { router, useFocusEffect } from "expo-router";
 import {
+  SettingsMessage,
   SettingsRow,
+  SettingsScreen,
   SettingsSection,
   SettingsToggleRow,
 } from "../components/settings";
-import { BackIcon, IconButton } from "../components/ui";
-import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  pageTitleLineHeight,
-  pageTitleSize,
-  spacing,
-} from "../constants/typography";
-import { useTheme } from "../context/ThemeContext";
 import { getNotificationPermissionState } from "../notifications/habitNotifications";
 import {
   defaultAppPreferences,
@@ -32,14 +16,6 @@ import {
 import { applyDailyReminderPreference } from "../storage/habitsStorage";
 
 export default function NotificationPreferencesScreen() {
-  const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
-  const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
-  );
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [permissionState, setPermissionState] = useState("not-requested");
   const [message, setMessage] = useState("");
@@ -98,26 +74,12 @@ export default function NotificationPreferencesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <IconButton
-          accessibilityLabel="Back to Settings"
-          onPress={() => router.replace("/settings")}
-          style={styles.backButton}
-        >
-          <BackIcon />
-        </IconButton>
-
-        <Text style={styles.eyebrow}>Settings</Text>
-        <Text style={styles.title}>Notifications</Text>
-        <Text style={styles.subtitle}>
-          Reminders are optional. Momentum works normally if they are off.
-        </Text>
-
-        {message ? <Text style={styles.message}>{message}</Text> : null}
+    <SettingsScreen
+      onBack={() => router.replace("/settings")}
+      subtitle="Reminders are optional. Momentum works normally if they are off."
+      title="Notifications"
+    >
+      <SettingsMessage tone="danger">{message}</SettingsMessage>
 
         <SettingsSection title="Permission">
           <SettingsRow
@@ -139,8 +101,7 @@ export default function NotificationPreferencesScreen() {
             value={preferences.enableDailyReminders}
           />
         </SettingsSection>
-      </ScrollView>
-    </SafeAreaView>
+    </SettingsScreen>
   );
 }
 
@@ -174,51 +135,4 @@ function getPermissionDescription(state) {
   }
 
   return "Permission is requested only when a reminder is scheduled.";
-}
-
-function createStyles(colors, { isSmallScreen, isTablet }) {
-  return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.formMaxWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding,
-      width: "100%",
-    },
-    backButton: {
-      alignSelf: "flex-start",
-      marginBottom: spacing.lg,
-    },
-    eyebrow: {
-      color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginBottom: spacing.xs,
-      textTransform: "uppercase",
-    },
-    title: {
-      color: colors.text,
-      fontSize: pageTitleSize(isSmallScreen),
-      fontWeight: fontWeight.bold,
-      lineHeight: pageTitleLineHeight(isSmallScreen),
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
-      marginBottom: spacing.xl,
-      marginTop: spacing.sm,
-    },
-    message: {
-      color: colors.danger,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginBottom: spacing.lg,
-    },
-  });
 }

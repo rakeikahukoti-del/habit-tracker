@@ -2,19 +2,18 @@ import { useRef } from "react";
 import {
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import {
   categoryOptions,
   emojiOptions,
@@ -23,6 +22,7 @@ import {
   weekDayOptions,
 } from "../constants/habitOptions";
 import { useTheme } from "../context/ThemeContext";
+import { AppText } from "./ui";
 
 export default function HabitFormFields({
   name,
@@ -59,7 +59,7 @@ export default function HabitFormFields({
 
   return (
     <View style={styles.form}>
-      <Text style={styles.label}>Habit name</Text>
+      <AppText style={styles.label}>Habit name</AppText>
       <TextInput
         autoFocus={autoFocus}
         onChangeText={(value) => {
@@ -74,7 +74,7 @@ export default function HabitFormFields({
         value={name}
       />
 
-      <Text style={styles.label}>Habit emoji</Text>
+      <AppText style={styles.label}>Habit emoji</AppText>
       <View style={styles.emojiRow}>
         {emojiOptions.map((item) => (
           <Pressable
@@ -89,12 +89,12 @@ export default function HabitFormFields({
               pressed && styles.optionPressed,
             ]}
           >
-            <Text style={styles.emojiText}>{item}</Text>
+            <AppText style={styles.emojiText}>{item}</AppText>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>Category</Text>
+      <AppText style={styles.label}>Category</AppText>
       <View style={styles.optionGrid}>
         {categoryOptions.map((item) => (
           <Pressable
@@ -109,19 +109,19 @@ export default function HabitFormFields({
               pressed && styles.optionPressed,
             ]}
           >
-            <Text
+            <AppText
               style={[
                 styles.optionText,
                 category === item && styles.optionTextSelected,
               ]}
             >
               {item}
-            </Text>
+            </AppText>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>Color</Text>
+      <AppText style={styles.label}>Color</AppText>
       <View style={styles.colorRow}>
         {habitColorOptions.map((item) => (
           <Pressable
@@ -140,7 +140,7 @@ export default function HabitFormFields({
         ))}
       </View>
 
-      <Text style={styles.label}>Frequency</Text>
+      <AppText style={styles.label}>Frequency</AppText>
       <View style={styles.segmented}>
         {frequencyOptions.map((item) => (
           <Pressable
@@ -155,14 +155,14 @@ export default function HabitFormFields({
               pressed && styles.optionPressed,
             ]}
           >
-            <Text
+            <AppText
               style={[
                 styles.segmentText,
                 frequency === item && styles.segmentTextSelected,
               ]}
             >
               {item}
-            </Text>
+            </AppText>
           </Pressable>
         ))}
       </View>
@@ -185,18 +185,18 @@ export default function HabitFormFields({
                   pressed && styles.optionPressed,
                 ]}
               >
-                <Text
+                <AppText
                   style={[styles.dayText, selected && styles.dayTextSelected]}
                 >
                   {day}
-                </Text>
+                </AppText>
               </Pressable>
             );
           })}
         </View>
       )}
 
-      <Text style={styles.label}>Reminder time</Text>
+      <AppText style={styles.label}>Reminder time</AppText>
       <TextInput
         keyboardType="numbers-and-punctuation"
         onChangeText={setReminderTime}
@@ -214,40 +214,39 @@ export default function HabitFormFields({
 function createStyles(colors, isSmallScreen) {
   return StyleSheet.create({
     form: {
-      gap: spacing.md,
+      gap: v2Layout.formGap,
     },
     label: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginTop: spacing.xs,
-    },
+      ...v2Typography.label,
+      fontWeight: v2FontWeight.bold,
+      marginTop: v2Spacing.xs,
+      },
     input: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       color: colors.text,
-      fontSize: fontSize.bodyLarge,
-      lineHeight: lineHeight.bodyLarge,
+      ...v2Typography.body,
       minHeight: 52,
-      paddingHorizontal: spacing.lg,
+      paddingHorizontal: v2Spacing.lg,
       paddingVertical: 14,
     },
     emojiRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
     },
     emojiButton: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       justifyContent: "center",
-      minHeight: layout.minTapTarget,
-      minWidth: layout.minTapTarget,
+      minHeight: v2Layout.minTapTarget,
+      minWidth: v2Layout.minTapTarget,
     },
     emojiText: {
       fontSize: 23,
@@ -255,14 +254,14 @@ function createStyles(colors, isSmallScreen) {
     optionGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
     },
     optionButton: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      paddingHorizontal: spacing.md,
+      paddingHorizontal: v2Spacing.md,
       paddingVertical: 10,
     },
     optionSelected: {
@@ -275,8 +274,8 @@ function createStyles(colors, isSmallScreen) {
     },
     optionText: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
+      ...v2Typography.label,
+      fontWeight: v2FontWeight.medium,
     },
     optionTextSelected: {
       color: colors.text,
@@ -284,14 +283,14 @@ function createStyles(colors, isSmallScreen) {
     colorRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
     },
     colorButton: {
       borderColor: colors.swatchBorder,
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 2,
-      minHeight: layout.minTapTarget,
-      minWidth: layout.minTapTarget,
+      minHeight: v2Layout.minTapTarget,
+      minWidth: v2Layout.minTapTarget,
     },
     colorSelected: {
       borderColor: colors.text,
@@ -299,34 +298,32 @@ function createStyles(colors, isSmallScreen) {
     segmented: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
       flexWrap: isSmallScreen ? "wrap" : "nowrap",
-      gap: isSmallScreen ? spacing.xs : 0,
-      padding: spacing.xs,
+      gap: isSmallScreen ? v2Spacing.xs : 0,
+      padding: v2Spacing.xs,
     },
     segmentButton: {
       alignItems: "center",
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       flexBasis: isSmallScreen ? "48%" : 0,
       flexGrow: 1,
       justifyContent: "center",
-      minHeight: layout.minTapTarget,
-      paddingVertical: spacing.sm,
+      minHeight: v2Layout.minTapTarget,
+      paddingVertical: v2Spacing.sm,
     },
     segmentSelected: {
       backgroundColor: colors.surface,
+      ...v2Shadows.low,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 1,
     },
     segmentText: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.label,
+      fontWeight: v2FontWeight.bold,
     },
     segmentTextSelected: {
       color: colors.primary,
@@ -334,17 +331,17 @@ function createStyles(colors, isSmallScreen) {
     dayRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
     },
     dayButton: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      minHeight: layout.minTapTarget,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      minHeight: v2Layout.minTapTarget,
+      paddingHorizontal: v2Spacing.md,
+      paddingVertical: v2Spacing.sm,
     },
     daySelected: {
       backgroundColor: colors.accentSoft,
@@ -352,8 +349,8 @@ function createStyles(colors, isSmallScreen) {
     },
     dayText: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.caption,
+      fontWeight: v2FontWeight.bold,
     },
     dayTextSelected: {
       color: colors.text,

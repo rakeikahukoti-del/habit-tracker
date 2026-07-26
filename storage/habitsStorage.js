@@ -4,6 +4,7 @@ import {
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
   DEFAULT_HABIT_FREQUENCY,
+  frequencyOptions,
   weekDayOptions,
 } from "../constants/habitOptions";
 import { getAppPreferences, setLastShownLevel } from "./appPreferences";
@@ -16,6 +17,7 @@ import { isPlainObject, logStorageError } from "./storageUtils";
 import {
   cancelHabitReminders,
   hasReminderScheduleChanged,
+  parseReminderTime,
   scheduleHabitReminder,
 } from "../notifications/habitNotifications";
 import { getTodayKey, toDateKey, wasCompletedToday } from "../utils/habitStats";
@@ -372,10 +374,15 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
     emoji: safeHabit.emoji || DEFAULT_HABIT_EMOJI,
     category: safeHabit.category || DEFAULT_HABIT_CATEGORY,
     color: safeHabit.color || DEFAULT_HABIT_COLOR,
-    frequency: safeHabit.frequency || DEFAULT_HABIT_FREQUENCY,
+    frequency: frequencyOptions.includes(safeHabit.frequency)
+      ? safeHabit.frequency
+      : DEFAULT_HABIT_FREQUENCY,
     customDays: getSafeCustomDays(safeHabit.customDays),
     reminderTime:
-      typeof safeHabit.reminderTime === "string" ? safeHabit.reminderTime : "",
+      typeof safeHabit.reminderTime === "string" &&
+      parseReminderTime(safeHabit.reminderTime)
+        ? safeHabit.reminderTime.trim()
+        : "",
     notificationIds: Array.isArray(safeHabit.notificationIds)
       ? safeHabit.notificationIds
       : [],

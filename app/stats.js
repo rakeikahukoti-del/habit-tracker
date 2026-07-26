@@ -2,23 +2,21 @@ import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import BottomNav from "../components/BottomNav";
+import AnalyticsScreen, {
+  AnalyticsHeader,
+} from "../components/analytics/AnalyticsScreen";
+import { AppText } from "../components/ui";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { getGamification } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
@@ -35,10 +33,9 @@ export default function StatsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
   const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
+    () => createStyles(colors, { isSmallScreen }),
+    [colors, isSmallScreen]
   );
   const [period, setPeriod] = useState("month");
   const [habits, setHabits] = useState([]);
@@ -89,26 +86,20 @@ export default function StatsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Progress</Text>
-          <Text style={styles.subtitle}>
-            Consistency across {getPeriodLabel(period).toLowerCase()}.
-          </Text>
-        </View>
+    <AnalyticsScreen bottomNav>
+        <AnalyticsHeader
+          subtitle={`Consistency across ${getPeriodLabel(period).toLowerCase()}.`}
+          title="Progress"
+        />
 
         <PeriodControl period={period} setPeriod={setPeriod} styles={styles} />
 
-        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
 
         {loading ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>Loading progress...</Text>
+            <AppText style={styles.loadingText}>Loading progress...</AppText>
           </View>
         ) : null}
 
@@ -123,8 +114,8 @@ export default function StatsScreen() {
               accessible
               style={styles.heroMetric}
             >
-              <Text style={styles.heroValue}>{progress.completionRate}%</Text>
-              <Text style={styles.heroLabel}>Overall consistency</Text>
+              <AppText style={styles.heroValue}>{progress.completionRate}%</AppText>
+              <AppText style={styles.heroLabel}>Overall consistency</AppText>
               <View style={styles.heroTrack}>
                 <View
                   style={[
@@ -133,10 +124,10 @@ export default function StatsScreen() {
                   ]}
                 />
               </View>
-              <Text style={styles.heroContext}>
+              <AppText style={styles.heroContext}>
                 {progress.completedCount} of {progress.possibleCount} possible
                 completions
-              </Text>
+              </AppText>
             </View>
 
             <Section title="This week" styles={styles}>
@@ -182,7 +173,7 @@ export default function StatsScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.textActionLabel}>Analytics</Text>
+                  <AppText style={styles.textActionLabel}>Analytics</AppText>
                 </Pressable>
               }
               title="Recent history"
@@ -192,9 +183,7 @@ export default function StatsScreen() {
             </Section>
           </>
         ) : null}
-      </ScrollView>
-      <BottomNav />
-    </SafeAreaView>
+    </AnalyticsScreen>
   );
 }
 
@@ -217,14 +206,14 @@ function PeriodControl({ period, setPeriod, styles }) {
               pressed && styles.pressed,
             ]}
           >
-            <Text
+            <AppText
               style={[
                 styles.periodLabel,
                 selected && styles.periodLabelSelected,
               ]}
             >
               {item.label}
-            </Text>
+            </AppText>
           </Pressable>
         );
       })}
@@ -236,7 +225,7 @@ function Section({ action, children, styles, title }) {
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <AppText style={styles.sectionTitle}>{title}</AppText>
         {action}
       </View>
       {children}
@@ -258,7 +247,7 @@ function WeeklyVisual({ days, styles }) {
             key={day.dateKey}
             style={styles.weekDay}
           >
-            <Text style={styles.weekLabel}>{day.label}</Text>
+            <AppText style={styles.weekLabel}>{day.label}</AppText>
             <View
               style={[
                 styles.weekDot,
@@ -266,9 +255,9 @@ function WeeklyVisual({ days, styles }) {
                 complete && styles.weekDotComplete,
               ]}
             />
-            <Text style={styles.weekCount}>
+            <AppText style={styles.weekCount}>
               {day.completedCount}/{day.totalHabits}
-            </Text>
+            </AppText>
           </View>
         );
       })}
@@ -279,15 +268,15 @@ function WeeklyVisual({ days, styles }) {
 function MetricRow({ label, styles, value }) {
   return (
     <View style={styles.metricRow}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text
+      <AppText style={styles.metricLabel}>{label}</AppText>
+      <AppText
         adjustsFontSizeToFit
         minimumFontScale={0.78}
         numberOfLines={1}
         style={styles.metricValue}
       >
         {value}
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -314,10 +303,10 @@ function HistoryGrid({ days, styles }) {
 function EmptyProgress({ styles }) {
   return (
     <View style={styles.emptyCard}>
-      <Text style={styles.emptyTitle}>Not enough data yet</Text>
-      <Text style={styles.emptyText}>
+      <AppText style={styles.emptyTitle}>Not enough data yet</AppText>
+      <AppText style={styles.emptyText}>
         Create a habit and complete it for a few days to begin seeing progress.
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -334,49 +323,21 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.maxContentWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding + 88,
-      width: "100%",
-    },
-    header: {
-      paddingBottom: spacing.lg,
-      paddingTop: spacing.md,
-    },
-    title: {
-      color: colors.text,
-      fontSize: isSmallScreen ? 28 : 32,
-      fontWeight: fontWeight.bold,
-      lineHeight: isSmallScreen ? 34 : 38,
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginTop: 4,
-    },
     periodControl: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
       gap: 4,
-      marginBottom: spacing.lg,
+      marginBottom: v2Spacing.lg,
       padding: 4,
     },
     periodItem: {
       alignItems: "center",
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       flex: 1,
       minHeight: 40,
       justifyContent: "center",
@@ -388,18 +349,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     periodLabel: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     periodLabelSelected: {
       color: colors.text,
     },
     errorBanner: {
       backgroundColor: colors.dangerSoft,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       color: colors.danger,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginBottom: 12,
       paddingHorizontal: 14,
       paddingVertical: 10,
@@ -408,41 +369,41 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       gap: 10,
       padding: 28,
     },
     loadingText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     heroMetric: {
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
       borderTopWidth: StyleSheet.hairlineWidth,
-      marginBottom: spacing.xl,
-      paddingVertical: spacing.xl,
+      marginBottom: v2Spacing.xl,
+      paddingVertical: v2Spacing.xl,
     },
     heroValue: {
       color: colors.text,
       fontSize: isSmallScreen ? 54 : 64,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       lineHeight: isSmallScreen ? 60 : 70,
     },
     heroLabel: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
       marginTop: 4,
     },
     heroTrack: {
       backgroundColor: colors.surface,
-      borderRadius: radius.pill || 999,
+      borderRadius: v2Radius.pill,
       height: 8,
-      marginTop: spacing.lg,
+      marginTop: v2Spacing.lg,
       overflow: "hidden",
     },
     heroFill: {
@@ -452,13 +413,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     heroContext: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: v2Spacing.sm,
     },
     section: {
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
     },
     sectionHeader: {
       alignItems: "center",
@@ -467,17 +428,17 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     sectionTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     weekVisual: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
       justifyContent: "space-between",
-      padding: isSmallScreen ? spacing.md : spacing.lg,
+      padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
     },
     weekDay: {
       alignItems: "center",
@@ -487,8 +448,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     weekLabel: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     weekDot: {
       backgroundColor: colors.surface,
@@ -508,64 +469,64 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     weekCount: {
       color: colors.muted,
       fontSize: 10,
-      fontWeight: fontWeight.medium,
+      fontWeight: v2FontWeight.medium,
     },
     metricList: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginBottom: spacing.xl,
-      paddingHorizontal: spacing.lg,
+      marginBottom: v2Spacing.xl,
+      paddingHorizontal: v2Spacing.lg,
     },
     metricRow: {
       alignItems: "center",
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       justifyContent: "space-between",
       minHeight: 54,
     },
     metricLabel: {
       color: colors.muted,
       flex: 1,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
       minWidth: 0,
     },
     metricValue: {
       color: colors.text,
       flexShrink: 0,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
       maxWidth: "52%",
       textAlign: "right",
     },
     textAction: {
       minHeight: 36,
       justifyContent: "center",
-      paddingLeft: spacing.md,
+      paddingLeft: v2Spacing.md,
     },
     textActionLabel: {
       color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     historyGrid: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 7,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     historyCell: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       borderWidth: 1,
       height: isSmallScreen ? 22 : 25,
       width: isSmallScreen ? 22 : 25,
@@ -580,20 +541,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     emptyCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      padding: spacing.xl,
+      padding: v2Spacing.xl,
     },
     emptyTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     emptyText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.body.fontSize,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.sm,
     },
     pressed: {
       opacity: 0.74,

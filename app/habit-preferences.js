@@ -1,24 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-} from "react-native";
+import { useCallback, useRef, useState } from "react";
 import { router, useFocusEffect } from "expo-router";
-import { SettingsRow, SettingsSection, SettingsToggleRow } from "../components/settings";
-import { BackIcon, IconButton } from "../components/ui";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  pageTitleLineHeight,
-  pageTitleSize,
-  spacing,
-} from "../constants/typography";
-import { useTheme } from "../context/ThemeContext";
+  SettingsMessage,
+  SettingsRow,
+  SettingsScreen,
+  SettingsSection,
+  SettingsToggleRow,
+} from "../components/settings";
 import {
   defaultAppPreferences,
   getAppPreferences,
@@ -26,14 +14,6 @@ import {
 } from "../storage/appPreferences";
 
 export default function HabitPreferencesScreen() {
-  const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
-  const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
-  );
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [message, setMessage] = useState("");
   const preferenceUpdatingRef = useRef(false);
@@ -78,26 +58,12 @@ export default function HabitPreferencesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <IconButton
-          accessibilityLabel="Back to Settings"
-          onPress={() => router.replace("/settings")}
-          style={styles.backButton}
-        >
-          <BackIcon />
-        </IconButton>
-
-        <Text style={styles.eyebrow}>Settings</Text>
-        <Text style={styles.title}>Habit preferences</Text>
-        <Text style={styles.subtitle}>
-          Control how habits behave on Home.
-        </Text>
-
-        {message ? <Text style={styles.message}>{message}</Text> : null}
+    <SettingsScreen
+      onBack={() => router.replace("/settings")}
+      subtitle="Control how habits behave on Home."
+      title="Habit preferences"
+    >
+      <SettingsMessage>{message}</SettingsMessage>
 
         <SettingsSection title="Order">
           <SettingsRow
@@ -133,54 +99,6 @@ export default function HabitPreferencesScreen() {
             value={preferences.enableLongPressReorder}
           />
         </SettingsSection>
-      </ScrollView>
-    </SafeAreaView>
+    </SettingsScreen>
   );
-}
-
-function createStyles(colors, { isSmallScreen, isTablet }) {
-  return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.formMaxWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding,
-      width: "100%",
-    },
-    backButton: {
-      alignSelf: "flex-start",
-      marginBottom: spacing.lg,
-    },
-    eyebrow: {
-      color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginBottom: spacing.xs,
-      textTransform: "uppercase",
-    },
-    title: {
-      color: colors.text,
-      fontSize: pageTitleSize(isSmallScreen),
-      fontWeight: fontWeight.bold,
-      lineHeight: pageTitleLineHeight(isSmallScreen),
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
-      marginBottom: spacing.xl,
-      marginTop: spacing.sm,
-    },
-    message: {
-      color: colors.primary,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginBottom: spacing.lg,
-    },
-  });
 }

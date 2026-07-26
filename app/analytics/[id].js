@@ -1,40 +1,38 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import AnalyticsScaffold from "../../components/analytics/AnalyticsScreen";
 import ProgressDots from "../../components/ProgressDots";
-import { BackIcon, IconButton } from "../../components/ui";
+import { AppText, BackIcon, IconButton } from "../../components/ui";
+import { DEFAULT_HABIT_EMOJI } from "../../constants/habitOptions";
 import {
-  DEFAULT_HABIT_EMOJI,
-} from "../../constants/habitOptions";
-import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  radius,
-  spacing,
-} from "../../constants/typography";
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Spacing,
+  v2Typography,
+} from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { getHabits } from "../../storage/habitsStorage";
-import { getHabitPerformance, getTodayKey, toDateKey } from "../../utils/habitStats";
+import {
+  getHabitPerformance,
+  getTodayKey,
+  toDateKey,
+} from "../../utils/habitStats";
 
 export default function IndividualAnalyticsScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
   const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
+    () => createStyles(colors, { isSmallScreen }),
+    [colors, isSmallScreen]
   );
   const [habit, setHabit] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,34 +82,31 @@ export default function IndividualAnalyticsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
+    <AnalyticsScaffold maxWidth={v2Layout.formMaxWidth}>
         <IconButton
           accessibilityLabel="Back to Analytics"
+          color={colors.text}
           onPress={goBackToAnalytics}
           style={styles.backButton}
         >
-          <BackIcon />
+          <BackIcon color={colors.text} />
         </IconButton>
 
-        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
 
         {loading ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>Loading habit analytics...</Text>
+            <AppText style={styles.loadingText}>Loading habit analytics...</AppText>
           </View>
         ) : null}
 
         {!loading && !habit ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Habit not found</Text>
-            <Text style={styles.emptyText}>
+            <AppText style={styles.emptyTitle}>Habit not found</AppText>
+            <AppText style={styles.emptyText}>
               This habit may have been deleted.
-            </Text>
+            </AppText>
           </View>
         ) : null}
 
@@ -119,13 +114,13 @@ export default function IndividualAnalyticsScreen() {
           <>
             <View style={styles.header}>
               <View style={styles.iconBadge}>
-                <Text style={styles.icon}>{habit.emoji || DEFAULT_HABIT_EMOJI}</Text>
+                <AppText style={styles.icon}>{habit.emoji || DEFAULT_HABIT_EMOJI}</AppText>
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.category}>{analytics.category}</Text>
-                <Text style={styles.title} numberOfLines={3}>
+                <AppText style={styles.category}>{analytics.category}</AppText>
+                <AppText style={styles.title} numberOfLines={3}>
                   {habit.name}
-                </Text>
+                </AppText>
               </View>
             </View>
 
@@ -134,8 +129,8 @@ export default function IndividualAnalyticsScreen() {
               accessible
               style={styles.heroMetric}
             >
-              <Text style={styles.heroValue}>{analytics.completionRate}%</Text>
-              <Text style={styles.heroLabel}>Completion rate</Text>
+              <AppText style={styles.heroValue}>{analytics.completionRate}%</AppText>
+              <AppText style={styles.heroLabel}>Completion rate</AppText>
               <View style={styles.heroTrack}>
                 <View
                   style={[
@@ -179,15 +174,14 @@ export default function IndividualAnalyticsScreen() {
             </Section>
           </>
         ) : null}
-      </ScrollView>
-    </SafeAreaView>
+    </AnalyticsScaffold>
   );
 }
 
 function Section({ children, styles, title }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <AppText style={styles.sectionTitle}>{title}</AppText>
       {children}
     </View>
   );
@@ -196,15 +190,15 @@ function Section({ children, styles, title }) {
 function MetricRow({ label, styles, value }) {
   return (
     <View style={styles.metricRow}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text
+      <AppText style={styles.metricLabel}>{label}</AppText>
+      <AppText
         adjustsFontSizeToFit
         minimumFontScale={0.78}
         numberOfLines={1}
         style={styles.metricValue}
       >
         {value}
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -248,7 +242,7 @@ function MiniTrend({ points, styles }) {
                 ]}
               />
             </View>
-            <Text style={styles.trendLabel}>{point.label}</Text>
+            <AppText style={styles.trendLabel}>{point.label}</AppText>
           </View>
         );
       })}
@@ -295,34 +289,25 @@ function goBackToAnalytics() {
   router.replace("/analytics");
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.formMaxWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding,
-      width: "100%",
-    },
     backButton: {
       alignSelf: "flex-start",
-      marginBottom: spacing.md,
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      marginBottom: v2Spacing.md,
     },
     header: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
     },
     iconBadge: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       height: 52,
       justifyContent: "center",
@@ -337,14 +322,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     category: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
       marginBottom: 4,
     },
     title: {
       color: colors.text,
       fontSize: isSmallScreen ? 24 : 28,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       lineHeight: isSmallScreen ? 30 : 34,
     },
     heroMetric: {
@@ -352,26 +337,26 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
       borderTopWidth: StyleSheet.hairlineWidth,
-      marginBottom: spacing.xl,
-      paddingVertical: spacing.xl,
+      marginBottom: v2Spacing.xl,
+      paddingVertical: v2Spacing.xl,
     },
     heroValue: {
       color: colors.text,
       fontSize: isSmallScreen ? 50 : 58,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       lineHeight: isSmallScreen ? 56 : 64,
     },
     heroLabel: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginTop: 4,
     },
     heroTrack: {
       backgroundColor: colors.surface,
       borderRadius: 999,
       height: 8,
-      marginTop: spacing.lg,
+      marginTop: v2Spacing.lg,
       overflow: "hidden",
     },
     heroFill: {
@@ -382,10 +367,10 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     metricList: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginBottom: spacing.xl,
-      paddingHorizontal: spacing.lg,
+      marginBottom: v2Spacing.xl,
+      paddingHorizontal: v2Spacing.lg,
     },
     metricRow: {
       alignItems: "center",
@@ -398,48 +383,48 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     metricLabel: {
       color: colors.muted,
       flex: 1,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
       minWidth: 0,
     },
     metricValue: {
       color: colors.text,
       flexShrink: 0,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
       maxWidth: "52%",
       textAlign: "right",
     },
     section: {
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
     },
     sectionTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     weekCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     historyGrid: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 7,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     historyCell: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       borderWidth: 1,
       height: isSmallScreen ? 22 : 25,
       width: isSmallScreen ? 22 : 25,
@@ -456,23 +441,23 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignItems: "flex-end",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       height: 138,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     trendColumn: {
       alignItems: "center",
       flex: 1,
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       height: "100%",
       justifyContent: "flex-end",
     },
     trendTrack: {
       backgroundColor: colors.surface,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       flex: 1,
       justifyContent: "flex-end",
       overflow: "hidden",
@@ -485,29 +470,29 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     trendLabel: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       gap: 10,
       padding: 28,
     },
     loadingText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     errorBanner: {
       backgroundColor: colors.dangerSoft,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       color: colors.danger,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginBottom: 12,
       paddingHorizontal: 14,
       paddingVertical: 10,
@@ -515,20 +500,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     emptyCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      padding: spacing.xl,
+      padding: v2Spacing.xl,
     },
     emptyTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     emptyText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.body.fontSize,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.sm,
     },
   });
 }

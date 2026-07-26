@@ -487,6 +487,16 @@ function isScheduledOpportunity(
   );
 }
 
+export function isHabitScheduledOnDate(habit, dateKey) {
+  if (typeof dateKey !== "string" || !isValidDateKey(dateKey)) {
+    return false;
+  }
+
+  const date = dateKeyToLocalDate(dateKey);
+
+  return isScheduledOpportunity(habit, date);
+}
+
 function isScheduledDate(date, habit) {
   const scheduledWeekdays = getScheduledWeekdays(habit);
 

@@ -1,13 +1,14 @@
 import { Component } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
-  fontSize,
-  fontWeight,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
-import { v2Colors } from "../src/design";
+  v2Colors,
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
+import { AppText, PressableScale } from "./ui";
 
 export default class AppErrorBoundary extends Component {
   constructor(props) {
@@ -38,22 +39,19 @@ export default class AppErrorBoundary extends Component {
     return (
       <View style={styles.screen}>
         <View style={styles.card}>
-          <Text style={styles.eyebrow}>Momentum</Text>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.body}>
+          <AppText style={styles.eyebrow}>Momentum</AppText>
+          <AppText style={styles.title}>Something went wrong</AppText>
+          <AppText style={styles.body}>
             Your habit data is still stored locally. Try reopening this screen.
-          </Text>
-          <Pressable
+          </AppText>
+          <PressableScale
             accessibilityLabel="Try again"
             accessibilityRole="button"
             onPress={this.handleRetry}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-            ]}
+            style={styles.button}
           >
-            <Text style={styles.buttonText}>Try again</Text>
-          </Pressable>
+            <AppText style={styles.buttonText}>Try again</AppText>
+          </PressableScale>
         </View>
       </View>
     );
@@ -71,47 +69,44 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: v2Colors.surfaceElevated,
     borderColor: v2Colors.borderDefault,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     maxWidth: 380,
-    padding: spacing.xxl,
+    padding: v2Spacing.xxl,
     width: "100%",
+    ...v2Shadows.low,
   },
   eyebrow: {
     color: v2Colors.textSecondary,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
     letterSpacing: 0.6,
-    marginBottom: spacing.sm,
+    marginBottom: v2Spacing.sm,
     textTransform: "uppercase",
   },
   title: {
     color: v2Colors.textPrimary,
-    fontSize: fontSize.section,
-    fontWeight: fontWeight.bold,
-    lineHeight: 24,
+    fontSize: v2Typography.sectionTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: v2Typography.sectionTitle.lineHeight,
   },
   body: {
     color: v2Colors.textSecondary,
-    fontSize: fontSize.body,
-    lineHeight: lineHeight.body,
-    marginTop: spacing.sm,
+    fontSize: v2Typography.body.fontSize,
+    lineHeight: v2Typography.body.lineHeight,
+    marginTop: v2Spacing.sm,
   },
   button: {
     alignItems: "center",
     backgroundColor: v2Colors.accentPrimary,
-    borderRadius: radius.md,
+    borderRadius: v2Radius.medium,
     justifyContent: "center",
-    marginTop: spacing.xl,
+    marginTop: v2Spacing.xl,
     minHeight: 48,
-  },
-  buttonPressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.98 }],
   },
   buttonText: {
     color: v2Colors.accentContrast,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.button.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
 });

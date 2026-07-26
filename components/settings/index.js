@@ -1,5 +1,8 @@
 export {
+  SettingsHeader,
+  SettingsMessage,
   SettingsRow,
+  SettingsScreen,
   SettingsSection,
   SettingsToggleRow,
   ThemePreviewRow,

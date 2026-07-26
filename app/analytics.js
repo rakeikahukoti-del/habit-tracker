@@ -2,25 +2,22 @@ import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import BottomNav from "../components/BottomNav";
+import AnalyticsScaffold, {
+  AnalyticsHeader,
+} from "../components/analytics/AnalyticsScreen";
 import ProgressDots from "../components/ProgressDots";
-import { BackIcon, IconButton } from "../components/ui";
+import { AppText, BackIcon, IconButton } from "../components/ui";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { getGamification } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
@@ -37,10 +34,9 @@ export default function AnalyticsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
   const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
+    () => createStyles(colors, { isSmallScreen }),
+    [colors, isSmallScreen]
   );
   const [period, setPeriod] = useState("month");
   const [habits, setHabits] = useState([]);
@@ -91,34 +87,29 @@ export default function AnalyticsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
+    <AnalyticsScaffold bottomNav>
         <IconButton
           accessibilityLabel="Back to Progress"
+          color={colors.text}
           onPress={goBackToStats}
           style={styles.backButton}
         >
-          <BackIcon />
+          <BackIcon color={colors.text} />
         </IconButton>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Analytics</Text>
-          <Text style={styles.subtitle}>
-            Trends and habit performance for {getPeriodLabel(period).toLowerCase()}.
-          </Text>
-        </View>
+        <AnalyticsHeader
+          subtitle={`Trends and habit performance for ${getPeriodLabel(period).toLowerCase()}.`}
+          title="Analytics"
+        />
 
         <PeriodControl period={period} setPeriod={setPeriod} styles={styles} />
 
-        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
 
         {loading ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>Loading analytics...</Text>
+            <AppText style={styles.loadingText}>Loading analytics...</AppText>
           </View>
         ) : null}
 
@@ -162,9 +153,9 @@ export default function AnalyticsScreen() {
 
             <Section title="Habit performance" styles={styles}>
               {analytics.habitPerformance.length === 0 ? (
-                <Text style={styles.emptyText}>
+                <AppText style={styles.emptyText}>
                   Complete habits to compare performance.
-                </Text>
+                </AppText>
               ) : (
                 analytics.habitPerformance.map((item) => (
                   <HabitPerformanceRow
@@ -178,16 +169,14 @@ export default function AnalyticsScreen() {
 
             <Section title="Insights" styles={styles}>
               {analytics.insights.map((insight) => (
-                <Text key={insight} style={styles.insightText}>
+                <AppText key={insight} style={styles.insightText}>
                   {insight}
-                </Text>
+                </AppText>
               ))}
             </Section>
           </>
         ) : null}
-      </ScrollView>
-      <BottomNav />
-    </SafeAreaView>
+    </AnalyticsScaffold>
   );
 }
 
@@ -210,14 +199,14 @@ function PeriodControl({ period, setPeriod, styles }) {
               pressed && styles.pressed,
             ]}
           >
-            <Text
+            <AppText
               style={[
                 styles.periodLabel,
                 selected && styles.periodLabelSelected,
               ]}
             >
               {item.label}
-            </Text>
+            </AppText>
           </Pressable>
         );
       })}
@@ -228,7 +217,7 @@ function PeriodControl({ period, setPeriod, styles }) {
 function Section({ children, styles, title }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <AppText style={styles.sectionTitle}>{title}</AppText>
       {children}
     </View>
   );
@@ -254,9 +243,9 @@ function TrendChart({ points, styles, summary }) {
                   ]}
                 />
               </View>
-              <Text numberOfLines={1} style={styles.chartLabel}>
+              <AppText numberOfLines={1} style={styles.chartLabel}>
                 {point.label}
-              </Text>
+              </AppText>
             </View>
           );
         })}
@@ -268,9 +257,9 @@ function TrendChart({ points, styles, summary }) {
 function MetricBlock({ helper, label, styles, value }) {
   return (
     <View style={styles.metricBlock}>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-      {helper ? <Text style={styles.metricHelper}>{helper}</Text> : null}
+      <AppText style={styles.metricValue}>{value}</AppText>
+      <AppText style={styles.metricLabel}>{label}</AppText>
+      {helper ? <AppText style={styles.metricHelper}>{helper}</AppText> : null}
     </View>
   );
 }
@@ -294,12 +283,12 @@ function HabitPerformanceRow({ item, styles }) {
       ]}
     >
       <View style={styles.habitMain}>
-        <Text numberOfLines={1} style={styles.habitName}>
+        <AppText numberOfLines={1} style={styles.habitName}>
           {item.habit.name}
-        </Text>
-        <Text numberOfLines={2} style={styles.habitMeta}>
+        </AppText>
+        <AppText numberOfLines={2} style={styles.habitMeta}>
           {item.category} · {item.currentStreak} day streak · {trendLabel}
-        </Text>
+        </AppText>
         <View style={styles.habitTrack}>
           <View
             style={[
@@ -310,7 +299,7 @@ function HabitPerformanceRow({ item, styles }) {
         </View>
       </View>
       <View style={styles.habitRate}>
-        <Text style={styles.habitRateValue}>{item.completionRate}%</Text>
+        <AppText style={styles.habitRateValue}>{item.completionRate}%</AppText>
         <ProgressDots days={item.weeklyProgress} compact />
       </View>
     </Pressable>
@@ -320,10 +309,10 @@ function HabitPerformanceRow({ item, styles }) {
 function EmptyAnalytics({ styles }) {
   return (
     <View style={styles.emptyCard}>
-      <Text style={styles.emptyTitle}>Not enough data yet</Text>
-      <Text style={styles.emptyText}>
+      <AppText style={styles.emptyTitle}>Not enough data yet</AppText>
+      <AppText style={styles.emptyText}>
         Complete habits for a few days to begin seeing useful trends.
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -379,52 +368,27 @@ function goBackToStats() {
   router.replace("/stats");
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? 860 : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding + 88,
-      width: "100%",
-    },
     backButton: {
       alignSelf: "flex-start",
-      marginBottom: spacing.md,
-    },
-    header: {
-      paddingBottom: spacing.lg,
-    },
-    title: {
-      color: colors.text,
-      fontSize: isSmallScreen ? 28 : 32,
-      fontWeight: fontWeight.bold,
-      lineHeight: isSmallScreen ? 34 : 38,
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginTop: 4,
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      marginBottom: v2Spacing.md,
     },
     periodControl: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
       gap: 4,
-      marginBottom: spacing.lg,
+      marginBottom: v2Spacing.lg,
       padding: 4,
     },
     periodItem: {
       alignItems: "center",
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       flex: 1,
       justifyContent: "center",
       minHeight: 40,
@@ -436,18 +400,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     periodLabel: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     periodLabelSelected: {
       color: colors.text,
     },
     errorBanner: {
       backgroundColor: colors.dangerSoft,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       color: colors.danger,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginBottom: 12,
       paddingHorizontal: 14,
       paddingVertical: 10,
@@ -456,42 +420,42 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       gap: 10,
       padding: 28,
     },
     loadingText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     section: {
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
     },
     sectionTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     chart: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     chartBars: {
       alignItems: "flex-end",
       flexDirection: "row",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       height: 150,
     },
     chartColumn: {
       alignItems: "center",
       flex: 1,
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       height: "100%",
       justifyContent: "flex-end",
       minWidth: 0,
@@ -499,7 +463,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     chartTrack: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       borderWidth: 1,
       flex: 1,
       justifyContent: "flex-end",
@@ -508,57 +472,57 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     chartFill: {
       backgroundColor: colors.text,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       minHeight: 4,
       width: "100%",
     },
     chartLabel: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
       maxWidth: "100%",
     },
     metricGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
     },
     metricBlock: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     metricValue: {
       color: colors.text,
       fontSize: isSmallScreen ? 26 : 30,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
     },
     metricLabel: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: v2Spacing.sm,
     },
     metricHelper: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginTop: 3,
     },
     habitRow: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       minHeight: 92,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
     },
     habitMain: {
       flex: 1,
@@ -566,20 +530,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     habitName: {
       color: colors.text,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     habitMeta: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginTop: 4,
     },
     habitTrack: {
       backgroundColor: colors.surface,
-      borderRadius: radius.pill || 999,
+      borderRadius: v2Radius.pill,
       height: 6,
-      marginTop: spacing.md,
+      marginTop: v2Spacing.md,
       overflow: "hidden",
     },
     habitFill: {
@@ -590,43 +554,43 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     habitRate: {
       alignItems: "flex-end",
       flexShrink: 0,
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       justifyContent: "space-between",
       maxWidth: 104,
     },
     habitRateValue: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     insightText: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       color: colors.text,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      padding: spacing.lg,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
+      padding: v2Spacing.lg,
     },
     emptyCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      padding: spacing.xl,
+      padding: v2Spacing.xl,
     },
     emptyTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     emptyText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.body.fontSize,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.sm,
     },
     pressed: {
       opacity: 0.74,

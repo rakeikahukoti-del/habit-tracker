@@ -1,18 +1,16 @@
 import { useRef, useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
 } from "react-native";
 import { router } from "expo-router";
 import HabitFormFields from "../components/HabitFormFields";
+import HabitFormScreen, {
+  HabitFormHeader,
+  habitFormSharedStyles,
+} from "../components/HabitFormScreen";
+import { AppText } from "../components/ui";
 import {
   DEFAULT_HABIT_CATEGORY,
   DEFAULT_HABIT_COLOR,
@@ -20,15 +18,12 @@ import {
   DEFAULT_HABIT_FREQUENCY,
 } from "../constants/habitOptions";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  pageTitleLineHeight,
-  pageTitleSize,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Shadows,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { parseReminderTime } from "../notifications/habitNotifications";
 import { awardHabitCreatedBadge } from "../storage/gamificationStorage";
@@ -36,10 +31,7 @@ import { addHabit } from "../storage/habitsStorage";
 
 export default function AddHabitScreen() {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = createStyles(colors);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState(DEFAULT_HABIT_EMOJI);
   const [category, setCategory] = useState(DEFAULT_HABIT_CATEGORY);
@@ -127,61 +119,9 @@ export default function AddHabitScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.container}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.topBar}>
-            <Pressable
-              accessibilityLabel="Cancel creating habit"
-              accessibilityRole="button"
-              hitSlop={10}
-              onPress={handleCancel}
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.header}>
-            <Text style={styles.eyebrow}>New Habit</Text>
-            <Text style={styles.title}>Create a habit</Text>
-            <Text style={styles.subtitle}>
-              Choose one promise you can repeat tomorrow.
-            </Text>
-          </View>
-
-          <HabitFormFields
-            name={name}
-            setName={setName}
-            emoji={emoji}
-            setEmoji={setEmoji}
-            category={category}
-            setCategory={setCategory}
-            color={color}
-            setColor={setColor}
-            frequency={frequency}
-            setFrequency={setFrequency}
-            customDays={customDays}
-            setCustomDays={setCustomDays}
-            reminderTime={reminderTime}
-            setReminderTime={setReminderTime}
-            onNameChange={() => setError("")}
-            autoFocus
-          />
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </ScrollView>
-
+    <HabitFormScreen
+      error={error}
+      footer={
         <Pressable
           accessibilityLabel="Save habit"
           accessibilityRole="button"
@@ -193,101 +133,79 @@ export default function AddHabitScreen() {
             pressed && !saving && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.saveButtonText}>
+          <AppText style={styles.saveButtonText}>
             {saving ? "Saving..." : "Save habit"}
-          </Text>
+          </AppText>
         </Pressable>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      }
+      header={
+        <HabitFormHeader
+          eyebrow="New Habit"
+          subtitle="Choose one promise you can repeat tomorrow."
+          title="Create a habit"
+        />
+      }
+      topBar={
+        <Pressable
+          accessibilityLabel="Cancel creating habit"
+          accessibilityRole="button"
+          hitSlop={10}
+          onPress={handleCancel}
+          style={({ pressed }) => [
+            styles.cancelButton,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <AppText style={styles.cancelButtonText}>Cancel</AppText>
+        </Pressable>
+      }
+    >
+      <HabitFormFields
+        autoFocus
+        category={category}
+        color={color}
+        customDays={customDays}
+        emoji={emoji}
+        frequency={frequency}
+        name={name}
+        onNameChange={() => setError("")}
+        reminderTime={reminderTime}
+        setCategory={setCategory}
+        setColor={setColor}
+        setCustomDays={setCustomDays}
+        setEmoji={setEmoji}
+        setFrequency={setFrequency}
+        setName={setName}
+        setReminderTime={setReminderTime}
+      />
+    </HabitFormScreen>
   );
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors) {
   return StyleSheet.create({
-  safeArea: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  scrollContent: {
-    alignSelf: "center",
-    maxWidth: isTablet ? layout.formMaxWidth : "100%",
-    padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-    paddingBottom: spacing.xxl,
-    width: "100%",
-  },
-  topBar: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingTop: 4,
-  },
   cancelButton: {
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: layout.minTapTarget,
+    marginLeft: "auto",
+    minHeight: v2Layout.minTapTarget,
     paddingHorizontal: 16,
   },
   cancelButtonText: {
     color: colors.text,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-  },
-  header: {
-    marginBottom: spacing.xl,
-    paddingTop: spacing.md,
-  },
-  eyebrow: {
-    color: colors.primary,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
-    marginBottom: 6,
-  },
-  title: {
-    color: colors.text,
-    fontSize: pageTitleSize(isSmallScreen),
-    fontWeight: fontWeight.bold,
-    lineHeight: pageTitleLineHeight(isSmallScreen),
-  },
-  subtitle: {
-    color: colors.muted,
-    fontSize: fontSize.bodyLarge,
-    fontWeight: fontWeight.regular,
-    lineHeight: lineHeight.bodyLarge,
-    marginTop: spacing.sm,
-  },
-  error: {
-    color: colors.danger,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.regular,
-    marginTop: spacing.md,
+    ...v2Typography.button,
+    fontWeight: v2FontWeight.bold,
   },
   saveButton: {
-    alignItems: "center",
+    ...habitFormSharedStyles.actionButton,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    justifyContent: "center",
-    minHeight: 52,
-    paddingVertical: 16,
+    ...v2Shadows.low,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 3,
-    marginBottom: isSmallScreen
-      ? layout.screenPaddingSmall
-      : layout.screenPadding,
-    marginHorizontal: isSmallScreen
-      ? layout.screenPaddingSmall
-      : layout.screenPadding,
-    marginTop: 0,
   },
   saveButtonDisabled: {
     opacity: 0.65,
@@ -298,8 +216,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   saveButtonText: {
     color: colors.inverseText,
-    fontSize: fontSize.bodyLarge,
-    fontWeight: fontWeight.bold,
+    ...v2Typography.button,
+    fontWeight: v2FontWeight.bold,
   },
   });
 }

@@ -1,10 +1,15 @@
 import * as Haptics from "expo-haptics";
 import { router, usePathname } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { fontWeight } from "../constants/typography";
 import { useTheme } from "../context/ThemeContext";
-import { v2Layout } from "../src/design";
+import {
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Typography,
+} from "../src/design";
+import { AppText } from "./ui";
 
 const navItems = [
   { href: "/", key: "today", label: "Today" },
@@ -54,7 +59,7 @@ export default function BottomNav() {
                 name={item.key}
                 styles={styles}
               />
-              <Text
+              <AppText
                 adjustsFontSizeToFit
                 maxFontSizeMultiplier={1.2}
                 minimumFontScale={0.86}
@@ -62,7 +67,7 @@ export default function BottomNav() {
                 style={[styles.label, active && styles.labelActive]}
               >
                 {item.label}
-              </Text>
+              </AppText>
             </Pressable>
           );
         })}
@@ -190,7 +195,7 @@ function createStyles(colors, bottomInset) {
     },
     indicator: {
       backgroundColor: colors.border,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 2,
       marginBottom: 3,
       opacity: 0,
@@ -202,14 +207,14 @@ function createStyles(colors, bottomInset) {
     },
     label: {
       color: colors.softText,
-      fontSize: 11,
-      fontWeight: fontWeight.medium,
-      lineHeight: 14,
+      fontSize: v2Typography.navigationLabel.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.navigationLabel.lineHeight,
       textAlign: "center",
     },
     labelActive: {
       color: colors.text,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
     },
     iconBox: {
       alignItems: "center",
@@ -239,7 +244,7 @@ function createStyles(colors, bottomInset) {
       top: 5,
     },
     calendarDot: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       bottom: 4,
       height: 4,
       position: "absolute",
@@ -256,7 +261,7 @@ function createStyles(colors, bottomInset) {
       width: 4,
     },
     axisVertical: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       bottom: 4,
       height: 17,
       left: 4,
@@ -264,7 +269,7 @@ function createStyles(colors, bottomInset) {
       width: 2,
     },
     axisHorizontal: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       bottom: 4,
       height: 2,
       left: 4,
@@ -272,7 +277,7 @@ function createStyles(colors, bottomInset) {
       width: 17,
     },
     trendA: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 2,
       left: 8,
       position: "absolute",
@@ -281,7 +286,7 @@ function createStyles(colors, bottomInset) {
       width: 8,
     },
     trendB: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 2,
       position: "absolute",
       right: 4,
@@ -296,31 +301,31 @@ function createStyles(colors, bottomInset) {
       width: 17,
     },
     trophyStem: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 6,
       marginTop: 3,
       width: 3,
     },
     trophyBase: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 2,
       marginTop: 1,
       width: 14,
     },
     gearOuter: {
       alignItems: "center",
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 17,
       justifyContent: "center",
       width: 17,
     },
     gearInner: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 4,
       width: 4,
     },
     gearTick: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 23,
       opacity: 0.86,
       position: "absolute",

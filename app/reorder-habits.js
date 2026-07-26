@@ -5,30 +5,25 @@ import {
   PanResponder,
   Platform,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
   UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { BackIcon, IconButton } from "../components/ui";
+import { SettingsScreen } from "../components/settings";
+import { AppText } from "../components/ui";
 import {
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
 } from "../constants/habitOptions";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  pageTitleLineHeight,
-  pageTitleSize,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { getHabits, saveHabitOrder } from "../storage/habitsStorage";
 import { withAlpha } from "../utils/colorUtils";
@@ -43,8 +38,7 @@ export default function ReorderHabitsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = createStyles(colors, { isSmallScreen });
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -175,37 +169,25 @@ export default function ReorderHabitsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        scrollEnabled={!draggingId}
-        showsVerticalScrollIndicator={false}
-      >
-        <IconButton
-          accessibilityLabel="Back to Habit Preferences"
-          onPress={() => router.replace("/habit-preferences")}
-          style={styles.backButton}
-        >
-          <BackIcon />
-        </IconButton>
-
-        <Text style={styles.eyebrow}>Habits</Text>
-        <Text style={styles.title}>Reorder habits</Text>
-        <Text style={styles.subtitle}>
-          Hold a row, then drag it up or down.
-        </Text>
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    <SettingsScreen
+      backLabel="Back to Habit Preferences"
+      eyebrow="Habits"
+      onBack={() => router.replace("/habit-preferences")}
+      scrollEnabled={!draggingId}
+      subtitle="Hold a row, then drag it up or down."
+      title="Reorder habits"
+    >
+      {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
 
         <View style={styles.listCard}>
           {loading ? (
-            <Text style={styles.emptyText}>Loading habits...</Text>
+            <AppText style={styles.emptyText}>Loading habits...</AppText>
           ) : habits.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No habits yet</Text>
-              <Text style={styles.emptyText}>
+              <AppText style={styles.emptyTitle}>No habits yet</AppText>
+              <AppText style={styles.emptyText}>
                 Create a habit first, then set its order here.
-              </Text>
+              </AppText>
             </View>
           ) : (
             habits.map((habit, index) => (
@@ -223,8 +205,7 @@ export default function ReorderHabitsScreen() {
             ))
           )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </SettingsScreen>
   );
 }
 
@@ -285,81 +266,55 @@ function HabitOrderRow({
             },
           ]}
         >
-          <Text style={styles.iconText}>
+          <AppText style={styles.iconText}>
             {habit.emoji || DEFAULT_HABIT_EMOJI}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.habitText}>
-          <Text numberOfLines={1} style={styles.habitName}>
+          <AppText numberOfLines={1} style={styles.habitName}>
             {habit.name}
-          </Text>
+          </AppText>
+          {habit.category ? (
+            <AppText numberOfLines={1} style={styles.habitCategory}>
+              {habit.category}
+            </AppText>
+          ) : null}
         </View>
 
         <View
           accessible={false}
           style={styles.dragHandle}
         >
-          <Text style={styles.dragHandleText}>☰</Text>
+          <AppText style={styles.dragHandleText}>☰</AppText>
         </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.formMaxWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding,
-      width: "100%",
-    },
-    backButton: {
-      alignSelf: "flex-start",
-      marginBottom: spacing.lg,
-    },
-    eyebrow: {
-      color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginBottom: spacing.xs,
-      textTransform: "uppercase",
-    },
-    title: {
-      color: colors.text,
-      fontSize: pageTitleSize(isSmallScreen),
-      fontWeight: fontWeight.bold,
-      lineHeight: pageTitleLineHeight(isSmallScreen),
-      marginBottom: spacing.sm,
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.body,
-      marginBottom: spacing.lg,
-    },
     errorText: {
       backgroundColor: colors.dangerSoft,
-      borderRadius: radius.sm,
+      borderRadius: v2Radius.small,
       color: colors.danger,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
-      marginBottom: spacing.md,
-      padding: spacing.md,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
+      marginBottom: v2Spacing.md,
+      overflow: "hidden",
+      padding: v2Spacing.md,
     },
     listCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.xl,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       overflow: "visible",
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.07,
     },
     habitRowWrap: {
       borderTopColor: colors.border,
@@ -369,9 +324,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     habitRow: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       minHeight: 70,
-      padding: isSmallScreen ? spacing.md : spacing.lg,
+      padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
     },
     habitRowPressed: {
       opacity: 0.82,
@@ -385,16 +340,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     habitRowDragging: {
       backgroundColor: colors.inputBackground,
-      elevation: 8,
+      ...v2Shadows.floating,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 12 },
       shadowOpacity: 0.18,
-      shadowRadius: 18,
       zIndex: 20,
     },
     iconBadge: {
       alignItems: "center",
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 1,
       height: 46,
       justifyContent: "center",
@@ -402,6 +355,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     iconText: {
       fontSize: 23,
+      lineHeight: 28,
     },
     habitText: {
       flex: 1,
@@ -409,15 +363,22 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     habitName: {
       color: colors.text,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
-      lineHeight: lineHeight.bodyLarge,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.body.lineHeight,
+    },
+    habitCategory: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.caption.lineHeight,
+      marginTop: 2,
     },
     dragHandle: {
       alignItems: "center",
       backgroundColor: colors.inputBackground,
       borderColor: colors.border,
-      borderRadius: radius.round,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       height: 42,
       justifyContent: "center",
@@ -425,27 +386,27 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     dragHandleText: {
       color: colors.muted,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
       lineHeight: 22,
     },
     emptyState: {
       alignItems: "center",
-      padding: spacing.xxl,
+      padding: v2Spacing.xxl,
     },
     emptyTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
-      marginBottom: spacing.xs,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: v2Spacing.xs,
       textAlign: "center",
     },
     emptyText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.body,
-      padding: spacing.xl,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.regular,
+      lineHeight: v2Typography.body.lineHeight,
+      padding: v2Spacing.xl,
       textAlign: "center",
     },
   });

@@ -1,13 +1,13 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
-  fontSize,
-  fontWeight,
-  lineHeight,
-  radius,
-  spacing,
-} from "../../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Spacing,
+  v2Typography,
+} from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { XP_PER_LEVEL } from "../../storage/gamificationStorage";
+import { AppText } from "../ui";
 
 export default function LevelProgress({ levelInfo, rank, compact = false }) {
   const { colors } = useTheme();
@@ -22,10 +22,10 @@ export default function LevelProgress({ levelInfo, rank, compact = false }) {
     >
       <View style={styles.top}>
         <View>
-          <Text style={[styles.label, { color: colors.text }]}>LEVEL {levelInfo?.level || 1}</Text>
-          {rank ? <Text style={[styles.rank, { color: colors.muted }]}>{rank}</Text> : null}
+          <AppText style={[styles.label, { color: colors.text }]}>LEVEL {levelInfo?.level || 1}</AppText>
+          {rank ? <AppText style={[styles.rank, { color: colors.muted }]}>{rank}</AppText> : null}
         </View>
-        <Text style={[styles.xp, { color: colors.text }]}>{xp} XP</Text>
+        <AppText style={[styles.xp, { color: colors.text }]}>{xp} XP</AppText>
       </View>
       <View style={[styles.track, { backgroundColor: colors.surface }]}>
         <View
@@ -38,19 +38,19 @@ export default function LevelProgress({ levelInfo, rank, compact = false }) {
           ]}
         />
       </View>
-      <Text style={[styles.helper, { color: colors.muted }]}>
+      <AppText style={[styles.helper, { color: colors.muted }]}>
         {levelInfo?.nextLevelXp || XP_PER_LEVEL} XP to level {(levelInfo?.level || 1) + 1}
-      </Text>
+      </AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: spacing.md,
+    gap: v2Spacing.md,
   },
   wrapCompact: {
-    gap: spacing.sm,
+    gap: v2Spacing.sm,
   },
   top: {
     alignItems: "flex-end",
@@ -58,31 +58,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   label: {
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
     letterSpacing: 0.6,
   },
   rank: {
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.medium,
     marginTop: 3,
   },
   xp: {
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   track: {
-    borderRadius: radius.round,
+    borderRadius: v2Radius.pill,
     height: 7,
     overflow: "hidden",
   },
   fill: {
-    borderRadius: radius.round,
+    borderRadius: v2Radius.pill,
     height: "100%",
   },
   helper: {
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.medium,
-    lineHeight: lineHeight.caption,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: v2Typography.caption.lineHeight,
   },
 });

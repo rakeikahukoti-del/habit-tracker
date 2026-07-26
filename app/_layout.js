@@ -4,9 +4,8 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppErrorBoundary from "../components/AppErrorBoundary";
 import { MomentumLogo } from "../components/brand";
-import { fontWeight } from "../constants/typography";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
-import { v2Colors, v2Spacing } from "../src/design";
+import { v2Colors, v2FontWeight, v2Spacing } from "../src/design";
 
 export default function RootLayout() {
   return (
@@ -39,7 +38,7 @@ function ThemedStack() {
           headerTitleStyle: {
             color: colors.text,
             fontSize: 18,
-            fontWeight: fontWeight.bold,
+            fontWeight: v2FontWeight.bold,
           },
           headerTintColor: colors.primary,
           contentStyle: { backgroundColor: colors.background },

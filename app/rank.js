@@ -5,26 +5,29 @@ import {
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useFocusEffect } from "expo-router";
-import BottomNav from "../components/BottomNav";
-import { BadgeMedal, getBadgeTierAccent, LevelProgress } from "../components/progression";
+import {
+  BadgeMedal,
+  GamificationHeader,
+  GamificationScreen,
+  getBadgeTierAccent,
+  LevelProgress,
+} from "../components/progression";
+import { AppText } from "../components/ui";
 import { themes } from "../constants/colors";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import {
   badges,
@@ -44,10 +47,9 @@ export default function RankScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
   const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen, isTablet }),
-    [colors, isSmallScreen, isTablet]
+    () => createStyles(colors, { isSmallScreen }),
+    [colors, isSmallScreen]
   );
   const [gamification, setGamification] = useState(null);
   const [habits, setHabits] = useState([]);
@@ -120,37 +122,50 @@ export default function RankScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Rank</Text>
-          <Text style={styles.subtitle}>
-            Long-term progression through consistency.
-          </Text>
-        </View>
+    <GamificationScreen
+      overlay={
+        <>
+          <BadgeDetailModal
+            badge={selectedBadge?.badge}
+            earned={selectedBadge?.earned}
+            onClose={() => setSelectedBadge(null)}
+            progress={selectedBadge?.progress}
+            styles={styles}
+            visible={Boolean(selectedBadge)}
+          />
+          <AchievementDetailModal
+            achievement={selectedAchievement}
+            onClose={() => setSelectedAchievement(null)}
+            styles={styles}
+            visible={Boolean(selectedAchievement)}
+          />
+        </>
+      }
+    >
+        <GamificationHeader
+          subtitle="Long-term progression through consistency."
+          title="Rank"
+        />
 
         {loading ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>Loading progression...</Text>
+            <AppText style={styles.loadingText}>Loading progression...</AppText>
           </View>
         ) : (
           <>
             <View style={styles.hero}>
               <View style={styles.rankEmblem}>
-                <Text style={styles.rankEmblemText}>{getRankInitial(rank)}</Text>
+                <AppText style={styles.rankEmblemText}>{getRankInitial(rank)}</AppText>
               </View>
-              <Text style={styles.rankLabel}>Current rank</Text>
-              <Text style={styles.rankTitle}>{rank}</Text>
+              <AppText style={styles.rankLabel}>Current rank</AppText>
+              <AppText style={styles.rankTitle}>{rank}</AppText>
               <LevelProgress levelInfo={levelInfo} rank={rank} />
-              <Text style={styles.rankContext}>
+              <AppText style={styles.rankContext}>
                 {nextRank
                   ? `${nextRank.label} unlocks at level ${nextRank.unlockLevel}.`
                   : "Maximum rank reached."}
-              </Text>
+              </AppText>
             </View>
 
             <Section title="Rank path" styles={styles}>
@@ -214,9 +229,9 @@ export default function RankScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.showButtonText}>
+                  <AppText style={styles.showButtonText}>
                     {showAllBadges ? "Show fewer badges" : "Show all badges"}
-                  </Text>
+                  </AppText>
                 </Pressable>
               ) : null}
             </Section>
@@ -232,32 +247,16 @@ export default function RankScreen() {
                   />
                 ))
               ) : (
-                <Text style={styles.emptyText}>
+                <AppText style={styles.emptyText}>
                   Achievements appear here after badges, levels, perfect days,
                   or theme unlocks.
-                </Text>
+                </AppText>
               )}
             </Section>
           </>
         )}
-      </ScrollView>
 
-      <BadgeDetailModal
-        badge={selectedBadge?.badge}
-        earned={selectedBadge?.earned}
-        onClose={() => setSelectedBadge(null)}
-        progress={selectedBadge?.progress}
-        styles={styles}
-        visible={Boolean(selectedBadge)}
-      />
-      <AchievementDetailModal
-        achievement={selectedAchievement}
-        onClose={() => setSelectedAchievement(null)}
-        styles={styles}
-        visible={Boolean(selectedAchievement)}
-      />
-      <BottomNav />
-    </SafeAreaView>
+    </GamificationScreen>
   );
 }
 
@@ -265,8 +264,8 @@ function Section({ children, styles, subtitle, title }) {
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+        <AppText style={styles.sectionTitle}>{title}</AppText>
+        {subtitle ? <AppText style={styles.sectionSubtitle}>{subtitle}</AppText> : null}
       </View>
       {children}
     </View>
@@ -298,12 +297,12 @@ function RankPath({ currentLevel, styles }) {
               ]}
             />
             <View style={styles.rankStepText}>
-              <Text style={styles.rankStepName}>{theme.label}</Text>
-              <Text style={styles.rankStepMeta}>Level {theme.unlockLevel}</Text>
+              <AppText style={styles.rankStepName}>{theme.label}</AppText>
+              <AppText style={styles.rankStepMeta}>Level {theme.unlockLevel}</AppText>
             </View>
-            <Text style={styles.rankStepState}>
+            <AppText style={styles.rankStepState}>
               {current ? "Current" : unlocked ? "Unlocked" : "Locked"}
-            </Text>
+            </AppText>
           </View>
         );
       })}
@@ -331,10 +330,10 @@ function ThemeReward({ locked, styles, theme }) {
           style={[styles.themeSwatch, { backgroundColor: previewColors.primary }]}
         />
       </View>
-      <Text style={styles.themeName}>{theme.label}</Text>
-      <Text style={styles.themeMeta}>
+      <AppText style={styles.themeName}>{theme.label}</AppText>
+      <AppText style={styles.themeMeta}>
         {locked ? `Unlocks at level ${theme.unlockLevel}` : "Unlocked"}
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -356,16 +355,16 @@ function BadgeTile({ badge, earned, onPress, progress, styles }) {
       <BadgeMedal badge={badge} earned={earned} />
       <View style={styles.badgeText}>
         <View style={styles.badgeTopLine}>
-          <Text numberOfLines={2} style={styles.badgeName}>
+          <AppText numberOfLines={2} style={styles.badgeName}>
             {badge.label}
-          </Text>
-          <Text style={[styles.rarityPill, { borderColor: accent }]}>
+          </AppText>
+          <AppText style={[styles.rarityPill, { borderColor: accent }]}>
             {badge.rarity}
-          </Text>
+          </AppText>
         </View>
-        <Text numberOfLines={2} style={styles.badgeMeta}>
+        <AppText numberOfLines={2} style={styles.badgeMeta}>
           {earned ? badge.tier : getProgressLabel(progress)}
-        </Text>
+        </AppText>
         {!earned && progress?.max ? (
           <View style={styles.badgeMiniTrack}>
             <View
@@ -393,21 +392,21 @@ function AchievementRow({ achievement, onPress, styles }) {
       ]}
     >
       <View style={styles.achievementMark}>
-        <Text style={styles.achievementMarkText}>
+        <AppText style={styles.achievementMarkText}>
           {getAchievementMark(achievement.type)}
-        </Text>
+        </AppText>
       </View>
       <View style={styles.achievementText}>
-        <Text numberOfLines={2} style={styles.achievementTitle}>
+        <AppText numberOfLines={2} style={styles.achievementTitle}>
           {achievement.title}
-        </Text>
-        <Text numberOfLines={2} style={styles.achievementDescription}>
+        </AppText>
+        <AppText numberOfLines={2} style={styles.achievementDescription}>
           {achievement.description}
-        </Text>
+        </AppText>
       </View>
-      <Text style={styles.achievementDate}>
+      <AppText style={styles.achievementDate}>
         {formatAchievementDate(achievement.unlockedAt)}
-      </Text>
+      </AppText>
     </Pressable>
   );
 }
@@ -431,23 +430,23 @@ function BadgeDetailModal({ badge, earned, onClose, progress, styles, visible })
             showsVerticalScrollIndicator={false}
           >
             <BadgeMedal badge={badge} earned={earned} large />
-            <Text style={styles.modalEyebrow}>
+            <AppText style={styles.modalEyebrow}>
               {earned ? "Badge earned" : "Locked badge"}
-            </Text>
-            <Text style={styles.modalTitle}>{badge.label}</Text>
-            <Text style={styles.modalDescription}>{badge.description}</Text>
+            </AppText>
+            <AppText style={styles.modalTitle}>{badge.label}</AppText>
+            <AppText style={styles.modalDescription}>{badge.description}</AppText>
             <View style={styles.modalMetaRow}>
-              <Text style={styles.modalMeta}>{badge.tier}</Text>
-              <Text style={styles.modalMeta}>{badge.rarity}</Text>
+              <AppText style={styles.modalMeta}>{badge.tier}</AppText>
+              <AppText style={styles.modalMeta}>{badge.rarity}</AppText>
             </View>
             {!earned ? (
               <View style={styles.requirementBox}>
-                <Text style={styles.requirementLabel}>Requirement</Text>
-                <Text style={styles.requirementText}>{badge.description}</Text>
+                <AppText style={styles.requirementLabel}>Requirement</AppText>
+                <AppText style={styles.requirementText}>{badge.description}</AppText>
                 {progress?.max ? (
-                  <Text style={styles.requirementText}>
+                  <AppText style={styles.requirementText}>
                     Progress: {progress.value} / {progress.max}
-                  </Text>
+                  </AppText>
                 ) : null}
               </View>
             ) : null}
@@ -460,7 +459,7 @@ function BadgeDetailModal({ badge, earned, onClose, progress, styles, visible })
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.modalButtonText}>Close</Text>
+              <AppText style={styles.modalButtonText}>Close</AppText>
             </Pressable>
           </ScrollView>
         </View>
@@ -488,26 +487,26 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.achievementModalMark}>
-              <Text style={styles.achievementModalMarkText}>
+              <AppText style={styles.achievementModalMarkText}>
                 {getAchievementMark(achievement.type)}
-              </Text>
+              </AppText>
             </View>
-            <Text style={styles.modalEyebrow}>Recent achievement</Text>
-            <Text style={styles.modalTitle}>{achievement.title}</Text>
-            <Text style={styles.modalDescription}>{achievement.description}</Text>
+            <AppText style={styles.modalEyebrow}>Recent achievement</AppText>
+            <AppText style={styles.modalTitle}>{achievement.title}</AppText>
+            <AppText style={styles.modalDescription}>{achievement.description}</AppText>
             <View style={styles.modalMetaRow}>
-              <Text style={styles.modalMeta}>
+              <AppText style={styles.modalMeta}>
                 {formatAchievementType(achievement.type)}
-              </Text>
-              <Text style={styles.modalMeta}>
+              </AppText>
+              <AppText style={styles.modalMeta}>
                 {formatAchievementDate(achievement.unlockedAt)}
-              </Text>
+              </AppText>
             </View>
             {achievement.habitName ? (
-              <Text style={styles.requirementText}>Habit: {achievement.habitName}</Text>
+              <AppText style={styles.requirementText}>Habit: {achievement.habitName}</AppText>
             ) : null}
             {achievement.xp ? (
-              <Text style={styles.requirementText}>Reward: +{achievement.xp} XP</Text>
+              <AppText style={styles.requirementText}>Reward: +{achievement.xp} XP</AppText>
             ) : null}
             <Pressable
               accessibilityLabel="Close achievement details"
@@ -518,7 +517,7 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.modalButtonText}>Close</Text>
+              <AppText style={styles.modalButtonText}>Close</AppText>
             </Pressable>
           </ScrollView>
         </View>
@@ -669,64 +668,39 @@ function formatAchievementDate(dateString) {
   });
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    container: {
-      alignSelf: "center",
-      maxWidth: isTablet ? layout.maxContentWidth : "100%",
-      padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-      paddingBottom: layout.screenBottomPadding + 88,
-      width: "100%",
-    },
-    header: {
-      paddingBottom: spacing.xl,
-      paddingTop: spacing.md,
-    },
-    title: {
-      color: colors.text,
-      fontSize: isSmallScreen ? 28 : 32,
-      fontWeight: fontWeight.bold,
-      lineHeight: isSmallScreen ? 34 : 38,
-    },
-    subtitle: {
-      color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginTop: 4,
-    },
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       gap: 10,
       padding: 28,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.08,
     },
     loadingText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     hero: {
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
       borderTopWidth: StyleSheet.hairlineWidth,
-      gap: spacing.md,
-      marginBottom: spacing.xl,
-      paddingVertical: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
+      paddingVertical: v2Spacing.xl,
     },
     rankEmblem: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       height: 70,
       justifyContent: "center",
@@ -736,56 +710,59 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     rankEmblemText: {
       color: colors.text,
       fontSize: 28,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       transform: [{ rotate: "-45deg" }],
     },
     rankLabel: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     rankTitle: {
       color: colors.text,
       fontSize: isSmallScreen ? 42 : 52,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       lineHeight: isSmallScreen ? 48 : 58,
     },
     rankContext: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
     },
     section: {
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
     },
     sectionHeader: {
       gap: 3,
     },
     sectionTitle: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     sectionSubtitle: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     rankPath: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      paddingHorizontal: spacing.lg,
+      paddingHorizontal: v2Spacing.lg,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.08,
     },
     rankStep: {
       alignItems: "center",
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       minHeight: 58,
     },
     rankStepCurrent: {
@@ -793,7 +770,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     rankStepMarker: {
       borderColor: colors.border,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       height: 14,
       width: 14,
@@ -812,34 +789,37 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     rankStepName: {
       color: colors.text,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     rankStepMeta: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginTop: 2,
     },
     rankStepState: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     themeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.md,
+      gap: v2Spacing.md,
     },
     themeReward: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
       minHeight: 94,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.08,
     },
     themeRewardLocked: {
       opacity: 0.58,
@@ -847,82 +827,85 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     themeSwatches: {
       flexDirection: "row",
       gap: 6,
-      marginBottom: spacing.md,
+      marginBottom: v2Spacing.md,
     },
     themeSwatch: {
       borderColor: colors.border,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       height: 16,
       width: 16,
     },
     themeName: {
       color: colors.text,
-      fontSize: fontSize.cardTitle,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.cardTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     themeMeta: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
       marginTop: 4,
     },
     badgeProgressTrack: {
       backgroundColor: colors.surface,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 7,
       overflow: "hidden",
     },
     badgeProgressFill: {
       backgroundColor: colors.text,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: "100%",
     },
     badgeGrid: {
-      gap: spacing.md,
+      gap: v2Spacing.md,
     },
     badgeTile: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
-      gap: spacing.lg,
+      gap: v2Spacing.lg,
       minHeight: 110,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.08,
     },
     badgeText: {
       flex: 1,
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       minWidth: 0,
     },
     badgeTopLine: {
       alignItems: "flex-start",
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       justifyContent: "space-between",
     },
     badgeName: {
       color: colors.text,
       flex: 1,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
-      lineHeight: lineHeight.bodyLarge,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.body.lineHeight,
     },
     badgeMeta: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     rarityPill: {
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       color: colors.muted,
       flexShrink: 0,
       fontSize: 9,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       overflow: "hidden",
       paddingHorizontal: 8,
       paddingVertical: 3,
@@ -930,45 +913,48 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     badgeMiniTrack: {
       backgroundColor: colors.surface,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: 5,
       overflow: "hidden",
     },
     badgeMiniFill: {
       backgroundColor: colors.text,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: "100%",
     },
     showButton: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: 44,
     },
     showButtonText: {
       color: colors.text,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     achievementRow: {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       minHeight: 78,
-      padding: spacing.lg,
+      padding: v2Spacing.lg,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.08,
     },
     achievementMark: {
       alignItems: "center",
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 1,
       height: 42,
       justifyContent: "center",
@@ -976,8 +962,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     achievementMarkText: {
       color: colors.text,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     achievementText: {
       flex: 1,
@@ -985,21 +971,21 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     achievementTitle: {
       color: colors.text,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     achievementDescription: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.caption,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.caption.lineHeight,
       marginTop: 3,
     },
     achievementDate: {
       color: colors.muted,
       flexShrink: 0,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
       maxWidth: 82,
       textAlign: "right",
     },
@@ -1014,16 +1000,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       maxHeight: "82%",
       maxWidth: 390,
-      padding: spacing.xl,
+      padding: v2Spacing.xl,
+      ...v2Shadows.floating,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 14 },
       shadowOpacity: 0.18,
-      shadowRadius: 24,
-      elevation: 8,
       width: "100%",
     },
     modalScrollContent: {
@@ -1032,23 +1016,23 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     modalEyebrow: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
-      marginTop: spacing.lg,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginTop: v2Spacing.lg,
     },
     modalTitle: {
       color: colors.text,
       fontSize: 24,
-      fontWeight: fontWeight.bold,
-      marginTop: spacing.sm,
+      fontWeight: v2FontWeight.bold,
+      marginTop: v2Spacing.sm,
       textAlign: "center",
     },
     modalDescription: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.sm,
       textAlign: "center",
     },
     modalMetaRow: {
@@ -1056,16 +1040,16 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       flexWrap: "wrap",
       gap: 8,
       justifyContent: "center",
-      marginTop: spacing.lg,
+      marginTop: v2Spacing.lg,
     },
     modalMeta: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       color: colors.text,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
       overflow: "hidden",
       paddingHorizontal: 10,
       paddingVertical: 5,
@@ -1073,31 +1057,31 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     requirementBox: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginTop: spacing.lg,
-      padding: spacing.lg,
+      marginTop: v2Spacing.lg,
+      padding: v2Spacing.lg,
       width: "100%",
     },
     requirementLabel: {
       color: colors.text,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
       marginBottom: 4,
     },
     requirementText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      lineHeight: lineHeight.body,
-      marginTop: spacing.sm,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.sm,
       textAlign: "center",
     },
     achievementModalMark: {
       alignItems: "center",
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       height: 74,
       justifyContent: "center",
@@ -1107,27 +1091,27 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     achievementModalMarkText: {
       color: colors.text,
       fontSize: 24,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       transform: [{ rotate: "-45deg" }],
     },
     modalButton: {
       alignItems: "center",
       backgroundColor: colors.primary,
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       justifyContent: "center",
-      marginTop: spacing.xl,
+      marginTop: v2Spacing.xl,
       minHeight: 48,
       width: "100%",
     },
     modalButtonText: {
       color: colors.inverseText,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     emptyText: {
       color: colors.muted,
-      fontSize: fontSize.body,
-      lineHeight: lineHeight.body,
+      fontSize: v2Typography.body.fontSize,
+      lineHeight: v2Typography.body.lineHeight,
     },
     pressed: {
       opacity: 0.78,

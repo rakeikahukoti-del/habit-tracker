@@ -1,20 +1,20 @@
 import {
-  Pressable,
   SafeAreaView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router } from "expo-router";
 import { MomentumWolfMark, MomentumWordmark } from "../components/brand";
+import { AppText, PressableScale } from "../components/ui";
 import {
-  fontSize,
-  fontWeight,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { completeOnboarding } from "../storage/appPreferences";
 
@@ -37,31 +37,36 @@ export default function OnboardingScreen() {
           <MomentumWolfMark size={94} />
           <MomentumWordmark width={190} />
         </View>
-        <Text style={styles.eyebrow}>Welcome</Text>
-        <Text style={styles.title}>Build discipline through consistency.</Text>
-        <Text style={styles.subtitle}>
+        <AppText style={styles.eyebrow}>Welcome</AppText>
+        <AppText style={styles.title}>
+          Build discipline through consistency.
+        </AppText>
+        <AppText style={styles.subtitle}>
           Choose the habits that matter. Complete them each day. Momentum tracks
           the progress you build.
-        </Text>
+        </AppText>
 
         <View style={styles.points}>
-          <Text style={styles.point}>Today shows the habits in front of you.</Text>
-          <Text style={styles.point}>Progress and Rank show consistency over time.</Text>
-          <Text style={styles.point}>Your habit data stays on this device.</Text>
+          <AppText style={styles.point}>
+            Today shows the habits in front of you.
+          </AppText>
+          <AppText style={styles.point}>
+            Progress and Rank show consistency over time.
+          </AppText>
+          <AppText style={styles.point}>
+            Your habit data stays on this device.
+          </AppText>
         </View>
 
-        <Pressable
+        <PressableScale
           accessibilityLabel="Start tracking habits"
           accessibilityRole="button"
           hitSlop={8}
           onPress={handleStart}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}
+          style={styles.button}
         >
-          <Text style={styles.buttonText}>Start tracking</Text>
-        </Pressable>
+          <AppText style={styles.buttonText}>Start tracking</AppText>
+        </PressableScale>
       </View>
     </SafeAreaView>
   );
@@ -78,66 +83,69 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       flex: 1,
       justifyContent: "center",
       maxWidth: isTablet ? 620 : "100%",
-      padding: isSmallScreen ? 20 : 26,
+      padding: isSmallScreen
+        ? v2Layout.screenPaddingCompact
+        : v2Layout.screenPadding,
       width: "100%",
     },
     brand: {
       alignItems: "flex-start",
-      gap: spacing.lg,
-      marginBottom: spacing.xxl,
+      gap: v2Spacing.lg,
+      marginBottom: v2Spacing.xxl,
     },
     eyebrow: {
       color: colors.primary,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
-      marginBottom: spacing.sm,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: v2Spacing.sm,
       textTransform: "uppercase",
     },
     title: {
       color: colors.text,
-      fontSize: isSmallScreen ? 30 : 34,
-      fontWeight: fontWeight.bold,
-      lineHeight: isSmallScreen ? 36 : 40,
+      fontSize: isSmallScreen ? 30 : v2Typography.display.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: isSmallScreen ? 36 : v2Typography.display.lineHeight,
     },
     subtitle: {
       color: colors.muted,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.regular,
-      lineHeight: lineHeight.bodyLarge,
-      marginTop: 14,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.regular,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.md,
     },
     points: {
-      gap: 10,
-      marginTop: 26,
+      gap: v2Spacing.md,
+      marginTop: v2Spacing.xl,
     },
     point: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 1,
       color: colors.text,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.medium,
-      padding: 14,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
+      overflow: "hidden",
+      padding: v2Spacing.md,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.07,
     },
     button: {
       alignItems: "center",
       backgroundColor: colors.primary,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       justifyContent: "center",
-      marginTop: 28,
+      marginTop: v2Spacing.xxl,
       minHeight: 54,
-      paddingHorizontal: 18,
-      paddingVertical: 16,
-    },
-    buttonPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
+      paddingHorizontal: v2Spacing.lg,
+      paddingVertical: v2Spacing.base,
     },
     buttonText: {
       color: colors.inverseText,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.button.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
   });
 }

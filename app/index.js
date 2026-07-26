@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as Haptics from "expo-haptics";
+import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
-  AppState,
   FlatList,
-  LayoutAnimation,
   Modal,
   Platform,
   Pressable,
@@ -12,55 +9,29 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import { MomentumWolfMark } from "../components/brand";
 import ConfettiBurst from "../components/ConfettiBurst";
 import EmptyState from "../components/EmptyState";
 import HabitCard from "../components/HabitCard";
 import { BadgeMedal } from "../components/progression";
+import { AppText } from "../components/ui";
 import { themes } from "../constants/colors";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Layout,
+  v2Radius,
+  v2Shadows,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
-import {
-  defaultAppPreferences,
-  getAppPreferences,
-  getLastShownLevel,
-  hasCompletedOnboarding,
-  setLastShownLevel,
-} from "../storage/appPreferences";
-import {
-  awardHabitCompletion,
-  consumeGamificationMessages,
-  getBadgeById,
-  getGamification,
-  getGamificationLevelInfo,
-  getRankForLevel,
-  rankThemes,
-  rebuildGamificationFromHabits,
-} from "../storage/gamificationStorage";
-import {
-  completeHabitForToday,
-  getHabits,
-  uncompleteHabitForToday,
-} from "../storage/habitsStorage";
-import {
-  getCurrentStreak,
-  getTodayKey,
-  wasCompletedToday,
-} from "../utils/habitStats";
+import { useHomeController } from "../hooks/useHomeController";
+import { rankThemes } from "../utils/gamification";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -75,323 +46,37 @@ export default function HomeScreen() {
     () => createStyles(colors, { isSmallScreen, isTablet }),
     [colors, isSmallScreen, isTablet]
   );
-  const [habits, setHabits] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [celebration, setCelebration] = useState("");
-  const [completionReward, setCompletionReward] = useState(null);
-  const [badgeUnlock, setBadgeUnlock] = useState(null);
-  const [confettiKey, setConfettiKey] = useState(0);
-  const [gamification, setGamification] = useState(null);
-  const [levelUp, setLevelUp] = useState(null);
-  const [perfectDay, setPerfectDay] = useState(null);
-  const [themeUnlock, setThemeUnlock] = useState(null);
-  const [moveCompletedToBottom, setMoveCompletedToBottom] = useState(false);
-  const [preferences, setPreferences] = useState(defaultAppPreferences);
-  const [progressExpanded, setProgressExpanded] = useState(null);
-  const habitActionInProgressRef = useRef(new Set());
-  const todayKeyRef = useRef(getTodayKey());
-
-  const loadHabits = useCallback(async ({ isActive = () => true } = {}) => {
-    try {
-      if (!isActive()) {
-        return;
-      }
-
-      setError("");
-      const completedOnboarding = await hasCompletedOnboarding();
-
-      if (!isActive()) {
-        return;
-      }
-
-      if (!completedOnboarding) {
-        router.replace("/onboarding");
-        return;
-      }
-
-      const [
-        storedHabits,
-        storedPreferences,
-        messages,
-        storedGamification,
-      ] = await Promise.all([
-        getHabits(),
-        getAppPreferences(),
-        consumeGamificationMessages(),
-        getGamification(),
-      ]);
-
-      if (!isActive()) {
-        return;
-      }
-
-      setHabits(storedHabits);
-      setMoveCompletedToBottom(storedPreferences.moveCompletedToBottom);
-      setPreferences(storedPreferences);
-      setGamification(storedGamification);
-
-      setProgressExpanded((currentValue) =>
-        currentValue === null ? storedHabits.length <= 3 : currentValue
-      );
-
-      if (messages.length > 0) {
-        const queuedRewards = getQueuedRewardsFromMessages(
-          messages,
-          storedGamification,
-          storedPreferences
-        );
-
-        setCelebration(queuedRewards.celebration);
-        setPerfectDay(queuedRewards.perfectDay);
-        setLevelUp(queuedRewards.levelUp);
-        setThemeUnlock(queuedRewards.themeUnlock);
-        setBadgeUnlock(queuedRewards.badgeUnlock);
-
-        if (queuedRewards.levelUp) {
-          await setLastShownLevel(queuedRewards.levelUp.level);
-        }
-      }
-    } catch {
-      if (isActive()) {
-        setError("Could not load habits. Pull to refresh and try again.");
-      }
-    } finally {
-      if (isActive()) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      loadHabits({
-        isActive: () => isActive,
-      });
-
-      return () => {
-        isActive = false;
-      };
-    }, [loadHabits])
-  );
-
-  useEffect(() => {
-    function refreshIfDateChanged() {
-      const nextTodayKey = getTodayKey();
-
-      if (todayKeyRef.current === nextTodayKey) {
-        return;
-      }
-
-      todayKeyRef.current = nextTodayKey;
-      loadHabits();
-    }
-
-    const intervalId = setInterval(refreshIfDateChanged, 60 * 1000);
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        refreshIfDateChanged();
-      }
-    });
-
-    return () => {
-      clearInterval(intervalId);
-      subscription.remove();
-    };
-  }, [loadHabits]);
-
-  useEffect(() => {
-    if (!completionReward) {
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setCompletionReward(null);
-    }, 3200);
-
-    return () => clearTimeout(timeoutId);
-  }, [completionReward]);
-
-  useEffect(() => {
-    if (!badgeUnlock) {
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setBadgeUnlock(null);
-    }, 4200);
-
-    return () => clearTimeout(timeoutId);
-  }, [badgeUnlock]);
-
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await loadHabits();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [loadHabits]);
-
-  const handleToggleComplete = useCallback(async (habit, options = {}) => {
-    if (habitActionInProgressRef.current.has(habit.id)) {
-      return;
-    }
-
-    habitActionInProgressRef.current.add(habit.id);
-
-    try {
-      setError("");
-      if (preferences.enableRewardHaptics) {
-        triggerLightHaptic();
-      }
-
-      if (wasCompletedToday(habit)) {
-        const savedHabit = await uncompleteHabitForToday(habit.id);
-
-        if (!savedHabit) {
-          setError("Could not find this habit. Pull to refresh and try again.");
-          return;
-        }
-
-        const nextHabits = habits.map((item) =>
-          item.id === habit.id ? savedHabit : item
-        );
-        const nextGamification = await rebuildGamificationFromHabits(
-          nextHabits,
-          { includeMessage: false }
-        );
-
-        setHabits(nextHabits);
-        setGamification(nextGamification);
-        setCelebration("");
-
-        return;
-      }
-
-      const savedHabit = await completeHabitForToday(habit.id);
-
-      if (!savedHabit) {
-        setError("Could not find this habit. Pull to refresh and try again.");
-        return;
-      }
-
-      const nextHabits = habits.map((item) =>
-        item.id === habit.id ? savedHabit : item
-      );
-      const previousXp = gamification?.xp || 0;
-      const award = await awardHabitCompletion({
-        completedHabit: savedHabit,
-        habits: nextHabits,
-      });
-      const xpEarned = Math.max(10, award.gamification.xp - previousXp);
-      const rewardLevelInfo = getGamificationLevelInfo(award.gamification);
-      const rewardRank = getRankForLevel(rewardLevelInfo.level);
-
-      await consumeGamificationMessages();
-
-      setHabits(nextHabits);
-      setGamification(award.gamification);
-      setCompletionReward({
-        habitName: savedHabit.name,
-        rank: rewardRank,
-        rankProgress: rewardLevelInfo.currentLevelXp,
-        source: options.source || "tap",
-        streak: getCurrentStreak(savedHabit.completedDates, savedHabit),
-        xpEarned,
-      });
-      setBadgeUnlock(
-        preferences.showBadgePopups && award.badgeUnlocks.length > 0
-          ? award.badgeUnlocks[0]
-          : null
-      );
-      setPerfectDay(award.perfectDay || null);
-      setThemeUnlock(award.themeUnlocks[0] || null);
-      setCelebration(
-        preferences.showBadgePopups ? award.messages.join(" ") : ""
-      );
-
-      if (shouldShowConfetti(award.messages, preferences)) {
-        setConfettiKey((currentKey) => currentKey + 1);
-      }
-
-      if (preferences.showLevelUpPopup) {
-        await maybeShowLevelUp(
-          award.gamification,
-          award.messages,
-          setLevelUp
-        );
-      }
-
-      if (preferences.enableRewardHaptics) {
-        triggerSuccessHaptic();
-      }
-    } catch {
-      setError("Could not update this habit. Please try again.");
-    } finally {
-      habitActionInProgressRef.current.delete(habit.id);
-    }
-  }, [gamification, habits, preferences]);
+  const {
+    badgeUnlock,
+    celebration,
+    completionReward,
+    confettiKey,
+    error,
+    habits,
+    handleRefresh,
+    handleToggleComplete,
+    homeSummary,
+    levelUp,
+    loading,
+    perfectDay,
+    preferences,
+    progressExpanded,
+    refreshing,
+    setBadgeUnlock,
+    setCelebration,
+    setCompletionReward,
+    setLevelUp,
+    setPerfectDay,
+    setThemeUnlock,
+    themeUnlock,
+    toggleProgressExpanded,
+    visibleHabits,
+  } = useHomeController();
 
   const handleReorderPress = useCallback(() => {
     router.push("/reorder-habits");
   }, []);
 
-  const toggleProgressExpanded = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setProgressExpanded((value) => !value);
-  }, []);
-
-  const homeSummary = useMemo(() => {
-    const completedTodayCount = habits.filter((habit) =>
-      wasCompletedToday(habit)
-    ).length;
-    const completionPercentage =
-      habits.length === 0
-        ? 0
-        : Math.round((completedTodayCount / habits.length) * 100);
-    const levelInfo = getGamificationLevelInfo(gamification);
-
-    return {
-      completedTodayCount,
-      completionLabel:
-        habits.length === 0 ? "0%" : `${completionPercentage}%`,
-      completionPercentage,
-      habitsSectionMessage: getTodayHabitsMessage(completionPercentage),
-      levelInfo,
-      longestCurrentStreak: habits.reduce(
-        (longest, habit) =>
-          Math.max(longest, getCurrentStreak(habit.completedDates, habit)),
-        0
-      ),
-      motivation: getProgressMessage(completionPercentage, habits.length),
-      rank: getRankForLevel(levelInfo.level),
-      todayXp: getTodayXp(habits),
-    };
-  }, [gamification, habits]);
-  const visibleHabits = useMemo(() => {
-    const orderedHabits = [...habits].sort(
-      (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
-    );
-
-    if (!moveCompletedToBottom) {
-      return orderedHabits;
-    }
-
-    return orderedHabits.sort((firstHabit, secondHabit) => {
-      const firstCompleted = wasCompletedToday(firstHabit);
-      const secondCompleted = wasCompletedToday(secondHabit);
-
-      if (firstCompleted === secondCompleted) {
-        return firstHabit.order - secondHabit.order;
-      }
-
-      return firstCompleted ? 1 : -1;
-    });
-  }, [habits, moveCompletedToBottom]);
   const {
     completedTodayCount,
     completionLabel,
@@ -400,7 +85,6 @@ export default function HomeScreen() {
     levelInfo,
     longestCurrentStreak,
     motivation,
-    rank,
     todayXp,
   } = homeSummary;
   const renderHabitItem = useCallback(
@@ -434,8 +118,8 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <View style={styles.todayHeader}>
           <View>
-            <Text style={styles.todayTitle}>Today</Text>
-            <Text style={styles.todayDate}>{formatTodayDate()}</Text>
+            <AppText style={styles.todayTitle}>Today</AppText>
+            <AppText style={styles.todayDate}>{formatTodayDate()}</AppText>
           </View>
           <MomentumWolfMark
             color={colors.text}
@@ -448,12 +132,12 @@ export default function HomeScreen() {
           <View style={styles.progressPanel}>
             <View style={styles.progressHeader}>
               <View>
-                <Text style={styles.progressLabel}>Daily progress</Text>
-                <Text style={styles.progressValue}>{completionLabel}</Text>
+                <AppText style={styles.progressLabel}>Daily progress</AppText>
+                <AppText style={styles.progressValue}>{completionLabel}</AppText>
               </View>
-              <Text style={styles.progressCount}>
+              <AppText style={styles.progressCount}>
                 {completedTodayCount}/{habits.length}
-              </Text>
+              </AppText>
             </View>
 
             <View style={styles.progressTrack}>
@@ -468,20 +152,20 @@ export default function HomeScreen() {
             <View style={styles.progressMetaRow}>
               {preferences.showXpRankOnHome ? (
                 <>
-                  <Text style={styles.progressMeta}>
+                  <AppText style={styles.progressMeta}>
                     Level {levelInfo.level}
-                  </Text>
-                  <Text style={styles.progressMeta}>{todayXp} XP today</Text>
+                  </AppText>
+                  <AppText style={styles.progressMeta}>{todayXp} XP today</AppText>
                 </>
               ) : null}
-              <Text style={styles.progressMeta}>🔥 {longestCurrentStreak}</Text>
+              <AppText style={styles.progressMeta}>🔥 {longestCurrentStreak}</AppText>
             </View>
           </View>
         ) : null}
 
         {progressExpanded && preferences.showProgressCard ? (
           <View style={styles.focusNote}>
-            <Text style={styles.focusNoteText}>{motivation}</Text>
+            <AppText style={styles.focusNoteText}>{motivation}</AppText>
           </View>
         ) : null}
 
@@ -497,9 +181,9 @@ export default function HomeScreen() {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.progressTextButtonLabel}>
+            <AppText style={styles.progressTextButtonLabel}>
               {progressExpanded ? "Hide focus note" : "Show focus note"}
-            </Text>
+            </AppText>
           </Pressable>
         ) : null}
 
@@ -513,7 +197,7 @@ export default function HomeScreen() {
               pressed && styles.cardPressed,
             ]}
           >
-            <Text style={styles.celebrationText}>{celebration}</Text>
+            <AppText style={styles.celebrationText}>{celebration}</AppText>
           </Pressable>
         ) : null}
 
@@ -530,18 +214,18 @@ export default function HomeScreen() {
             ]}
           >
             <View style={styles.completionPopupTop}>
-              <Text style={styles.completionPopupEyebrow}>Completed</Text>
-              <Text style={styles.completionPopupXp}>
+              <AppText style={styles.completionPopupEyebrow}>Completed</AppText>
+              <AppText style={styles.completionPopupXp}>
                 +{completionReward.xpEarned} XP
-              </Text>
+              </AppText>
             </View>
-            <Text style={styles.completionPopupTitle} numberOfLines={2}>
+            <AppText style={styles.completionPopupTitle} numberOfLines={2}>
               {completionReward.habitName}
-            </Text>
-            <Text style={styles.completionPopupMeta}>
+            </AppText>
+            <AppText style={styles.completionPopupMeta}>
               {completionReward.streak} day streak • {completionReward.rank} •{" "}
               {completionReward.rankProgress}/100 XP
-            </Text>
+            </AppText>
           </Pressable>
         ) : null}
 
@@ -557,32 +241,32 @@ export default function HomeScreen() {
           >
             <BadgeMedal badge={badgeUnlock} earned large />
             <View style={styles.badgeUnlockContent}>
-              <Text style={styles.badgeUnlockEyebrow}>Badge earned</Text>
-              <Text style={styles.badgeUnlockTitle}>{badgeUnlock.label}</Text>
-              <Text style={styles.badgeUnlockDescription}>
+              <AppText style={styles.badgeUnlockEyebrow}>Badge earned</AppText>
+              <AppText style={styles.badgeUnlockTitle}>{badgeUnlock.label}</AppText>
+              <AppText style={styles.badgeUnlockDescription}>
                 {badgeUnlock.description}
-              </Text>
+              </AppText>
               <View style={styles.badgeUnlockFooter}>
-                <Text style={styles.badgeUnlockTier}>{badgeUnlock.tier}</Text>
-                <Text style={styles.badgeUnlockRarity}>
+                <AppText style={styles.badgeUnlockTier}>{badgeUnlock.tier}</AppText>
+                <AppText style={styles.badgeUnlockRarity}>
                   {badgeUnlock.rarity}
-                </Text>
+                </AppText>
               </View>
             </View>
           </Pressable>
         ) : null}
 
-        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
 
         <View style={styles.listHeader}>
           <View style={styles.listHeaderText}>
             <View style={styles.listTitleRow}>
-              <Text style={styles.listTitle}>Habits</Text>
-              <Text style={styles.doneBadgeText}>
+              <AppText style={styles.listTitle}>Habits</AppText>
+              <AppText style={styles.doneBadgeText}>
                 {completedTodayCount}/{habits.length} done
-              </Text>
+              </AppText>
             </View>
-            <Text style={styles.listSubtitle}>{habitsSectionMessage}</Text>
+            <AppText style={styles.listSubtitle}>{habitsSectionMessage}</AppText>
           </View>
           <Pressable
             accessibilityLabel="Add a new habit"
@@ -594,7 +278,7 @@ export default function HomeScreen() {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.inlineAddText}>+ Add</Text>
+            <AppText style={styles.inlineAddText}>+ Add</AppText>
           </Pressable>
         </View>
 
@@ -613,7 +297,7 @@ export default function HomeScreen() {
             loading ? (
               <View style={styles.loadingState}>
                 <ActivityIndicator color={colors.primary} />
-                <Text style={styles.loadingText}>Loading habits...</Text>
+                <AppText style={styles.loadingText}>Loading habits...</AppText>
               </View>
             ) : (
               <EmptyState />
@@ -640,17 +324,17 @@ export default function HomeScreen() {
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.rankIcon}>{getRankIcon(levelUp?.rank)}</Text>
-              <Text style={styles.levelModalEyebrow}>Rank up</Text>
-              <Text style={styles.levelModalTitle}>Level {levelUp?.level}</Text>
-              <Text style={styles.levelModalRank}>{levelUp?.rank} Rank</Text>
-              <Text style={styles.levelModalMessage}>
+              <AppText style={styles.rankIcon}>{getRankIcon(levelUp?.rank)}</AppText>
+              <AppText style={styles.levelModalEyebrow}>Rank up</AppText>
+              <AppText style={styles.levelModalTitle}>Level {levelUp?.level}</AppText>
+              <AppText style={styles.levelModalRank}>{levelUp?.rank} Rank</AppText>
+              <AppText style={styles.levelModalMessage}>
                 Your consistency is turning into momentum.
-              </Text>
+              </AppText>
               {levelUp?.themeUnlock ? (
-                <Text style={styles.levelModalUnlock}>
+                <AppText style={styles.levelModalUnlock}>
                   Theme unlocked: {levelUp.themeUnlock.label}
-                </Text>
+                </AppText>
               ) : null}
               <View style={styles.levelModalTrack}>
                 <View
@@ -669,7 +353,7 @@ export default function HomeScreen() {
                   pressed && styles.buttonPressed,
                 ]}
               >
-                <Text style={styles.levelModalButtonText}>Keep Going</Text>
+                <AppText style={styles.levelModalButtonText}>Keep Going</AppText>
               </Pressable>
             </ScrollView>
           </View>
@@ -688,14 +372,14 @@ export default function HomeScreen() {
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.levelModalEyebrow}>Theme unlocked</Text>
-              <Text style={styles.levelModalTitle}>
+              <AppText style={styles.levelModalEyebrow}>Theme unlocked</AppText>
+              <AppText style={styles.levelModalTitle}>
                 {getThemeUnlockLabel(themeUnlock)} Theme
-              </Text>
+              </AppText>
               <ThemePreview achievement={themeUnlock} styles={styles} />
-              <Text style={styles.levelModalMessage}>
+              <AppText style={styles.levelModalMessage}>
                 Preview your new rank theme and equip it instantly.
-              </Text>
+              </AppText>
               <View style={styles.modalButtonRow}>
                 <Pressable
                   accessibilityLabel="Equip unlocked theme later"
@@ -707,7 +391,7 @@ export default function HomeScreen() {
                     pressed && styles.buttonPressed,
                   ]}
                 >
-                  <Text style={styles.levelModalSecondaryText}>Later</Text>
+                  <AppText style={styles.levelModalSecondaryText}>Later</AppText>
                 </Pressable>
                 <Pressable
                   accessibilityLabel="Equip unlocked theme"
@@ -724,7 +408,7 @@ export default function HomeScreen() {
                     pressed && styles.buttonPressed,
                   ]}
                 >
-                  <Text style={styles.levelModalButtonText}>Equip</Text>
+                  <AppText style={styles.levelModalButtonText}>Equip</AppText>
                 </Pressable>
               </View>
             </ScrollView>
@@ -744,13 +428,13 @@ export default function HomeScreen() {
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.rankIcon}>★</Text>
-              <Text style={styles.levelModalEyebrow}>Perfect day</Text>
-              <Text style={styles.levelModalTitle}>All habits complete</Text>
-              <Text style={styles.levelModalMessage}>
+              <AppText style={styles.rankIcon}>★</AppText>
+              <AppText style={styles.levelModalEyebrow}>Perfect day</AppText>
+              <AppText style={styles.levelModalTitle}>All habits complete</AppText>
+              <AppText style={styles.levelModalMessage}>
                 You cleared every habit today and earned the perfect day bonus.
-              </Text>
-              <Text style={styles.levelModalUnlock}>+25 bonus XP</Text>
+              </AppText>
+              <AppText style={styles.levelModalUnlock}>+25 bonus XP</AppText>
               <Pressable
                 accessibilityLabel="Close perfect day message"
                 accessibilityRole="button"
@@ -760,7 +444,7 @@ export default function HomeScreen() {
                   pressed && styles.buttonPressed,
                 ]}
               >
-                <Text style={styles.levelModalButtonText}>Nice</Text>
+                <AppText style={styles.levelModalButtonText}>Nice</AppText>
               </Pressable>
             </ScrollView>
           </View>
@@ -771,158 +455,12 @@ export default function HomeScreen() {
   );
 }
 
-function shouldShowConfetti(messages, preferences) {
-  const hasLevelUp = messages.some((message) => message.includes("Level up"));
-  const hasMajorBadge = messages.some(
-    (message) =>
-      message.includes("7-Day Streak") ||
-      message.includes("14-Day Streak") ||
-      message.includes("30-Day Streak") ||
-      message.includes("Perfect Day")
-  );
-
-  return (
-    (preferences.showLevelUpPopup && hasLevelUp) ||
-    (preferences.showBadgePopups && hasMajorBadge)
-  );
-}
-
-function getTodayXp(habits) {
-  const completedToday = habits.filter(wasCompletedToday).length;
-  const hasPerfectDay =
-    habits.length > 0 && habits.every((habit) => wasCompletedToday(habit));
-
-  return completedToday * 10 + (hasPerfectDay ? 25 : 0);
-}
-
-function getProgressMessage(percentage, habitCount) {
-  if (habitCount === 0) {
-    return "Add one habit to start today with momentum.";
-  }
-
-  if (percentage === 100) {
-    return "Perfect day. You cleared every habit.";
-  }
-
-  if (percentage >= 70) {
-    return "Strong progress. Keep the streak alive.";
-  }
-
-  if (percentage >= 35) {
-    return "You are moving. One more check-in helps.";
-  }
-
-  return "Start small. Complete the easiest habit first.";
-}
-
-function getTodayHabitsMessage(percentage) {
-  if (percentage === 0) {
-    return "Start strong today.";
-  }
-
-  if (percentage < 50) {
-    return "Keep building momentum.";
-  }
-
-  if (percentage < 100) {
-    return "Almost there.";
-  }
-
-  return "Perfect day complete.";
-}
-
 function formatTodayDate() {
   return new Date().toLocaleDateString(undefined, {
     day: "numeric",
     month: "long",
     weekday: "long",
   });
-}
-
-function getQueuedRewardsFromMessages(messages, gamification, preferences) {
-  const levelInfo = getGamificationLevelInfo(gamification);
-  const levelMessage = messages.find((message) => message.type === "level");
-  const themeMessage = messages.find((message) => message.type === "theme");
-  const perfectDayMessage = messages.find(
-    (message) => message.type === "perfect-day"
-  );
-  const badgeMessage = messages.find((message) => message.type === "badge");
-  const textMessages = messages.filter((message) => message.type === "message");
-  const queuedLevel = levelMessage?.level || levelInfo.level;
-
-  return {
-    badgeUnlock:
-      preferences.showBadgePopups && badgeMessage?.badgeId
-        ? getBadgeById(badgeMessage.badgeId)
-        : null,
-    celebration: textMessages.map((message) => message.text).join(" "),
-    levelUp:
-      preferences.showLevelUpPopup && levelMessage
-        ? {
-            level: queuedLevel,
-            progress: (levelInfo.currentLevelXp / 100) * 100,
-            rank: getRankForLevel(queuedLevel),
-            themeUnlock: getThemeUnlockForLevel(queuedLevel),
-          }
-        : null,
-    perfectDay:
-      preferences.showBadgePopups && perfectDayMessage
-        ? {
-            description: perfectDayMessage.text,
-            title: "Perfect Day",
-            type: "perfect-day",
-          }
-        : null,
-    themeUnlock:
-      preferences.showLevelUpPopup && themeMessage
-        ? {
-            themeKey: themeMessage.themeKey,
-            title: `${getThemeUnlockLabel(themeMessage)} Theme`,
-            type: "theme",
-          }
-        : null,
-  };
-}
-
-async function triggerLightHaptic() {
-  try {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  } catch {
-    // Haptics are a nice-to-have and should never block habit completion.
-  }
-}
-
-async function triggerSuccessHaptic() {
-  try {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  } catch {
-    // Some devices or environments do not support haptic feedback.
-  }
-}
-
-async function maybeShowLevelUp(gamification, messages, setLevelUp) {
-  if (!messages.some((message) => message.includes("Level up"))) {
-    return;
-  }
-
-  const levelInfo = getGamificationLevelInfo(gamification);
-  const lastShownLevel = await getLastShownLevel();
-
-  if (levelInfo.level <= lastShownLevel) {
-    return;
-  }
-
-  await setLastShownLevel(levelInfo.level);
-  setLevelUp({
-    level: levelInfo.level,
-    progress: (levelInfo.currentLevelXp / 100) * 100,
-    rank: getRankForLevel(levelInfo.level),
-    themeUnlock: getThemeUnlockForLevel(levelInfo.level),
-  });
-}
-
-function getThemeUnlockForLevel(level) {
-  return rankThemes.find((theme) => theme.unlockLevel === level);
 }
 
 function getRankIcon(rank) {
@@ -988,12 +526,12 @@ function ThemePreview({ achievement, styles }) {
           ]}
         />
       </View>
-      <Text style={[styles.themeUnlockName, { color: previewColors.text }]}>
+      <AppText style={[styles.themeUnlockName, { color: previewColors.text }]}>
         {getThemeUnlockLabel(achievement)}
-      </Text>
-      <Text style={[styles.themeUnlockMeta, { color: previewColors.muted }]}>
+      </AppText>
+      <AppText style={[styles.themeUnlockMeta, { color: previewColors.muted }]}>
         Newly unlocked rank theme
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -1007,8 +545,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   container: {
     alignSelf: "center",
     flex: 1,
-    maxWidth: isTablet ? layout.formMaxWidth : "100%",
-    paddingHorizontal: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
+    maxWidth: isTablet ? v2Layout.formMaxWidth : "100%",
+    paddingHorizontal: isSmallScreen ? v2Layout.screenPaddingCompact : v2Layout.screenPadding,
     overflow: "hidden",
     width: "100%",
   },
@@ -1022,13 +560,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   todayTitle: {
     color: colors.text,
     fontSize: isSmallScreen ? 26 : 30,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     lineHeight: isSmallScreen ? 31 : 36,
   },
   todayDate: {
     color: colors.muted,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.medium,
     marginTop: 3,
   },
   progressPanel: {
@@ -1047,20 +585,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   progressLabel: {
     color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
     marginBottom: 4,
   },
   progressValue: {
     color: colors.text,
     fontSize: isSmallScreen ? 30 : 36,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     lineHeight: isSmallScreen ? 35 : 42,
   },
   progressCount: {
     color: colors.text,
-    fontSize: fontSize.section,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.sectionTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
     paddingBottom: 5,
   },
   progressMetaRow: {
@@ -1072,13 +610,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   progressMeta: {
     color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
   },
   focusNote: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     marginBottom: 8,
     paddingHorizontal: 14,
@@ -1086,9 +624,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   focusNoteText: {
     color: colors.muted,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.medium,
-    lineHeight: lineHeight.body,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: v2Typography.body.lineHeight,
   },
   progressTextButton: {
     alignSelf: "flex-start",
@@ -1099,159 +637,44 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   progressTextButtonLabel: {
     color: colors.primary,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
-  },
-  summaryCard: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    gap: 10,
-    marginBottom: 10,
-    marginTop: 8,
-    padding: isSmallScreen ? 14 : spacing.lg,
-    width: "100%",
-  },
-  summaryTop: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
-    justifyContent: "space-between",
-  },
-  summaryLabel: {
-    color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
-    marginBottom: 5,
-  },
-  summaryValue: {
-    color: colors.text,
-    fontSize: isSmallScreen ? 18 : 21,
-    fontWeight: fontWeight.bold,
-  },
-  percentBadge: {
-    alignItems: "center",
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.xl,
-    justifyContent: "center",
-    minHeight: 46,
-    minWidth: 70,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  percentText: {
-    color: colors.primary,
-    fontSize: fontSize.section,
-    fontWeight: fontWeight.bold,
-  },
-  compactSummary: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "space-between",
-  },
-  compactSummaryText: {
-    color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
-  },
-  progressDetails: {
-    gap: spacing.md,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   progressTrack: {
     backgroundColor: colors.inputBackground,
-    borderRadius: 999,
+    borderRadius: v2Radius.pill,
     height: 12,
     overflow: "hidden",
   },
   progressFill: {
     backgroundColor: colors.accent,
-    borderRadius: 999,
+    borderRadius: v2Radius.pill,
     height: "100%",
-  },
-  motivationText: {
-    color: colors.muted,
-    fontSize: fontSize.bodyLarge,
-    fontWeight: fontWeight.medium,
-    lineHeight: lineHeight.bodyLarge,
-  },
-  summaryStats: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  summaryStat: {
-    backgroundColor: colors.inputBackground,
-    borderRadius: radius.lg,
-    flexBasis: isSmallScreen ? "100%" : "30%",
-    flexGrow: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  summaryStatValue: {
-    color: colors.text,
-    fontSize: fontSize.section,
-    fontWeight: fontWeight.bold,
-  },
-  summaryStatLabel: {
-    color: colors.muted,
-    fontSize: fontSize.tiny,
-    fontWeight: fontWeight.bold,
-    marginTop: 3,
-    textTransform: "uppercase",
-  },
-  summaryFooter: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  progressToggle: {
-    alignItems: "center",
-    backgroundColor: colors.inputBackground,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.round,
-    justifyContent: "center",
-    minHeight: 42,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  progressToggleText: {
-    color: colors.primary,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
   },
   celebrationBanner: {
     backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
+    borderRadius: v2Radius.medium,
     marginBottom: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
   celebrationText: {
     color: colors.text,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
     lineHeight: 18,
   },
   completionPopup: {
     backgroundColor: colors.card,
     borderColor: colors.accent,
-    borderRadius: radius.xl,
+    borderRadius: v2Radius.feature,
     borderWidth: 1.5,
     marginBottom: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    ...v2Shadows.medium,
     shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.16,
-    shadowRadius: 18,
-    elevation: 6,
   },
   completionPopupTop: {
     alignItems: "center",
@@ -1261,24 +684,24 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   completionPopupEyebrow: {
     color: colors.accent,
-    fontSize: fontSize.tiny,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.navigationLabel.fontSize,
+    fontWeight: v2FontWeight.bold,
     textTransform: "uppercase",
   },
   completionPopupXp: {
     color: colors.primary,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   completionPopupTitle: {
     color: colors.text,
-    fontSize: fontSize.cardTitle,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.cardTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   completionPopupMeta: {
     color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
     lineHeight: 18,
     marginTop: 5,
   },
@@ -1286,17 +709,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.accent,
-    borderRadius: radius.xl,
+    borderRadius: v2Radius.feature,
     borderWidth: 1.5,
     gap: 14,
     marginBottom: 10,
     paddingHorizontal: 18,
     paddingVertical: 20,
+    ...v2Shadows.medium,
     shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 7,
   },
   badgeUnlockContent: {
     alignItems: "center",
@@ -1306,18 +727,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   badgeUnlockEyebrow: {
     color: colors.accent,
     fontSize: 11,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     letterSpacing: 0.6,
     textTransform: "uppercase",
   },
   badgeUnlockRarity: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderRadius: radius.round,
+    borderRadius: v2Radius.pill,
     borderWidth: 1,
     color: colors.text,
     fontSize: 12,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     overflow: "hidden",
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1326,13 +747,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   badgeUnlockTitle: {
     color: colors.text,
     fontSize: 18,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     textAlign: "center",
   },
   badgeUnlockDescription: {
     color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
     lineHeight: 18,
     textAlign: "center",
   },
@@ -1347,21 +768,21 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   badgeUnlockTier: {
     backgroundColor: colors.accentSoft,
     borderColor: colors.border,
-    borderRadius: radius.round,
+    borderRadius: v2Radius.pill,
     borderWidth: 1,
     color: colors.text,
     fontSize: 12,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     overflow: "hidden",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   errorBanner: {
     backgroundColor: colors.dangerSoft,
-    borderRadius: radius.sm,
+    borderRadius: v2Radius.small,
     color: colors.danger,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
     marginBottom: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -1388,34 +809,26 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   listTitle: {
     color: colors.text,
-    fontSize: isSmallScreen ? fontSize.cardTitle : fontSize.section,
-    fontWeight: fontWeight.bold,
+    fontSize: isSmallScreen ? v2Typography.cardTitle.fontSize : v2Typography.sectionTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   listSubtitle: {
     color: colors.muted,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
     lineHeight: 18,
     marginTop: 5,
   },
-  doneBadge: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.border,
-    borderRadius: radius.round,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
   doneBadgeText: {
     color: colors.muted,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   inlineAddButton: {
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     justifyContent: "center",
     minHeight: 44,
@@ -1424,14 +837,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   inlineAddText: {
     color: colors.text,
-    fontSize: fontSize.label,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   loadingState: {
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.xl,
+    borderRadius: v2Radius.feature,
     borderWidth: 1,
     gap: 10,
     marginTop: 24,
@@ -1439,8 +852,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   loadingText: {
     color: colors.muted,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.medium,
   },
   listContent: {
     paddingBottom: 32,
@@ -1471,16 +884,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "stretch",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     maxHeight: "82%",
     maxWidth: 360,
     padding: 22,
+    ...v2Shadows.floating,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 8,
     width: "100%",
   },
   levelModalScrollContent: {
@@ -1489,41 +900,41 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   rankIcon: {
     color: colors.accent,
     fontSize: 56,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     marginBottom: 8,
     textAlign: "center",
   },
   levelModalEyebrow: {
     color: colors.primary,
     fontSize: 12,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     marginBottom: 6,
     textTransform: "uppercase",
   },
   levelModalTitle: {
     color: colors.text,
     fontSize: 34,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
   },
   levelModalRank: {
     color: colors.accent,
     fontSize: 18,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     marginTop: 4,
   },
   levelModalMessage: {
     color: colors.muted,
     fontSize: 14,
-    fontWeight: fontWeight.medium,
+    fontWeight: v2FontWeight.medium,
     lineHeight: 21,
     marginTop: 12,
   },
   levelModalUnlock: {
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.sm,
+    borderRadius: v2Radius.small,
     color: colors.primary,
     fontSize: 14,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     marginTop: 14,
     overflow: "hidden",
     paddingHorizontal: 12,
@@ -1532,20 +943,20 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   levelModalTrack: {
     backgroundColor: colors.inputBackground,
-    borderRadius: 999,
+    borderRadius: v2Radius.pill,
     height: 10,
     marginTop: 18,
     overflow: "hidden",
   },
   levelModalFill: {
     backgroundColor: colors.primary,
-    borderRadius: 999,
+    borderRadius: v2Radius.pill,
     height: "100%",
   },
   levelModalButton: {
     alignItems: "center",
     backgroundColor: colors.primary,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     justifyContent: "center",
     marginTop: 20,
     minHeight: 50,
@@ -1553,13 +964,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalButtonText: {
     color: colors.inverseText,
     fontSize: 15,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
   },
   levelModalSecondaryButton: {
     alignItems: "center",
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     justifyContent: "center",
     marginTop: 20,
@@ -1568,7 +979,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalSecondaryText: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
   },
   modalButtonRow: {
     flexDirection: "row",
@@ -1588,7 +999,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     transform: [{ scale: 0.995 }],
   },
   themeUnlockPreview: {
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     marginTop: 16,
     padding: 16,
@@ -1600,18 +1011,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   themeUnlockDot: {
     borderColor: colors.border,
-    borderRadius: 999,
+    borderRadius: v2Radius.pill,
     borderWidth: 1,
     height: 18,
     width: 18,
   },
   themeUnlockName: {
     fontSize: 20,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
   },
   themeUnlockMeta: {
     fontSize: 12,
-    fontWeight: fontWeight.medium,
+    fontWeight: v2FontWeight.medium,
     marginTop: 4,
   },
   });

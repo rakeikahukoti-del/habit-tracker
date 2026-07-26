@@ -2,18 +2,18 @@ import { useMemo, useState } from "react";
 import {
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import {
-  fontSize,
-  fontWeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { getTodayKey, toDateKey } from "../utils/habitStats";
+import { AppText } from "./ui";
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -58,11 +58,11 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Calendar</Text>
-          <Text style={styles.subtitle}>
+          <AppText style={styles.title}>Calendar</AppText>
+          <AppText style={styles.subtitle}>
             {completedCount} complete this month
             {onToggleDate ? " · tap to edit" : ""}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.monthControls}>
@@ -76,14 +76,14 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               pressed && styles.buttonPressed,
             ]}
           >
-          <Text style={styles.monthButtonText}>{"<"}</Text>
+            <AppText style={styles.monthButtonText}>{"<"}</AppText>
           </Pressable>
-          <Text numberOfLines={1} style={styles.monthTitle}>
+          <AppText numberOfLines={1} style={styles.monthTitle}>
             {visibleMonth.toLocaleDateString(undefined, {
               month: "long",
               year: "numeric",
             })}
-          </Text>
+          </AppText>
           <Pressable
             accessibilityLabel="Next month"
             accessibilityRole="button"
@@ -97,7 +97,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               pressed && canGoNext && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.monthButtonText}>{">"}</Text>
+            <AppText style={styles.monthButtonText}>{">"}</AppText>
           </Pressable>
         </View>
       </View>
@@ -105,7 +105,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
       <View style={styles.weekdayRow}>
         {WEEKDAY_LABELS.map((label, index) => (
           <View key={`${label}-${index}`} style={styles.weekdaySlot}>
-            <Text style={styles.weekdayLabel}>{label}</Text>
+            <AppText style={styles.weekdayLabel}>{label}</AppText>
           </View>
         ))}
       </View>
@@ -133,7 +133,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
                   day.isFuture && styles.futureCell,
                 ]}
               >
-                <Text
+                <AppText
                   style={[
                     styles.dayNumber,
                     day.completed && styles.dayNumberCompleted,
@@ -142,7 +142,7 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
                   ]}
                 >
                   {day.dayOfMonth}
-                </Text>
+                </AppText>
               </Pressable>
             </View>
           )
@@ -193,34 +193,33 @@ function createStyles(colors, isSmallScreen) {
     card: {
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginBottom: spacing.xl,
-      padding: isSmallScreen ? spacing.lg : spacing.xl,
+      marginBottom: v2Spacing.xl,
+      padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
     },
     header: {
-      gap: spacing.md,
-      marginBottom: spacing.lg,
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.lg,
     },
     headerText: {
       minWidth: 0,
     },
     title: {
       color: colors.text,
-      fontSize: fontSize.cardTitle,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.cardTitle,
+      fontWeight: v2FontWeight.bold,
     },
     subtitle: {
       color: colors.muted,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.medium,
-      lineHeight: 18,
-      marginTop: spacing.xs,
+      ...v2Typography.label,
+      fontWeight: v2FontWeight.medium,
+      marginTop: v2Spacing.xs,
     },
     monthControls: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.sm,
+      gap: v2Spacing.sm,
       justifyContent: "space-between",
       width: "100%",
     },
@@ -228,7 +227,7 @@ function createStyles(colors, isSmallScreen) {
       alignItems: "center",
       backgroundColor: colors.inputBackground,
       borderColor: colors.border,
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: 44,
@@ -244,19 +243,19 @@ function createStyles(colors, isSmallScreen) {
     monthButtonText: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: fontWeight.bold,
+      fontWeight: v2FontWeight.bold,
       lineHeight: 26,
     },
     monthTitle: {
       color: colors.text,
       flex: 1,
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.body,
+      fontWeight: v2FontWeight.bold,
       textAlign: "center",
     },
     weekdayRow: {
       flexDirection: "row",
-      marginBottom: spacing.xs,
+      marginBottom: v2Spacing.xs,
     },
     weekdaySlot: {
       alignItems: "center",
@@ -264,8 +263,8 @@ function createStyles(colors, isSmallScreen) {
     },
     weekdayLabel: {
       color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.caption,
+      fontWeight: v2FontWeight.bold,
     },
     grid: {
       flexDirection: "row",
@@ -280,7 +279,7 @@ function createStyles(colors, isSmallScreen) {
       aspectRatio: 1,
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: isSmallScreen ? 40 : 44,
@@ -299,8 +298,8 @@ function createStyles(colors, isSmallScreen) {
     },
     dayNumber: {
       color: colors.softText,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.caption,
+      fontWeight: v2FontWeight.bold,
     },
     dayNumberCompleted: {
       color: colors.text,

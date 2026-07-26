@@ -1,13 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
+import { AppText, PressableScale } from "./ui";
 import {
-  fontSize,
-  fontWeight,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 
 export default function EmptyState() {
@@ -22,22 +23,19 @@ export default function EmptyState() {
         size={72}
         style={styles.mark}
       />
-      <Text style={styles.title}>No habits yet</Text>
-      <Text style={styles.message}>
+      <AppText style={styles.title}>No habits yet</AppText>
+      <AppText style={styles.message}>
         Start with one small promise to yourself.
-      </Text>
+      </AppText>
       <Link href="/add" asChild>
-        <Pressable
+        <PressableScale
           accessibilityLabel="Create a new habit"
           accessibilityRole="button"
           hitSlop={8}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}
+          style={styles.button}
         >
-          <Text style={styles.buttonText}>Create First Habit</Text>
-        </Pressable>
+          <AppText style={styles.buttonText}>Create First Habit</AppText>
+        </PressableScale>
       </Link>
     </View>
   );
@@ -49,51 +47,46 @@ function createStyles(colors) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginTop: spacing.xl,
-      paddingHorizontal: spacing.xxl,
+      marginTop: v2Spacing.xl,
+      paddingHorizontal: v2Spacing.xxl,
       paddingVertical: 36,
+      ...v2Shadows.low,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.08,
-      shadowRadius: 16,
-      elevation: 1,
     },
     mark: {
-      marginBottom: spacing.xl,
+      marginBottom: v2Spacing.xl,
     },
     title: {
       color: colors.text,
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
-      marginBottom: spacing.sm,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.sectionTitle.lineHeight,
+      marginBottom: v2Spacing.sm,
     },
     message: {
       color: colors.muted,
-      fontSize: fontSize.bodyLarge,
-      lineHeight: lineHeight.bodyLarge,
-      marginBottom: spacing.xl,
+      fontSize: v2Typography.body.fontSize,
+      lineHeight: v2Typography.body.lineHeight,
+      marginBottom: v2Spacing.xl,
       maxWidth: 260,
       textAlign: "center",
     },
     button: {
       alignItems: "center",
       backgroundColor: colors.primary,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       justifyContent: "center",
       minHeight: 48,
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.md,
-    },
-    buttonPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
+      paddingHorizontal: v2Spacing.xl,
+      paddingVertical: v2Spacing.md,
     },
     buttonText: {
       color: colors.inverseText,
-      fontSize: fontSize.bodyLarge,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.button.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
   });
 }

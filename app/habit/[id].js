@@ -1,21 +1,20 @@
 import { useCallback, useRef, useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import HabitFormFields from "../../components/HabitFormFields";
+import HabitFormScreen, {
+  HabitFormHeader,
+  habitFormSharedStyles,
+} from "../../components/HabitFormScreen";
 import HabitHistoryGrid from "../../components/HabitHistoryGrid";
 import ProgressDots from "../../components/ProgressDots";
-import { BackIcon, IconButton } from "../../components/ui";
+import { AppText, BackIcon, IconButton } from "../../components/ui";
 import {
   DEFAULT_HABIT_CATEGORY,
   DEFAULT_HABIT_COLOR,
@@ -23,14 +22,12 @@ import {
   DEFAULT_HABIT_FREQUENCY,
 } from "../../constants/habitOptions";
 import {
-  fontSize,
-  fontWeight,
-  layout,
-  pageTitleLineHeight,
-  pageTitleSize,
-  radius,
-  spacing,
-} from "../../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { parseReminderTime } from "../../notifications/habitNotifications";
 import {
@@ -50,8 +47,7 @@ export default function HabitDetailsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = createStyles(colors, { isSmallScreen });
   const { id } = useLocalSearchParams();
   const [habit, setHabit] = useState(null);
   const [name, setName] = useState("");
@@ -250,19 +246,19 @@ export default function HabitDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <HabitFormScreen>
         <View style={styles.missingContainer}>
-          <Text style={styles.missingTitle}>Loading habit...</Text>
+          <AppText style={styles.missingTitle}>Loading habit...</AppText>
         </View>
-      </SafeAreaView>
+      </HabitFormScreen>
     );
   }
 
   if (!habit) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <HabitFormScreen>
         <View style={styles.missingContainer}>
-          <Text style={styles.missingTitle}>Habit not found</Text>
+          <AppText style={styles.missingTitle}>Habit not found</AppText>
           <Pressable
             accessibilityLabel="Go Home"
             accessibilityRole="button"
@@ -273,10 +269,10 @@ export default function HabitDetailsScreen() {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.saveButtonText}>Go Home</Text>
+            <AppText style={styles.saveButtonText}>Go Home</AppText>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </HabitFormScreen>
     );
   }
 
@@ -287,50 +283,75 @@ export default function HabitDetailsScreen() {
   const icon = emoji || habit.emoji || DEFAULT_HABIT_EMOJI;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.container}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.topActions}>
-            <IconButton
-              accessibilityLabel="Back to Home"
-              onPress={() => router.replace("/")}
-              style={styles.homeButton}
-            >
-              <BackIcon />
-            </IconButton>
-          </View>
+    <HabitFormScreen
+      error={error}
+      footer={
+        <>
+          <Pressable
+            accessibilityLabel="Delete habit"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={handleDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <AppText style={styles.deleteButtonText}>Delete</AppText>
+          </Pressable>
 
-          <View style={styles.pageHeader}>
+          <Pressable
+            accessibilityLabel="Save habit changes"
+            accessibilityRole="button"
+            disabled={saving}
+            onPress={handleSave}
+            style={({ pressed }) => [
+              styles.saveButton,
+              saving && styles.saveButtonDisabled,
+              pressed && !saving && styles.buttonPressed,
+            ]}
+          >
+            <AppText style={styles.saveButtonText}>
+              {saving ? "Saving..." : "Save"}
+            </AppText>
+          </Pressable>
+        </>
+      }
+      header={
+        <HabitFormHeader
+          eyebrow="Edit Habit"
+          icon={
             <View
               style={[
                 styles.iconBadge,
                 { backgroundColor: color, borderColor: colors.border },
               ]}
             >
-              <Text style={styles.icon}>{icon}</Text>
+              <AppText style={styles.icon}>{icon}</AppText>
             </View>
-            <View style={styles.pageHeaderText}>
-              <Text style={styles.eyebrow}>Edit Habit</Text>
-              <Text style={styles.pageTitle} numberOfLines={2}>
-                {habit.name}
-              </Text>
-            </View>
-          </View>
+          }
+          title={habit.name}
+        />
+      }
+      topBar={
+        <IconButton
+          accessibilityLabel="Back to Home"
+          color={colors.text}
+          onPress={() => router.replace("/")}
+          style={styles.homeButton}
+        >
+          <BackIcon color={colors.text} />
+        </IconButton>
+      }
+    >
 
           <View style={styles.statsCard}>
             <View style={styles.statsHeader}>
               <View>
-                <Text style={styles.cardLabel}>Today</Text>
-                <Text style={styles.statusText}>
+                <AppText style={styles.cardLabel}>Today</AppText>
+                <AppText style={styles.statusText}>
                   {completedToday ? "Complete" : "Open"}
-                </Text>
+                </AppText>
               </View>
               <ProgressDots days={weeklyProgress} compact />
             </View>
@@ -366,51 +387,16 @@ export default function HabitDetailsScreen() {
               setReminderTime={setReminderTime}
               onNameChange={() => setError("")}
             />
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
-        </ScrollView>
-
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityLabel="Delete habit"
-            accessibilityRole="button"
-            hitSlop={6}
-            onPress={handleDelete}
-            style={({ pressed }) => [
-              styles.deleteButton,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </Pressable>
-
-          <Pressable
-            accessibilityLabel="Save habit changes"
-            accessibilityRole="button"
-            disabled={saving}
-            onPress={handleSave}
-            style={({ pressed }) => [
-              styles.saveButton,
-              saving && styles.saveButtonDisabled,
-              pressed && !saving && styles.buttonPressed,
-            ]}
-          >
-            <Text style={styles.saveButtonText}>
-              {saving ? "Saving..." : "Save"}
-            </Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    </HabitFormScreen>
   );
 }
 
 function StatBlock({ label, value, styles }) {
   return (
     <View style={styles.statBlock}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <AppText style={styles.statValue}>{value}</AppText>
+      <AppText style={styles.statLabel}>{label}</AppText>
     </View>
   );
 }
@@ -419,76 +405,35 @@ function getSortedUniqueDateKeys(dateKeys) {
   return Array.from(new Set(dateKeys)).sort();
 }
 
-function createStyles(colors, { isSmallScreen, isTablet }) {
+function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
-  safeArea: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    alignSelf: "center",
-    maxWidth: isTablet ? layout.formMaxWidth : "100%",
-    padding: isSmallScreen ? layout.screenPaddingSmall : layout.screenPadding,
-    paddingBottom: 34,
-    width: "100%",
-  },
-  pageHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.md,
-    marginBottom: 22,
-    paddingTop: spacing.md,
-  },
-  topActions: {
-    alignItems: "flex-start",
-    paddingTop: 6,
-    zIndex: 3,
-  },
   homeButton: {
     alignSelf: "flex-start",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
   },
   iconBadge: {
     alignItems: "center",
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     height: 58,
     justifyContent: "center",
     width: 58,
   },
   icon: {
-    fontSize: 31,
-  },
-  pageHeaderText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  eyebrow: {
-    color: colors.primary,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    marginBottom: 4,
-  },
-  pageTitle: {
     color: colors.text,
-    fontSize: pageTitleSize(isSmallScreen),
-    fontWeight: fontWeight.bold,
-    lineHeight: pageTitleLineHeight(isSmallScreen),
+    fontSize: 31,
   },
   statsCard: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     marginBottom: 18,
-    padding: isSmallScreen ? spacing.lg : spacing.xl,
+    padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
+    ...v2Shadows.low,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 1,
   },
   statsHeader: {
     alignItems: "flex-start",
@@ -500,15 +445,15 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   cardLabel: {
     color: colors.muted,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.medium,
     marginBottom: 4,
     textTransform: "uppercase",
   },
   statusText: {
     color: colors.text,
-    fontSize: fontSize.section,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.sectionTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   statsGrid: {
     flexDirection: "row",
@@ -518,7 +463,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   statBlock: {
     backgroundColor: colors.inputBackground,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: v2Radius.medium,
     borderWidth: 1,
     flexBasis: isSmallScreen ? "100%" : "30%",
     flexGrow: 1,
@@ -527,58 +472,31 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   statValue: {
     color: colors.text,
     fontSize: 22,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
   },
   statLabel: {
     color: colors.muted,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.medium,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.medium,
     marginTop: 4,
   },
   form: {
-    gap: spacing.md,
-  },
-  error: {
-    color: colors.danger,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.regular,
-    marginTop: 4,
-  },
-  actions: {
-    alignSelf: "center",
-    backgroundColor: colors.background,
-    borderTopColor: colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    gap: 12,
-    maxWidth: isTablet ? 760 : "100%",
-    padding: 18,
-    width: "100%",
+    gap: v2Spacing.md,
   },
   deleteButton: {
-    alignItems: "center",
+    ...habitFormSharedStyles.actionButton,
     backgroundColor: colors.dangerSoft,
     borderColor: colors.border,
-    borderRadius: radius.md,
     borderWidth: 1,
-    flex: 1,
-    minHeight: 50,
-    justifyContent: "center",
-    paddingVertical: 16,
   },
   deleteButtonText: {
     color: colors.danger,
-    fontSize: fontSize.bodyLarge,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   saveButton: {
-    alignItems: "center",
+    ...habitFormSharedStyles.actionButton,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    flex: 1,
-    minHeight: 50,
-    justifyContent: "center",
-    paddingVertical: 16,
   },
   saveButtonDisabled: {
     opacity: 0.65,
@@ -589,8 +507,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   saveButtonText: {
     color: colors.inverseText,
-    fontSize: fontSize.bodyLarge,
-    fontWeight: fontWeight.bold,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   missingContainer: {
     flex: 1,
@@ -601,7 +519,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   missingTitle: {
     color: colors.text,
     fontSize: 20,
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     textAlign: "center",
   },
   });

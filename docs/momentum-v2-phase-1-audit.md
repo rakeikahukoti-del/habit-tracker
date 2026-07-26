@@ -29,7 +29,7 @@ Shared production components currently live in `components/`:
 - `ProgressDots`: 7-day progress display.
 - `HabitHistoryGrid`: monthly completion calendar for habit history edits.
 - `HabitFormFields`: shared create/edit form fields.
-- `GamificationPanel`: XP/rank/badge summary.
+- `components/progression/*`: shared XP, rank, and badge presentation.
 - `ConfettiBurst`: lightweight celebration animation.
 - `EmptyState`, `LegalScreen`: common screen content.
 
@@ -209,9 +209,9 @@ The wolf mark is a scalable, front-facing, symmetrical, monochrome React Native 
 
 ## Compatibility
 
-Current production screens still use the existing `constants/colors.js` and `constants/typography.js` theme system. The new v2 system is additive and isolated under `src/design/` for gradual migration.
+Production screens now use the V2 primitives and tokens under `src/design/`, `components/ui/`, `components/settings/`, `components/analytics/`, and `components/progression/`.
 
-`src/design/legacyThemeAdapter.js` maps the v2 dark foundation to the legacy theme token names used by the current app. This is a temporary adapter for later screen-by-screen migration.
+`constants/colors.js` and `constants/typography.js` remain in the repository for legacy compatibility and should only be removed after a separate compatibility audit confirms no external or historical references require them.
 
 Theme fallback behavior:
 

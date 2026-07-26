@@ -5,18 +5,18 @@ import {
   PanResponder,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
+import { AppText } from "./ui";
 import ProgressDots from "./ProgressDots";
 import {
-  fontSize,
-  fontWeight,
-  lineHeight,
-  radius,
-  spacing,
-} from "../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Shadows,
+  v2Spacing,
+  v2Typography,
+} from "../src/design";
 import {
   getCurrentStreak,
   getWeeklyProgress,
@@ -296,7 +296,7 @@ function HabitCard({
             },
           ]}
         >
-          <Text style={styles.swipeIcon}>✓</Text>
+          <AppText align="center" style={styles.swipeIcon}>✓</AppText>
         </Animated.View>
         <Animated.Text
           style={[styles.swipeText, { opacity: completeInstructionOpacity }]}
@@ -338,7 +338,7 @@ function HabitCard({
             },
           ]}
         >
-          <Text style={styles.swipeIcon}>↶</Text>
+          <AppText align="center" style={styles.swipeIcon}>↶</AppText>
         </Animated.View>
       </Animated.View>
       <Animated.View
@@ -404,16 +404,28 @@ function HabitCard({
                   },
                 ]}
               >
-                <Text style={styles.icon}>{icon}</Text>
+                <AppText align="center" style={styles.icon}>
+                  {icon}
+                </AppText>
               </View>
 
               <View style={styles.titleGroup}>
-                <Text style={styles.name} numberOfLines={1}>
+                <AppText
+                  color={colors.text}
+                  numberOfLines={1}
+                  style={styles.name}
+                  variant="cardTitle"
+                >
                   {habit.name}
-                </Text>
-                <Text style={styles.category} numberOfLines={1}>
+                </AppText>
+                <AppText
+                  color={colors.muted}
+                  numberOfLines={1}
+                  style={styles.category}
+                  variant="caption"
+                >
                   {habit.category || "General"} · 10 XP
-                </Text>
+                </AppText>
               </View>
             </View>
           </Pressable>
@@ -432,13 +444,14 @@ function HabitCard({
               accessibilityLabel={`${currentStreak} day streak`}
               style={styles.streakBadge}
             >
-              <Text style={styles.streakIcon}>🔥</Text>
-              <Text
+              <AppText style={styles.streakIcon}>🔥</AppText>
+              <AppText
+                color={colors.muted}
                 style={styles.streakText}
                 numberOfLines={1}
               >
                 {currentStreak}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
@@ -456,7 +469,7 @@ export default memo(HabitCard);
 function createStyles(colors, isCompact) {
   return StyleSheet.create({
     swipeWrap: {
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       maxWidth: "100%",
       overflow: "hidden",
       position: "relative",
@@ -464,14 +477,14 @@ function createStyles(colors, isCompact) {
     },
     swipeAction: {
       alignItems: "center",
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 0,
       bottom: 0,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       justifyContent: "flex-start",
       left: 0,
-      paddingHorizontal: spacing.xl,
+      paddingHorizontal: v2Spacing.xl,
       position: "absolute",
       top: 0,
       width: "100%",
@@ -500,35 +513,33 @@ function createStyles(colors, isCompact) {
     swipeIndicator: {
       alignItems: "center",
       backgroundColor: "rgba(243, 243, 243, 0.92)",
-      borderRadius: radius.round,
+      borderRadius: v2Radius.pill,
       height: 32,
       justifyContent: "center",
       width: 32,
     },
     swipeIcon: {
       color: "#111111",
-      fontSize: fontSize.section,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.sectionTitle,
+      fontWeight: v2FontWeight.bold,
     },
     swipeText: {
       color: "#F3F3F3",
-      fontSize: fontSize.body,
-      fontWeight: fontWeight.bold,
+      ...v2Typography.button,
+      fontWeight: v2FontWeight.bold,
     },
     card: {
       backgroundColor: colors.card,
       borderColor: colors.habitCardBorder || colors.border,
-      borderRadius: radius.lg,
+      borderRadius: v2Radius.large,
       borderWidth: 1,
       maxWidth: "100%",
       minHeight: isCompact ? 86 : 94,
-      paddingHorizontal: isCompact ? spacing.md : spacing.lg,
-      paddingVertical: isCompact ? spacing.md : 15,
+      paddingHorizontal: isCompact ? v2Spacing.md : v2Spacing.base,
+      paddingVertical: isCompact ? v2Spacing.md : 15,
+      ...v2Shadows.low,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.08,
-      shadowRadius: 16,
-      elevation: 1,
       width: "100%",
     },
     cardLayer: {
@@ -536,14 +547,14 @@ function createStyles(colors, isCompact) {
     },
     cardCompleted: {
       borderWidth: 1.5,
-      elevation: 2,
+      ...v2Shadows.medium,
+      shadowColor: colors.accent || colors.primary,
       shadowOpacity: 0.16,
-      shadowRadius: 18,
     },
     topRow: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.md,
+      gap: v2Spacing.md,
       justifyContent: "space-between",
       maxWidth: "100%",
     },
@@ -552,7 +563,7 @@ function createStyles(colors, isCompact) {
       flex: 1,
       flexDirection: "row",
       flexShrink: 1,
-      gap: spacing.md,
+      gap: v2Spacing.md,
       justifyContent: "space-between",
       minHeight: 50,
       minWidth: 0,
@@ -565,12 +576,12 @@ function createStyles(colors, isCompact) {
       flex: 1,
       flexDirection: "row",
       flexShrink: 1,
-      gap: isCompact ? 10 : spacing.md,
+      gap: isCompact ? 10 : v2Spacing.md,
       minWidth: 0,
     },
     iconBadge: {
       alignItems: "center",
-      borderRadius: radius.md,
+      borderRadius: v2Radius.medium,
       borderWidth: 1,
       height: isCompact ? 42 : 44,
       justifyContent: "center",
@@ -578,6 +589,7 @@ function createStyles(colors, isCompact) {
     },
     icon: {
       fontSize: isCompact ? 21 : 23,
+      lineHeight: isCompact ? 26 : 28,
     },
     titleGroup: {
       flex: 1,
@@ -585,25 +597,21 @@ function createStyles(colors, isCompact) {
       minWidth: 0,
     },
     name: {
-      color: colors.text,
-      fontSize: isCompact ? fontSize.bodyLarge : 17,
-      fontWeight: fontWeight.bold,
+      fontSize: isCompact ? 15 : v2Typography.cardTitle.fontSize,
+      fontWeight: v2FontWeight.semibold,
       letterSpacing: 0,
     },
     category: {
-      color: colors.muted,
-      fontSize: fontSize.caption,
-      fontWeight: fontWeight.regular,
       marginTop: 3,
     },
     rightActions: {
       alignItems: "center",
       flexDirection: "row",
       flexShrink: 0,
-      gap: isCompact ? spacing.sm : 10,
+      gap: isCompact ? v2Spacing.sm : 10,
     },
     weekRow: {
-      marginTop: 12,
+      marginTop: v2Spacing.md,
       maxWidth: "100%",
       paddingTop: 2,
       width: "100%",
@@ -611,7 +619,7 @@ function createStyles(colors, isCompact) {
     completionDot: {
       backgroundColor: "transparent",
       borderColor: colors.border,
-      borderRadius: radius.round,
+      borderRadius: v2Radius.pill,
       borderWidth: 1.5,
       height: 15,
       width: 15,
@@ -620,20 +628,20 @@ function createStyles(colors, isCompact) {
       alignItems: "center",
       flexDirection: "row",
       flexShrink: 0,
-      gap: spacing.xs,
+      gap: v2Spacing.xs,
       justifyContent: "center",
       maxWidth: isCompact ? 58 : 66,
       minHeight: 30,
     },
     streakIcon: {
-      fontSize: fontSize.label,
-      lineHeight: lineHeight.caption,
+      fontSize: v2Typography.label.fontSize,
+      lineHeight: v2Typography.caption.lineHeight,
     },
     streakText: {
-      color: colors.muted,
       flexShrink: 1,
-      fontSize: fontSize.label,
-      fontWeight: fontWeight.bold,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.label.lineHeight,
     },
   });
 }

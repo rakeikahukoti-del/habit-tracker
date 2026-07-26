@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
-  fontSize,
-  fontWeight,
-  radius,
-} from "../../constants/typography";
+  v2FontWeight,
+  v2Radius,
+  v2Typography,
+} from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
+import { AppText } from "../ui";
 
 const tierStyles = {
   Bronze: {
@@ -95,19 +96,21 @@ export default function BadgeMedal({
             },
           ]}
         >
-          <Text
+          <AppText
             adjustsFontSizeToFit
             numberOfLines={1}
             style={[
               styles.symbol,
               {
                 color: earned ? tier.symbol : colors.muted,
-                fontSize: large ? fontSize.section : fontSize.caption,
+                fontSize: large
+                  ? v2Typography.sectionTitle.fontSize
+                  : v2Typography.caption.fontSize,
               },
             ]}
           >
             {symbol}
-          </Text>
+          </AppText>
         </View>
       </View>
     </View>
@@ -121,7 +124,7 @@ export function getBadgeTierAccent(tierName) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: "center",
-    borderRadius: radius.lg,
+    borderRadius: v2Radius.large,
     borderWidth: 1.5,
     justifyContent: "center",
     overflow: "hidden",
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
   },
   inner: {
     alignItems: "center",
-    borderRadius: radius.md,
+    borderRadius: v2Radius.medium,
     borderWidth: 1,
     height: "78%",
     justifyContent: "center",
@@ -140,13 +143,13 @@ const styles = StyleSheet.create({
   },
   symbolPlate: {
     alignItems: "center",
-    borderRadius: radius.sm,
+    borderRadius: v2Radius.small,
     borderWidth: 1,
     justifyContent: "center",
     transform: [{ rotate: "-45deg" }],
   },
   symbol: {
-    fontWeight: fontWeight.bold,
+    fontWeight: v2FontWeight.bold,
     letterSpacing: 0.4,
     textAlign: "center",
   },
