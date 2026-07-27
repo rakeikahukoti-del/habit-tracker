@@ -12,7 +12,10 @@ import {
   v2Spacing,
   v2Typography,
 } from "../src/design";
-import { getTodayKey, toDateKey } from "../utils/habitStats";
+import {
+  getCalendarMonthDays,
+  startOfMonth,
+} from "../utils/calendarMonth";
 import { AppIcon, AppText } from "./ui";
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -163,42 +166,6 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
       </View>
     </View>
   );
-}
-
-function getCalendarMonthDays(habit, visibleMonth) {
-  const completedSet = new Set(habit.completedDates || []);
-  const todayKey = getTodayKey();
-  const today = startOfDay(new Date());
-  const year = visibleMonth.getFullYear();
-  const month = visibleMonth.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const leadingBlanks = firstDay.getDay();
-  const blanks = Array.from({ length: leadingBlanks }, () => ({
-    isBlank: true,
-  }));
-  const days = Array.from({ length: lastDay.getDate() }, (_, index) => {
-    const date = new Date(year, month, index + 1);
-    const dateKey = toDateKey(date);
-
-    return {
-      completed: completedSet.has(dateKey),
-      dateKey,
-      dayOfMonth: date.getDate(),
-      isFuture: startOfDay(date) > today,
-      isToday: dateKey === todayKey,
-    };
-  });
-
-  return [...blanks, ...days];
-}
-
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function createStyles(colors, isSmallScreen) {

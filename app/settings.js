@@ -345,6 +345,14 @@ export default function SettingsScreen() {
             </AppText>
 
             <TextInput
+              accessibilityHint={
+                modalMode === "export"
+                  ? "Copy this JSON backup."
+                  : "Paste a Momentum JSON backup before importing."
+              }
+              accessibilityLabel={
+                modalMode === "export" ? "Exported JSON backup" : "Import JSON backup"
+              }
               multiline
               onChangeText={modalMode === "export" ? setBackupText : setImportText}
               placeholder="Paste JSON here"

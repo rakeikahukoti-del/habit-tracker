@@ -32,9 +32,9 @@ import { router } from "expo-router";
 
 const SWIPE_COMPLETE_COLOR = "#4F755B";
 const SWIPE_UNDO_COLOR = "#85494D";
-const SWIPE_START_DISTANCE = 8;
-const SWIPE_DIRECTION_RATIO = 0.85;
-const SWIPE_THRESHOLD = 32;
+const SWIPE_START_DISTANCE = 7;
+const SWIPE_DIRECTION_RATIO = 0.72;
+const SWIPE_THRESHOLD = 28;
 const SWIPE_LIMIT = 112;
 
 function HabitCard({
@@ -121,8 +121,12 @@ function HabitCard({
 
           const horizontalDistance = Math.abs(gestureState.dx);
           const verticalDistance = Math.abs(gestureState.dy);
+          const validDirection =
+            (!completedToday && gestureState.dx > 0) ||
+            (completedToday && gestureState.dx < 0);
 
           return (
+            validDirection &&
             horizontalDistance > SWIPE_START_DISTANCE &&
             horizontalDistance > verticalDistance * SWIPE_DIRECTION_RATIO
           );
@@ -133,6 +137,8 @@ function HabitCard({
           }
 
           const horizontalSwipe =
+            ((!completedToday && gestureState.dx > 0) ||
+              (completedToday && gestureState.dx < 0)) &&
             Math.abs(gestureState.dx) > SWIPE_START_DISTANCE &&
             Math.abs(gestureState.dx) >
               Math.abs(gestureState.dy) * SWIPE_DIRECTION_RATIO;
@@ -369,6 +375,7 @@ function HabitCard({
             accessibilityHint="Swipe right to complete, swipe left to undo, or double tap to open details."
             accessibilityLabel={`${habit.name}, ${habit.category || "General"}, ${currentStreak} day streak`}
             accessibilityRole="button"
+            accessibilityState={{ selected: completedToday }}
             delayLongPress={260}
             onLongPress={() => {
               if (enableLongPressReorder) {
@@ -412,7 +419,7 @@ function HabitCard({
               <View style={styles.titleGroup}>
                 <AppText
                   color={colors.text}
-                  numberOfLines={1}
+                  numberOfLines={2}
                   style={styles.name}
                   variant="cardTitle"
                 >
@@ -420,7 +427,7 @@ function HabitCard({
                 </AppText>
                 <AppText
                   color={colors.muted}
-                  numberOfLines={1}
+                  numberOfLines={2}
                   style={styles.category}
                   variant="caption"
                 >

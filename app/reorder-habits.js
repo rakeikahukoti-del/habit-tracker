@@ -28,12 +28,14 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import {
   getHabits,
-  normalizeHabitOrder,
   saveHabitOrder,
 } from "../storage/habitsStorage";
 import { withAlpha } from "../utils/colorUtils";
 
 const ROW_DRAG_HEIGHT = 82;
+const AUTO_SCROLL_EDGE_DISTANCE = 116;
+const AUTO_SCROLL_STEP = 44;
+const AUTO_SCROLL_THROTTLE_MS = 70;
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -41,7 +43,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function ReorderHabitsScreen() {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
@@ -53,6 +55,10 @@ export default function ReorderHabitsScreen() {
   const [draggingId, setDraggingId] = useState(null);
   const activeDragY = useRef(new Animated.Value(0)).current;
   const habitsRef = useRef([]);
+  const lastAutoScrollAtRef = useRef(0);
+  const originalOrderIdsRef = useRef([]);
+  const scrollOffsetRef = useRef(0);
+  const scrollRef = useRef(null);
   const dragState = useRef({
     id: null,
     lastIndex: 0,
@@ -73,7 +79,7 @@ export default function ReorderHabitsScreen() {
       async function loadHabits() {
         try {
           setError("");
-          const savedHabits = normalizeHabitOrder(await getHabits());
+          const savedHabits = await getHabits();
 
           if (isActive) {
             setHabits(savedHabits);
@@ -106,6 +112,7 @@ export default function ReorderHabitsScreen() {
       lastIndex: index,
       startIndex: index,
     };
+    originalOrderIdsRef.current = habitsRef.current.map((item) => item.id);
     setDraggingId(habit.id);
     Haptics.selectionAsync().catch(() => {});
   }
@@ -128,6 +135,7 @@ export default function ReorderHabitsScreen() {
       (targetIndex - currentDrag.startIndex) * ROW_DRAG_HEIGHT;
 
     activeDragY.setValue(visualOffset);
+    maybeAutoScroll(gestureState.moveY);
 
     if (targetIndex === currentDrag.lastIndex) {
       return;
@@ -157,13 +165,16 @@ export default function ReorderHabitsScreen() {
 
     try {
       setError("");
-      await animateToRest(activeDragY);
-      const reorderedHabits = await saveHabitOrder(
-        habitsRef.current.map((habit) => habit.id)
-      );
+      const nextOrderIds = habitsRef.current.map((habit) => habit.id);
 
-      habitsRef.current = reorderedHabits;
-      setHabits(reorderedHabits);
+      await animateToRest(activeDragY);
+
+      if (!areStringArraysEqual(originalOrderIdsRef.current, nextOrderIds)) {
+        const reorderedHabits = await saveHabitOrder(nextOrderIds);
+
+        habitsRef.current = reorderedHabits;
+        setHabits(reorderedHabits);
+      }
     } catch {
       setError("Could not reorder habits. Please try again.");
     } finally {
@@ -178,12 +189,43 @@ export default function ReorderHabitsScreen() {
     }
   }
 
+  function maybeAutoScroll(moveY) {
+    const now = Date.now();
+
+    if (now - lastAutoScrollAtRef.current < AUTO_SCROLL_THROTTLE_MS) {
+      return;
+    }
+
+    let nextOffset = scrollOffsetRef.current;
+
+    if (moveY < AUTO_SCROLL_EDGE_DISTANCE) {
+      nextOffset = Math.max(0, scrollOffsetRef.current - AUTO_SCROLL_STEP);
+    } else if (moveY > height - AUTO_SCROLL_EDGE_DISTANCE) {
+      nextOffset = scrollOffsetRef.current + AUTO_SCROLL_STEP;
+    } else {
+      return;
+    }
+
+    lastAutoScrollAtRef.current = now;
+    scrollOffsetRef.current = nextOffset;
+    scrollRef.current?.scrollTo({ animated: true, y: nextOffset });
+  }
+
   return (
     <SettingsScreen
       backLabel="Back to Habit Preferences"
       eyebrow="Habits"
-      onBack={() => router.replace("/habit-preferences")}
+      onBack={() => {
+        if (!draggingId) {
+          router.replace("/habit-preferences");
+        }
+      }}
+      onScroll={(event) => {
+        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      }}
       scrollEnabled={!draggingId}
+      scrollEventThrottle={16}
+      scrollRef={scrollRef}
       subtitle="Hold the handle, then drag the habit into position."
       title="Reorder habits"
     >
@@ -264,8 +306,8 @@ function HabitOrderRow({
         accessibilityHint="Long press, then drag up or down to reorder."
         accessibilityLabel={`Reorder ${habit.name}`}
         accessibilityRole="button"
-        accessibilityState={{ busy: isDragging }}
-        delayLongPress={180}
+        accessibilityState={{ busy: isDragging, selected: isDragging }}
+        delayLongPress={150}
         onLongPress={() => onDragStart(habit, index)}
         style={({ pressed }) => [
           styles.habitRow,
@@ -292,7 +334,7 @@ function HabitOrderRow({
           </AppText>
           {habit.category ? (
             <AppText numberOfLines={1} style={styles.habitCategory}>
-            {habit.category}
+              {habit.category}
             </AppText>
           ) : null}
         </View>
@@ -401,9 +443,9 @@ function createStyles(colors, { isSmallScreen }) {
       borderColor: colors.border,
       borderRadius: v2Radius.pill,
       borderWidth: 1,
-      height: 42,
+      height: 48,
       justifyContent: "center",
-      width: 42,
+      width: 48,
     },
     emptyState: {
       alignItems: "center",
@@ -438,6 +480,14 @@ function moveArrayItem(items, fromIndex, toIndex) {
   nextItems.splice(toIndex, 0, item);
 
   return nextItems;
+}
+
+function areStringArraysEqual(firstArray, secondArray) {
+  if (firstArray.length !== secondArray.length) {
+    return false;
+  }
+
+  return firstArray.every((item, index) => item === secondArray[index]);
 }
 
 function animateToRest(animatedValue) {

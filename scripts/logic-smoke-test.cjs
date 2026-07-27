@@ -185,6 +185,13 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
   return require(moduleName);
 });
 const themePreferences = loadModule("utils/themePreferences.js");
+const calendarMonth = loadModule("utils/calendarMonth.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const designColors = loadModule("src/design/colors.js");
 const legacyThemeAdapter = loadModule("src/design/legacyThemeAdapter.js", (moduleName) => {
   if (moduleName === "./colors") {
@@ -291,6 +298,39 @@ test("date keys and active streaks stay local-date safe", () => {
     habitStats.getBestStreak(["2025-12-31", "2026-01-01"]),
     2,
     "streaks should bridge year boundaries"
+  );
+});
+
+test("calendar month helper handles leap years, blanks, today, and future days", () => {
+  const days = calendarMonth.getCalendarMonthDays(
+    { completedDates: ["2024-02-29"] },
+    new Date(2024, 1, 1),
+    new Date(2024, 1, 20)
+  );
+  const realDays = days.filter((day) => !day.isBlank);
+
+  assert.strictEqual(days.filter((day) => day.isBlank).length, 4);
+  assert.strictEqual(realDays.length, 29);
+  assert.strictEqual(realDays[19].dateKey, "2024-02-20");
+  assert.strictEqual(realDays[19].isToday, true);
+  assert.strictEqual(realDays[20].isFuture, true);
+  assert.strictEqual(
+    realDays.find((day) => day.dateKey === "2024-02-29").completed,
+    true
+  );
+  assert.strictEqual(
+    calendarMonth.isCurrentOrFutureMonth(
+      new Date(2024, 2, 1),
+      new Date(2024, 1, 20)
+    ),
+    true
+  );
+  assert.strictEqual(
+    calendarMonth.isCurrentOrFutureMonth(
+      new Date(2024, 0, 1),
+      new Date(2024, 1, 20)
+    ),
+    false
   );
 });
 
@@ -808,6 +848,8 @@ test("habit order normalization repairs missing, duplicate, and explicit order v
 
   const explicit = habitsStorage.normalizeHabitOrder(normalized, [
     "missing",
+    "missing",
+    "unknown",
     "first",
   ]);
 

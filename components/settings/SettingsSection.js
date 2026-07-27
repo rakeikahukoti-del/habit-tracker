@@ -26,6 +26,9 @@ export function SettingsScreen({
   eyebrow = "Settings",
   onBack,
   scrollEnabled = true,
+  scrollEventThrottle,
+  scrollRef,
+  onScroll,
   subtitle,
   title,
 }) {
@@ -43,7 +46,10 @@ export function SettingsScreen({
           bottomNav && styles.containerWithBottomNav,
         ]}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        ref={scrollRef}
         scrollEnabled={scrollEnabled}
+        scrollEventThrottle={scrollEventThrottle}
         showsVerticalScrollIndicator={false}
       >
         <SettingsHeader
