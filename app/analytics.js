@@ -257,7 +257,14 @@ function TrendChart({ points, styles, summary }) {
 function MetricBlock({ helper, label, styles, value }) {
   return (
     <View style={styles.metricBlock}>
-      <AppText style={styles.metricValue}>{value}</AppText>
+      <AppText
+        adjustsFontSizeToFit
+        minimumFontScale={0.72}
+        numberOfLines={2}
+        style={styles.metricValue}
+      >
+        {value}
+      </AppText>
       <AppText style={styles.metricLabel}>{label}</AppText>
       {helper ? <AppText style={styles.metricHelper}>{helper}</AppText> : null}
     </View>
@@ -282,26 +289,33 @@ function HabitPerformanceRow({ item, styles }) {
         pressed && styles.pressed,
       ]}
     >
-      <View style={styles.habitMain}>
-        <AppText numberOfLines={1} style={styles.habitName}>
-          {item.habit.name}
-        </AppText>
-        <AppText numberOfLines={2} style={styles.habitMeta}>
-          {item.category} · {item.currentStreak} day streak · {trendLabel}
-        </AppText>
-        <View style={styles.habitTrack}>
-          <View
-            style={[
-              styles.habitFill,
-              { width: `${clampPercentage(item.completionRate)}%` },
-            ]}
-          />
+      <View style={styles.habitTopRow}>
+        <View style={styles.habitMain}>
+          <AppText numberOfLines={2} style={styles.habitName}>
+            {item.habit.name}
+          </AppText>
+          <AppText numberOfLines={3} style={styles.habitMeta}>
+            {item.category} · {item.currentStreak} day streak · {trendLabel}
+          </AppText>
         </View>
+        <AppText
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+          numberOfLines={1}
+          style={styles.habitRateValue}
+        >
+          {item.completionRate}%
+        </AppText>
       </View>
-      <View style={styles.habitRate}>
-        <AppText style={styles.habitRateValue}>{item.completionRate}%</AppText>
-        <ProgressDots days={item.weeklyProgress} compact />
+      <View style={styles.habitTrack}>
+        <View
+          style={[
+            styles.habitFill,
+            { width: `${clampPercentage(item.completionRate)}%` },
+          ]}
+        />
       </View>
+      <ProgressDots days={item.weeklyProgress} compact />
     </Pressable>
   );
 }
@@ -391,7 +405,7 @@ function createStyles(colors, { isSmallScreen }) {
       borderRadius: v2Radius.medium,
       flex: 1,
       justifyContent: "center",
-      minHeight: 40,
+      minHeight: 44,
     },
     periodItemSelected: {
       backgroundColor: colors.surface,
@@ -495,12 +509,14 @@ function createStyles(colors, { isSmallScreen }) {
       borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
+      minWidth: 0,
       padding: v2Spacing.lg,
     },
     metricValue: {
       color: colors.text,
       fontSize: isSmallScreen ? 26 : 30,
       fontWeight: v2FontWeight.bold,
+      lineHeight: isSmallScreen ? 31 : 36,
     },
     metricLabel: {
       color: colors.muted,
@@ -519,10 +535,15 @@ function createStyles(colors, { isSmallScreen }) {
       borderColor: colors.border,
       borderRadius: v2Radius.large,
       borderWidth: 1,
+      gap: v2Spacing.md,
+      padding: v2Spacing.lg,
+    },
+    habitTopRow: {
+      alignItems: "flex-start",
       flexDirection: "row",
       gap: v2Spacing.md,
-      minHeight: 92,
-      padding: v2Spacing.lg,
+      justifyContent: "space-between",
+      maxWidth: "100%",
     },
     habitMain: {
       flex: 1,
@@ -532,6 +553,7 @@ function createStyles(colors, { isSmallScreen }) {
       color: colors.text,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.body.lineHeight,
     },
     habitMeta: {
       color: colors.muted,
@@ -551,17 +573,13 @@ function createStyles(colors, { isSmallScreen }) {
       borderRadius: 999,
       height: "100%",
     },
-    habitRate: {
-      alignItems: "flex-end",
-      flexShrink: 0,
-      gap: v2Spacing.sm,
-      justifyContent: "space-between",
-      maxWidth: 104,
-    },
     habitRateValue: {
       color: colors.text,
+      flexShrink: 0,
       fontSize: v2Typography.sectionTitle.fontSize,
       fontWeight: v2FontWeight.bold,
+      maxWidth: "32%",
+      textAlign: "right",
     },
     insightText: {
       backgroundColor: colors.card,

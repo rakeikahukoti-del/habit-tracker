@@ -2,7 +2,6 @@ import {
   getBadgeById,
   getGamificationLevelInfo,
   getRankForLevel,
-  rankThemes,
 } from "./gamification";
 import { getCurrentStreak, wasCompletedToday } from "./habitStats";
 
@@ -57,7 +56,6 @@ export function getQueuedRewardsFromMessages(messages, gamification, preferences
   const levelInfo = getGamificationLevelInfo(gamification);
   const dedupedMessages = dedupeMessages(safeMessages);
   const levelMessage = dedupedMessages.find((message) => message.type === "level");
-  const themeMessage = dedupedMessages.find((message) => message.type === "theme");
   const perfectDayMessage = dedupedMessages.find(
     (message) => message.type === "perfect-day"
   );
@@ -79,7 +77,6 @@ export function getQueuedRewardsFromMessages(messages, gamification, preferences
             level: queuedLevel,
             progress: (levelInfo.currentLevelXp / 100) * 100,
             rank: getRankForLevel(queuedLevel),
-            themeUnlock: getThemeUnlockForLevel(queuedLevel),
           }
         : null,
     perfectDay:
@@ -88,14 +85,6 @@ export function getQueuedRewardsFromMessages(messages, gamification, preferences
             description: perfectDayMessage.text,
             title: "Perfect Day",
             type: "perfect-day",
-          }
-        : null,
-    themeUnlock:
-      preferences.showLevelUpPopup && themeMessage
-        ? {
-            themeKey: themeMessage.themeKey,
-            title: `${getThemeUnlockLabel(themeMessage)} Theme`,
-            type: "theme",
           }
         : null,
   };
@@ -159,10 +148,6 @@ export function getTodayHabitsMessage(percentage) {
   return "Perfect day complete.";
 }
 
-export function getThemeUnlockForLevel(level) {
-  return rankThemes.find((theme) => theme.unlockLevel === level);
-}
-
 function getOrderedHabits(habits) {
   return getSafeHabits(habits).sort(compareHabitOrder);
 }
@@ -208,12 +193,6 @@ function dedupeMessages(messages) {
 
     return true;
   });
-}
-
-function getThemeUnlockLabel(achievement) {
-  const theme = rankThemes.find((item) => item.key === achievement?.themeKey);
-
-  return theme?.label || achievement?.title?.replace(" Theme", "") || "New";
 }
 
 function getSafeHabits(habits) {

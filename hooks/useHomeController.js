@@ -25,7 +25,6 @@ import {
 import {
   getHomeSummary,
   getQueuedRewardsFromMessages,
-  getThemeUnlockForLevel,
   getVisibleHomeHabits,
   shouldShowConfetti,
 } from "../utils/homeHabitActions";
@@ -47,7 +46,6 @@ export function useHomeController() {
   const [gamification, setGamification] = useState(null);
   const [levelUp, setLevelUp] = useState(null);
   const [perfectDay, setPerfectDay] = useState(null);
-  const [themeUnlock, setThemeUnlock] = useState(null);
   const [moveCompletedToBottom, setMoveCompletedToBottom] = useState(false);
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
@@ -107,7 +105,6 @@ export function useHomeController() {
         setCelebration(queuedRewards.celebration);
         setPerfectDay(queuedRewards.perfectDay);
         setLevelUp(queuedRewards.levelUp);
-        setThemeUnlock(queuedRewards.themeUnlock);
         setBadgeUnlock(queuedRewards.badgeUnlock);
 
         if (queuedRewards.levelUp) {
@@ -270,7 +267,6 @@ export function useHomeController() {
           : null
       );
       setPerfectDay(award.perfectDay || null);
-      setThemeUnlock(award.themeUnlocks[0] || null);
       setCelebration(
         preferences.showBadgePopups ? award.messages.join(" ") : ""
       );
@@ -332,8 +328,6 @@ export function useHomeController() {
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
-    setThemeUnlock,
-    themeUnlock,
     toggleProgressExpanded,
     visibleHabits,
   };
@@ -372,6 +366,5 @@ async function maybeShowLevelUp(gamification, messages, setLevelUp) {
     level: levelInfo.level,
     progress: (levelInfo.currentLevelXp / 100) * 100,
     rank: getRankForLevel(levelInfo.level),
-    themeUnlock: getThemeUnlockForLevel(levelInfo.level),
   });
 }

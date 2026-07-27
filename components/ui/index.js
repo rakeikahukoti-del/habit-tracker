@@ -1,4 +1,5 @@
 export { default as AppHeader } from "./AppHeader";
+export { default as AppIcon } from "./AppIcon";
 export { default as AppText } from "./AppText";
 export { default as BackIcon } from "./BackIcon";
 export { default as Divider } from "./Divider";

@@ -36,9 +36,7 @@ export async function getHabits() {
       const parsedHabits = JSON.parse(rawHabits);
 
       return Array.isArray(parsedHabits)
-        ? normalizeHabitList(parsedHabits).sort(
-            (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
-          )
+        ? normalizeHabitOrder(normalizeHabitList(parsedHabits))
         : [];
     } catch (error) {
       logStorageError("Could not parse saved habits. Backing up raw data.", error);
@@ -199,27 +197,11 @@ export async function uncompleteHabitForToday(id) {
 
 export async function saveHabitOrder(orderedHabitIds) {
   const habits = await getHabits();
-  const safeOrderedHabitIds = Array.isArray(orderedHabitIds)
-    ? orderedHabitIds
-    : [];
-  const orderLookup = new Map(
-    safeOrderedHabitIds.map((habitId, index) => [habitId, index])
-  );
-  const orderedHabits = habits.map((habit, index) =>
-    normalizeHabit(
-      {
-        ...habit,
-        order: orderLookup.has(habit.id) ? orderLookup.get(habit.id) : index,
-      },
-      index
-    )
-  );
+  const orderedHabits = normalizeHabitOrder(habits, orderedHabitIds);
 
   await saveHabits(orderedHabits);
 
-  return orderedHabits.sort(
-    (firstHabit, secondHabit) => firstHabit.order - secondHabit.order
-  );
+  return orderedHabits;
 }
 
 export async function deleteHabit(id) {
@@ -392,6 +374,41 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
   };
 }
 
+export function normalizeHabitOrder(habits, orderedHabitIds = null) {
+  const normalizedHabits = normalizeHabitList(
+    Array.isArray(habits) ? habits.filter(isPlainObject) : []
+  );
+  const safeOrderedIds = Array.isArray(orderedHabitIds)
+    ? orderedHabitIds.filter((habitId) => typeof habitId === "string")
+    : null;
+  const habitById = new Map(
+    normalizedHabits.map((habit) => [habit.id, habit])
+  );
+  const ordered = [];
+  const seenIds = new Set();
+
+  if (safeOrderedIds) {
+    safeOrderedIds.forEach((habitId) => {
+      const habit = habitById.get(habitId);
+
+      if (habit && !seenIds.has(habit.id)) {
+        ordered.push(habit);
+        seenIds.add(habit.id);
+      }
+    });
+  }
+
+  const remainingHabits = normalizedHabits
+    .filter((habit) => !seenIds.has(habit.id))
+    .sort(compareHabitOrder);
+  const nextHabits = [...ordered, ...remainingHabits];
+
+  return nextHabits.map((habit, index) => ({
+    ...habit,
+    order: index,
+  }));
+}
+
 function normalizeHabitList(habits) {
   const seenIds = new Set();
 
@@ -406,6 +423,21 @@ function normalizeHabitList(habits) {
       id: uniqueId,
     };
   });
+}
+
+function compareHabitOrder(firstHabit, secondHabit) {
+  const firstOrder = Number.isFinite(firstHabit.order)
+    ? firstHabit.order
+    : Number.MAX_SAFE_INTEGER;
+  const secondOrder = Number.isFinite(secondHabit.order)
+    ? secondHabit.order
+    : Number.MAX_SAFE_INTEGER;
+
+  if (firstOrder !== secondOrder) {
+    return firstOrder - secondOrder;
+  }
+
+  return String(firstHabit.id || "").localeCompare(String(secondHabit.id || ""));
 }
 
 function getUniqueHabitId(id, index, seenIds) {

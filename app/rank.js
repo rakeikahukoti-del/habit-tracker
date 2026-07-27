@@ -18,9 +18,9 @@ import {
   GamificationScreen,
   getBadgeTierAccent,
   LevelProgress,
+  RankMedal,
 } from "../components/progression";
-import { AppText } from "../components/ui";
-import { themes } from "../constants/colors";
+import { AppIcon, AppText } from "../components/ui";
 import {
   v2FontWeight,
   v2Radius,
@@ -34,9 +34,10 @@ import {
   getGamification,
   getGamificationLevelInfo,
   getRankForLevel,
-  rankThemes,
+  rankMilestones,
 } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
+import { sortBadgesByTier } from "../utils/gamification";
 import { getBestStreak, getCurrentStreak } from "../utils/habitStats";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -54,6 +55,7 @@ export default function RankScreen() {
   const [gamification, setGamification] = useState(null);
   const [habits, setHabits] = useState([]);
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [badgeSortDirection, setBadgeSortDirection] = useState("asc");
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,7 @@ export default function RankScreen() {
     [levelInfo.level]
   );
   const nextRank = useMemo(
-    () => rankThemes.find((theme) => theme.unlockLevel > levelInfo.level),
+    () => rankMilestones.find((rankItem) => rankItem.unlockLevel > levelInfo.level),
     [levelInfo.level]
   );
   const earnedBadgeIds = useMemo(
@@ -110,7 +112,11 @@ export default function RankScreen() {
     () => badges.filter((badge) => earnedBadgeIds.has(badge.id)),
     [earnedBadgeIds]
   );
-  const badgePreview = showAllBadges ? badges : badges.slice(0, 8);
+  const sortedBadges = useMemo(
+    () => sortBadgesByTier(badges, badgeSortDirection),
+    [badgeSortDirection]
+  );
+  const badgePreview = showAllBadges ? sortedBadges : sortedBadges.slice(0, 8);
   const progressionSnapshot = useMemo(
     () => getProgressionSnapshot({ gamification, habits, level: levelInfo.level }),
     [gamification, habits, levelInfo.level]
@@ -135,6 +141,7 @@ export default function RankScreen() {
           />
           <AchievementDetailModal
             achievement={selectedAchievement}
+            colors={colors}
             onClose={() => setSelectedAchievement(null)}
             styles={styles}
             visible={Boolean(selectedAchievement)}
@@ -155,9 +162,7 @@ export default function RankScreen() {
         ) : (
           <>
             <View style={styles.hero}>
-              <View style={styles.rankEmblem}>
-                <AppText style={styles.rankEmblemText}>{getRankInitial(rank)}</AppText>
-              </View>
+              <RankMedal rank={rank} size="large" />
               <AppText style={styles.rankLabel}>Current rank</AppText>
               <AppText style={styles.rankTitle}>{rank}</AppText>
               <LevelProgress levelInfo={levelInfo} rank={rank} />
@@ -172,14 +177,14 @@ export default function RankScreen() {
               <RankPath currentLevel={levelInfo.level} styles={styles} />
             </Section>
 
-            <Section title="Rank rewards" styles={styles}>
-              <View style={styles.themeGrid}>
-                {rankThemes.map((theme) => (
-                  <ThemeReward
-                    key={theme.key}
-                    locked={levelInfo.level < theme.unlockLevel}
+            <Section title="Rank medals" styles={styles}>
+              <View style={styles.medalGrid}>
+                {rankMilestones.map((rankItem) => (
+                  <RankReward
+                    key={rankItem.key}
+                    locked={levelInfo.level < rankItem.unlockLevel}
                     styles={styles}
-                    theme={theme}
+                    rankItem={rankItem}
                   />
                 ))}
               </View>
@@ -190,6 +195,45 @@ export default function RankScreen() {
               title="Badges"
               styles={styles}
             >
+              <View style={styles.badgeControls}>
+                {["asc", "desc"].map((direction) => {
+                  const selected = badgeSortDirection === direction;
+                  const label =
+                    direction === "asc"
+                      ? "Sort badges Bronze to Master"
+                      : "Sort badges Master to Bronze";
+
+                  return (
+                    <Pressable
+                      accessibilityLabel={label}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      key={direction}
+                      onPress={() => setBadgeSortDirection(direction)}
+                      style={({ pressed }) => [
+                        styles.sortButton,
+                        selected && styles.sortButtonSelected,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <AppIcon
+                        color={selected ? colors.text : colors.muted}
+                        name={direction === "asc" ? "sort-asc" : "sort-desc"}
+                        size={20}
+                        strokeWidth={2}
+                      />
+                      <AppText
+                        style={[
+                          styles.sortButtonText,
+                          selected && styles.sortButtonTextSelected,
+                        ]}
+                      >
+                        {direction === "asc" ? "Bronze first" : "Master first"}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </View>
               <View style={styles.badgeProgressTrack}>
                 <View
                   style={[
@@ -241,6 +285,7 @@ export default function RankScreen() {
                 gamification.recentAchievements.slice(0, 8).map((achievement) => (
                   <AchievementRow
                     achievement={achievement}
+                    colors={colors}
                     key={achievement.id}
                     onPress={() => setSelectedAchievement(achievement)}
                     styles={styles}
@@ -249,7 +294,7 @@ export default function RankScreen() {
               ) : (
                 <AppText style={styles.emptyText}>
                   Achievements appear here after badges, levels, perfect days,
-                  or theme unlocks.
+                  or rank milestones.
                 </AppText>
               )}
             </Section>
@@ -275,7 +320,7 @@ function Section({ children, styles, subtitle, title }) {
 function RankPath({ currentLevel, styles }) {
   return (
     <View style={styles.rankPath}>
-      {rankThemes.map((theme) => {
+      {rankMilestones.map((theme) => {
         const unlocked = currentLevel >= theme.unlockLevel;
         const current = getRankForLevel(currentLevel) === theme.label;
 
@@ -310,29 +355,17 @@ function RankPath({ currentLevel, styles }) {
   );
 }
 
-function ThemeReward({ locked, styles, theme }) {
-  const previewColors = themes[theme.key] || themes.dark;
-
+function RankReward({ locked, rankItem, styles }) {
   return (
     <View
-      accessibilityLabel={`${theme.label} theme, ${locked ? `locked until level ${theme.unlockLevel}` : "unlocked"}`}
+      accessibilityLabel={`${rankItem.label} medal, ${locked ? `locked until level ${rankItem.unlockLevel}` : "unlocked"}`}
       accessible
-      style={[styles.themeReward, locked && styles.themeRewardLocked]}
+      style={[styles.medalReward, locked && styles.medalRewardLocked]}
     >
-      <View style={styles.themeSwatches}>
-        <View
-          style={[styles.themeSwatch, { backgroundColor: previewColors.background }]}
-        />
-        <View
-          style={[styles.themeSwatch, { backgroundColor: previewColors.card }]}
-        />
-        <View
-          style={[styles.themeSwatch, { backgroundColor: previewColors.primary }]}
-        />
-      </View>
-      <AppText style={styles.themeName}>{theme.label}</AppText>
-      <AppText style={styles.themeMeta}>
-        {locked ? `Unlocks at level ${theme.unlockLevel}` : "Unlocked"}
+      <RankMedal rank={rankItem.label} size="small" />
+      <AppText style={styles.medalName}>{rankItem.label}</AppText>
+      <AppText style={styles.medalMeta}>
+        {locked ? `Unlocks at level ${rankItem.unlockLevel}` : "Unlocked"}
       </AppText>
     </View>
   );
@@ -380,7 +413,7 @@ function BadgeTile({ badge, earned, onPress, progress, styles }) {
   );
 }
 
-function AchievementRow({ achievement, onPress, styles }) {
+function AchievementRow({ achievement, colors, onPress, styles }) {
   return (
     <Pressable
       accessibilityLabel={`View ${achievement.title} achievement details`}
@@ -392,9 +425,12 @@ function AchievementRow({ achievement, onPress, styles }) {
       ]}
     >
       <View style={styles.achievementMark}>
-        <AppText style={styles.achievementMarkText}>
-          {getAchievementMark(achievement.type)}
-        </AppText>
+        <AppIcon
+          color={colors.text}
+          name={getAchievementIconName(achievement.type)}
+          size={22}
+          strokeWidth={2}
+        />
       </View>
       <View style={styles.achievementText}>
         <AppText numberOfLines={2} style={styles.achievementTitle}>
@@ -468,7 +504,7 @@ function BadgeDetailModal({ badge, earned, onClose, progress, styles, visible })
   );
 }
 
-function AchievementDetailModal({ achievement, onClose, styles, visible }) {
+function AchievementDetailModal({ achievement, colors, onClose, styles, visible }) {
   if (!achievement) {
     return null;
   }
@@ -487,9 +523,12 @@ function AchievementDetailModal({ achievement, onClose, styles, visible }) {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.achievementModalMark}>
-              <AppText style={styles.achievementModalMarkText}>
-                {getAchievementMark(achievement.type)}
-              </AppText>
+              <AppIcon
+                color={colors.text}
+                name={getAchievementIconName(achievement.type)}
+                size={28}
+                strokeWidth={2.2}
+              />
             </View>
             <AppText style={styles.modalEyebrow}>Recent achievement</AppText>
             <AppText style={styles.modalTitle}>{achievement.title}</AppText>
@@ -623,28 +662,24 @@ function getHighestDailyCompletionCount(habits) {
   return Math.max(0, ...Object.values(counts));
 }
 
-function getRankInitial(rank) {
-  return rank === "Master" ? "M" : rank.slice(0, 1);
-}
-
-function getAchievementMark(type) {
+function getAchievementIconName(type) {
   if (type === "badge") {
-    return "B";
+    return "trophy";
   }
 
   if (type === "perfect-day") {
-    return "P";
+    return "star";
   }
 
   if (type === "theme") {
-    return "T";
+    return "rank";
   }
 
   if (type === "level") {
-    return "L";
+    return "progress";
   }
 
-  return "A";
+  return "analytics";
 }
 
 function formatAchievementType(type) {
@@ -695,23 +730,6 @@ function createStyles(colors, { isSmallScreen }) {
       gap: v2Spacing.md,
       marginBottom: v2Spacing.xl,
       paddingVertical: v2Spacing.xl,
-    },
-    rankEmblem: {
-      alignItems: "center",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: v2Radius.large,
-      borderWidth: 1,
-      height: 70,
-      justifyContent: "center",
-      transform: [{ rotate: "45deg" }],
-      width: 70,
-    },
-    rankEmblemText: {
-      color: colors.text,
-      fontSize: 28,
-      fontWeight: v2FontWeight.bold,
-      transform: [{ rotate: "-45deg" }],
     },
     rankLabel: {
       color: colors.muted,
@@ -803,12 +821,13 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.bold,
     },
-    themeGrid: {
+    medalGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: v2Spacing.md,
     },
-    themeReward: {
+    medalReward: {
+      alignItems: "center",
       backgroundColor: colors.card,
       borderColor: colors.border,
       borderRadius: v2Radius.large,
@@ -821,31 +840,22 @@ function createStyles(colors, { isSmallScreen }) {
       shadowColor: colors.shadow,
       shadowOpacity: 0.08,
     },
-    themeRewardLocked: {
+    medalRewardLocked: {
       opacity: 0.58,
     },
-    themeSwatches: {
-      flexDirection: "row",
-      gap: 6,
-      marginBottom: v2Spacing.md,
-    },
-    themeSwatch: {
-      borderColor: colors.border,
-      borderRadius: v2Radius.pill,
-      borderWidth: 1,
-      height: 16,
-      width: 16,
-    },
-    themeName: {
+    medalName: {
       color: colors.text,
       fontSize: v2Typography.cardTitle.fontSize,
       fontWeight: v2FontWeight.bold,
+      marginTop: v2Spacing.md,
+      textAlign: "center",
     },
-    themeMeta: {
+    medalMeta: {
       color: colors.muted,
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
       marginTop: 4,
+      textAlign: "center",
     },
     badgeProgressTrack: {
       backgroundColor: colors.surface,
@@ -857,6 +867,37 @@ function createStyles(colors, { isSmallScreen }) {
       backgroundColor: colors.text,
       borderRadius: v2Radius.pill,
       height: "100%",
+    },
+    badgeControls: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+    },
+    sortButton: {
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      flexDirection: "row",
+      flexGrow: 1,
+      gap: v2Spacing.sm,
+      justifyContent: "center",
+      minHeight: 46,
+      minWidth: isSmallScreen ? "100%" : 0,
+      paddingHorizontal: v2Spacing.md,
+    },
+    sortButtonSelected: {
+      backgroundColor: colors.surface,
+      borderColor: colors.text,
+    },
+    sortButtonText: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    sortButtonTextSelected: {
+      color: colors.text,
     },
     badgeGrid: {
       gap: v2Spacing.md,
@@ -960,11 +1001,6 @@ function createStyles(colors, { isSmallScreen }) {
       height: 42,
       justifyContent: "center",
       width: 42,
-    },
-    achievementMarkText: {
-      color: colors.text,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.bold,
     },
     achievementText: {
       flex: 1,
@@ -1089,14 +1125,7 @@ function createStyles(colors, { isSmallScreen }) {
       borderWidth: 1,
       height: 74,
       justifyContent: "center",
-      transform: [{ rotate: "45deg" }],
       width: 74,
-    },
-    achievementModalMarkText: {
-      color: colors.text,
-      fontSize: 24,
-      fontWeight: v2FontWeight.bold,
-      transform: [{ rotate: "-45deg" }],
     },
     modalButton: {
       alignItems: "center",

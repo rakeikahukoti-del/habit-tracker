@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
 import {
   Animated,
   LayoutAnimation,
@@ -12,7 +13,7 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { SettingsScreen } from "../components/settings";
-import { AppText } from "../components/ui";
+import { AppIcon, AppText } from "../components/ui";
 import {
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
@@ -25,10 +26,14 @@ import {
   v2Typography,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
-import { getHabits, saveHabitOrder } from "../storage/habitsStorage";
+import {
+  getHabits,
+  normalizeHabitOrder,
+  saveHabitOrder,
+} from "../storage/habitsStorage";
 import { withAlpha } from "../utils/colorUtils";
 
-const ROW_DRAG_HEIGHT = 76;
+const ROW_DRAG_HEIGHT = 82;
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -68,7 +73,7 @@ export default function ReorderHabitsScreen() {
       async function loadHabits() {
         try {
           setError("");
-          const savedHabits = await getHabits();
+          const savedHabits = normalizeHabitOrder(await getHabits());
 
           if (isActive) {
             setHabits(savedHabits);
@@ -102,6 +107,7 @@ export default function ReorderHabitsScreen() {
       startIndex: index,
     };
     setDraggingId(habit.id);
+    Haptics.selectionAsync().catch(() => {});
   }
 
   function handleDragMove(gestureState) {
@@ -168,6 +174,7 @@ export default function ReorderHabitsScreen() {
       };
       activeDragY.setValue(0);
       setDraggingId(null);
+      Haptics.selectionAsync().catch(() => {});
     }
   }
 
@@ -177,7 +184,7 @@ export default function ReorderHabitsScreen() {
       eyebrow="Habits"
       onBack={() => router.replace("/habit-preferences")}
       scrollEnabled={!draggingId}
-      subtitle="Hold a row, then drag it up or down."
+      subtitle="Hold the handle, then drag the habit into position."
       title="Reorder habits"
     >
       {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
@@ -196,6 +203,7 @@ export default function ReorderHabitsScreen() {
           habits.map((habit, index) => (
             <HabitOrderRow
               dragY={activeDragY}
+              colors={colors}
               habit={habit}
               index={index}
               isDragging={draggingId === habit.id}
@@ -213,6 +221,7 @@ export default function ReorderHabitsScreen() {
 }
 
 function HabitOrderRow({
+  colors,
   habit,
   dragY,
   index,
@@ -226,7 +235,10 @@ function HabitOrderRow({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: () => isDragging,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          isDragging && Math.abs(gestureState.dy) > 2,
+        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+          isDragging && Math.abs(gestureState.dy) > 2,
         onPanResponderMove: (_, gestureState) => onDragMove(gestureState),
         onPanResponderRelease: onDragEnd,
         onPanResponderTerminate: onDragEnd,
@@ -280,16 +292,18 @@ function HabitOrderRow({
           </AppText>
           {habit.category ? (
             <AppText numberOfLines={1} style={styles.habitCategory}>
-              {habit.category}
+            {habit.category}
             </AppText>
           ) : null}
         </View>
 
-        <View
-          accessible={false}
-          style={styles.dragHandle}
-        >
-          <AppText style={styles.dragHandleText}>☰</AppText>
+        <View accessible={false} style={styles.dragHandle}>
+          <AppIcon
+            color={isDragging ? colors.text : colors.muted}
+            name="drag"
+            size={20}
+            strokeWidth={2}
+          />
         </View>
       </Pressable>
     </Animated.View>
@@ -328,7 +342,7 @@ function createStyles(colors, { isSmallScreen }) {
       alignItems: "center",
       flexDirection: "row",
       gap: v2Spacing.md,
-      minHeight: 70,
+      minHeight: ROW_DRAG_HEIGHT,
       padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
     },
     habitRowPressed: {
@@ -343,6 +357,10 @@ function createStyles(colors, { isSmallScreen }) {
     },
     habitRowDragging: {
       backgroundColor: colors.inputBackground,
+      borderColor: colors.accent,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      marginHorizontal: v2Spacing.xs,
       ...v2Shadows.floating,
       shadowColor: colors.shadow,
       shadowOpacity: 0.18,
@@ -386,12 +404,6 @@ function createStyles(colors, { isSmallScreen }) {
       height: 42,
       justifyContent: "center",
       width: 42,
-    },
-    dragHandleText: {
-      color: colors.muted,
-      fontSize: v2Typography.sectionTitle.fontSize,
-      fontWeight: v2FontWeight.bold,
-      lineHeight: 22,
     },
     emptyState: {
       alignItems: "center",

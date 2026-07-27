@@ -271,8 +271,8 @@ function MetricRow({ label, styles, value }) {
       <AppText style={styles.metricLabel}>{label}</AppText>
       <AppText
         adjustsFontSizeToFit
-        minimumFontScale={0.78}
-        numberOfLines={1}
+        minimumFontScale={0.72}
+        numberOfLines={2}
         style={styles.metricValue}
       >
         {value}
@@ -487,6 +487,7 @@ function createStyles(colors, { isSmallScreen }) {
       gap: v2Spacing.md,
       justifyContent: "space-between",
       minHeight: 54,
+      paddingVertical: v2Spacing.sm,
     },
     metricLabel: {
       color: colors.muted,
@@ -500,7 +501,8 @@ function createStyles(colors, { isSmallScreen }) {
       flexShrink: 0,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.bold,
-      maxWidth: "52%",
+      lineHeight: v2Typography.body.lineHeight,
+      maxWidth: "48%",
       textAlign: "right",
     },
     textAction: {

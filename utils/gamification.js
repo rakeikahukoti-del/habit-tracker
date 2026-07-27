@@ -30,20 +30,29 @@ export const badges = [
   createBadge("reach-level-ten", "Reach Level 10", "Progress", "Gold", "Rare", "Reach level 10 through XP."),
   createBadge("reach-level-twenty-five", "Reach Level 25", "Progress", "Diamond", "Epic", "Reach level 25 through XP."),
   createBadge("reach-level-forty", "Reach Level 40", "Progress", "Master", "Legendary", "Reach level 40 through XP."),
-  createBadge("unlock-silver", "Unlock Silver", "Ranks", "Silver", "Rare", "Unlock the Silver rank theme."),
-  createBadge("unlock-gold", "Unlock Gold", "Ranks", "Gold", "Rare", "Unlock the Gold rank theme."),
-  createBadge("unlock-platinum", "Unlock Platinum", "Ranks", "Platinum", "Epic", "Unlock the Platinum rank theme."),
-  createBadge("unlock-diamond", "Unlock Diamond", "Ranks", "Diamond", "Epic", "Unlock the Diamond rank theme."),
-  createBadge("unlock-master", "Unlock Master", "Ranks", "Master", "Legendary", "Unlock the Master rank theme."),
+  createBadge("unlock-silver", "Unlock Silver", "Ranks", "Silver", "Rare", "Reach the Silver rank."),
+  createBadge("unlock-gold", "Unlock Gold", "Ranks", "Gold", "Rare", "Reach the Gold rank."),
+  createBadge("unlock-platinum", "Unlock Platinum", "Ranks", "Platinum", "Epic", "Reach the Platinum rank."),
+  createBadge("unlock-diamond", "Unlock Diamond", "Ranks", "Diamond", "Epic", "Reach the Diamond rank."),
+  createBadge("unlock-master", "Unlock Master", "Ranks", "Master", "Legendary", "Reach the Master rank."),
 ];
 
-export const rankThemes = [
+export const rankMilestones = [
   { key: "bronze", label: "Bronze", unlockLevel: 1 },
   { key: "silver", label: "Silver", unlockLevel: 5 },
   { key: "gold", label: "Gold", unlockLevel: 10 },
   { key: "platinum", label: "Platinum", unlockLevel: 15 },
   { key: "diamond", label: "Diamond", unlockLevel: 25 },
   { key: "master", label: "Master", unlockLevel: 40 },
+];
+
+export const badgeTierOrder = [
+  "Bronze",
+  "Silver",
+  "Gold",
+  "Platinum",
+  "Diamond",
+  "Master",
 ];
 
 function createBadge(id, label, group, tier, rarity, description) {
@@ -104,12 +113,10 @@ export function calculateGamificationState({
   const newPerfectDayDates = perfectDayBonusDates.filter(
     (dateKey) => !previousGamification.perfectDayBonusDates.includes(dateKey)
   );
-  const newThemeUnlocks = getNewThemeUnlocks(previousLevel, nextLevel);
   const newAchievements = includeMessage
     ? buildRecalculatedAchievements({
         newBadgeUnlocks,
         newPerfectDayDates,
-        newThemeUnlocks,
         nextLevel,
         now,
         previousLevel,
@@ -119,7 +126,6 @@ export function calculateGamificationState({
     ? buildRecalculatedMessages({
         newBadgeUnlocks,
         newPerfectDayDates,
-        newThemeUnlocks,
         nextLevel,
         now,
         previousLevel,
@@ -141,7 +147,6 @@ export function calculateGamificationState({
     levelChanged: nextLevel !== previousLevel,
     newBadgeUnlocks,
     newPerfectDayDates,
-    newThemeUnlocks,
     previousLevel,
     rankChanged:
       getRankForLevel(previousLevel) !== getRankForLevel(nextLevel),
@@ -241,19 +246,6 @@ export function calculateAwardState({
     );
   }
 
-  getNewThemeUnlocks(previousLevel, nextLevel).forEach((theme) => {
-    newAchievements.push(
-      createAchievement({
-        description: `${theme.label} theme unlocked at level ${theme.unlockLevel}.`,
-        idParts: ["award", "theme", theme.key, completionDate],
-        now,
-        themeKey: theme.key,
-        title: `${theme.label} Theme`,
-        type: "theme",
-      })
-    );
-  });
-
   nextGamification.recentAchievements = [
     ...newAchievements,
     ...nextGamification.recentAchievements,
@@ -282,9 +274,6 @@ export function calculateAwardState({
     messages: nextMessages,
     perfectDay: newAchievements.find(
       (achievement) => achievement.type === "perfect-day"
-    ),
-    themeUnlocks: newAchievements.filter(
-      (achievement) => achievement.type === "theme"
     ),
   };
 }
@@ -331,10 +320,33 @@ export function getBadgeById(badgeId) {
   return badges.find((badge) => badge.id === badgeId) || null;
 }
 
-export function getNewThemeUnlocks(previousLevel, nextLevel) {
-  return rankThemes.filter(
-    (theme) => previousLevel < theme.unlockLevel && nextLevel >= theme.unlockLevel
+export function sortBadgesByTier(badgesToSort, direction = "asc") {
+  const multiplier = direction === "desc" ? -1 : 1;
+  const originalIndex = new Map(
+    badges.map((badge, index) => [badge.id, index])
   );
+
+  return [...(Array.isArray(badgesToSort) ? badgesToSort : [])].sort(
+    (firstBadge, secondBadge) => {
+      const firstTier = getBadgeTierIndex(firstBadge?.tier);
+      const secondTier = getBadgeTierIndex(secondBadge?.tier);
+
+      if (firstTier !== secondTier) {
+        return (firstTier - secondTier) * multiplier;
+      }
+
+      return (
+        (originalIndex.get(firstBadge?.id) ?? Number.MAX_SAFE_INTEGER) -
+        (originalIndex.get(secondBadge?.id) ?? Number.MAX_SAFE_INTEGER)
+      );
+    }
+  );
+}
+
+function getBadgeTierIndex(tier) {
+  const index = badgeTierOrder.indexOf(tier);
+
+  return index >= 0 ? index : Number.MAX_SAFE_INTEGER;
 }
 
 export function getEarnedBadgeIds({ habits, perfectDayBonusDates, xp }) {
@@ -468,7 +480,6 @@ export function isPerfectDayForDate(habits, dateKey) {
 function buildRecalculatedAchievements({
   newBadgeUnlocks,
   newPerfectDayDates,
-  newThemeUnlocks,
   nextLevel,
   now,
   previousLevel,
@@ -499,19 +510,6 @@ function buildRecalculatedAchievements({
     );
   }
 
-  newThemeUnlocks.forEach((theme) => {
-    achievements.push(
-      createAchievement({
-        description: `${theme.label} theme unlocked at level ${theme.unlockLevel}.`,
-        idParts: ["rebuild", "theme", theme.key],
-        now,
-        themeKey: theme.key,
-        title: `${theme.label} Theme`,
-        type: "theme",
-      })
-    );
-  });
-
   newBadgeUnlocks.forEach((badge) => {
     achievements.push(
       createAchievement({
@@ -531,7 +529,6 @@ function buildRecalculatedAchievements({
 function buildRecalculatedMessages({
   newBadgeUnlocks,
   newPerfectDayDates,
-  newThemeUnlocks,
   nextLevel,
   now,
   previousLevel,
@@ -561,18 +558,6 @@ function buildRecalculatedMessages({
     );
   }
 
-  newThemeUnlocks.forEach((theme) => {
-    messages.push(
-      createPendingMessage({
-        idParts: ["rebuild-message", "theme", theme.key],
-        now,
-        text: `${theme.label} theme unlocked.`,
-        themeKey: theme.key,
-        type: "theme",
-      })
-    );
-  });
-
   newBadgeUnlocks.forEach((badge) => {
     messages.push(
       createPendingMessage({
@@ -593,7 +578,6 @@ function createAchievement({
   description,
   idParts,
   now,
-  themeKey,
   title,
   type,
 }) {
@@ -601,7 +585,6 @@ function createAchievement({
     badgeId,
     description,
     id: createRewardId(idParts),
-    themeKey,
     title,
     type,
     unlockedAt: now,
@@ -614,7 +597,6 @@ function createPendingMessage({
   level,
   now,
   text,
-  themeKey,
   type = "message",
 }) {
   return {
@@ -622,7 +604,6 @@ function createPendingMessage({
     id: createRewardId([...idParts, now]),
     level,
     text,
-    themeKey,
     type,
   };
 }

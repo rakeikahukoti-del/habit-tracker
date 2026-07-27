@@ -18,6 +18,7 @@ function loadModule(filePath, customRequire = require) {
     Date,
     JSON,
     Math,
+    Map,
     Number,
     RegExp,
     Set,
@@ -179,6 +180,22 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
 
   if (moduleName === "./habitStats") {
     return habitStats;
+  }
+
+  return require(moduleName);
+});
+const themePreferences = loadModule("utils/themePreferences.js");
+const designColors = loadModule("src/design/colors.js");
+const legacyThemeAdapter = loadModule("src/design/legacyThemeAdapter.js", (moduleName) => {
+  if (moduleName === "./colors") {
+    return designColors;
+  }
+
+  return require(moduleName);
+});
+const appColors = loadModule("constants/colors.js", (moduleName) => {
+  if (moduleName === "../src/design/legacyThemeAdapter") {
+    return legacyThemeAdapter;
   }
 
   return require(moduleName);
@@ -742,8 +759,123 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
   );
 
   assert.strictEqual(rewards.levelUp.level, 5);
+  assert.strictEqual(
+    Object.prototype.hasOwnProperty.call(rewards, "themeUnlock"),
+    false
+  );
   assert.strictEqual(rewards.badgeUnlock.id, "first-completion");
   assert.strictEqual(rewards.celebration, "Nice work.");
+});
+
+test("appearance preferences only support Light and Dark with safe legacy migration", () => {
+  assertJsonEqual(
+    themePreferences.appearanceOptions.map((option) => option.value),
+    ["light", "dark"]
+  );
+  assertJsonEqual(Object.keys(appColors.themes).sort(), ["dark", "light"]);
+  assert.strictEqual(themePreferences.isSupportedThemePreference("light"), true);
+  assert.strictEqual(themePreferences.isSupportedThemePreference("dark"), true);
+  assert.strictEqual(themePreferences.isSupportedThemePreference("system"), false);
+  assert.strictEqual(themePreferences.normalizeThemePreference(null), "light");
+  assert.strictEqual(themePreferences.normalizeThemePreference(""), "light");
+  assert.strictEqual(themePreferences.normalizeThemePreference("system", "light"), "light");
+  assert.strictEqual(themePreferences.normalizeThemePreference("system", "dark"), "dark");
+  assert.strictEqual(themePreferences.normalizeThemePreference("bronze"), "light");
+  assert.strictEqual(themePreferences.normalizeThemePreference("silver"), "dark");
+  assert.strictEqual(themePreferences.normalizeThemePreference("gold"), "dark");
+  assert.strictEqual(themePreferences.normalizeThemePreference("platinum"), "dark");
+  assert.strictEqual(themePreferences.normalizeThemePreference("diamond"), "dark");
+  assert.strictEqual(themePreferences.normalizeThemePreference("master"), "dark");
+  assert.strictEqual(themePreferences.normalizeThemePreference("unknown"), "dark");
+});
+
+test("habit order normalization repairs missing, duplicate, and explicit order values", () => {
+  const normalized = habitsStorage.normalizeHabitOrder([
+    { id: "third", name: "Third", order: 9, completedDates: [] },
+    { id: "first", name: "First", order: 1, completedDates: [] },
+    { id: "duplicate", name: "Duplicate", order: 1, completedDates: [] },
+    { id: "missing", name: "Missing", completedDates: [] },
+  ]);
+
+  assertJsonEqual(
+    normalized.map((habit) => habit.id),
+    ["duplicate", "first", "missing", "third"]
+  );
+  assertJsonEqual(
+    normalized.map((habit) => habit.order),
+    [0, 1, 2, 3]
+  );
+
+  const explicit = habitsStorage.normalizeHabitOrder(normalized, [
+    "missing",
+    "first",
+  ]);
+
+  assertJsonEqual(
+    explicit.map((habit) => habit.id),
+    ["missing", "first", "duplicate", "third"]
+  );
+  assertJsonEqual(
+    explicit.map((habit) => habit.order),
+    [0, 1, 2, 3]
+  );
+});
+
+test("habit reorder persistence saves normalized order values", async () => {
+  resetStorage();
+  asyncStorageStore["habit-tracker:habits"] = JSON.stringify([
+    { id: "one", name: "One", order: 0, completedDates: [] },
+    { id: "two", name: "Two", order: 0, completedDates: [] },
+    { id: "three", name: "Three", completedDates: [] },
+  ]);
+
+  const reordered = await habitsStorage.saveHabitOrder(["three", "one"]);
+
+  assertJsonEqual(
+    reordered.map((habit) => habit.id),
+    ["three", "one", "two"]
+  );
+  assertJsonEqual(
+    JSON.parse(asyncStorageStore["habit-tracker:habits"]).map(
+      (habit) => habit.order
+    ),
+    [0, 1, 2]
+  );
+});
+
+test("badges sort by tier progression in stable ascending and descending order", () => {
+  const sample = [
+    gamificationLogic.getBadgeById("unlock-master"),
+    gamificationLogic.getBadgeById("first-completion"),
+    gamificationLogic.getBadgeById("unlock-gold"),
+    gamificationLogic.getBadgeById("three-day-streak"),
+    gamificationLogic.getBadgeById("unlock-diamond"),
+  ];
+  const ascending = gamificationLogic.sortBadgesByTier(sample, "asc");
+  const descending = gamificationLogic.sortBadgesByTier(sample, "desc");
+
+  assertJsonEqual(
+    ascending.map((badge) => badge.tier),
+    ["Bronze", "Bronze", "Gold", "Diamond", "Master"]
+  );
+  assertJsonEqual(
+    ascending.map((badge) => badge.id),
+    [
+      "first-completion",
+      "three-day-streak",
+      "unlock-gold",
+      "unlock-diamond",
+      "unlock-master",
+    ]
+  );
+  assertJsonEqual(
+    descending.map((badge) => badge.tier),
+    ["Master", "Diamond", "Gold", "Bronze", "Bronze"]
+  );
+  assertJsonEqual(
+    descending.slice(-2).map((badge) => badge.id),
+    ["first-completion", "three-day-streak"]
+  );
 });
 
 test("imported habits are normalized without corrupting existing storage", async () => {

@@ -4,3 +4,4 @@ export {
   GamificationHeader,
 } from "./GamificationScreen";
 export { default as LevelProgress } from "./LevelProgress";
+export { default as RankMedal, getRankMedalAccent } from "./RankMedal";

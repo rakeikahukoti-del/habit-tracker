@@ -246,7 +246,7 @@ export default function SettingsScreen() {
 
       <SettingsSection title="Experience">
         <SettingsRow
-          description="Mode and unlocked rank themes."
+          description="Choose Light or Dark mode."
           onPress={() => router.push("/appearance")}
           title="Appearance"
           value={formatThemeLabel(resolvedTheme)}

@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import BottomNav from "../BottomNav";
-import { BackIcon, IconButton, AppText } from "../ui";
+import { AppIcon, BackIcon, IconButton, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import {
   v2FontWeight,
@@ -178,7 +178,16 @@ export function SettingsRow({
           {value}
         </AppText>
       ) : null}
-      {showChevron ? <AppText style={styles.chevron}>›</AppText> : null}
+      {showChevron ? (
+        <View style={styles.chevron}>
+          <AppIcon
+            color={colors.muted}
+            name="chevron-right"
+            size={18}
+            strokeWidth={2}
+          />
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -271,9 +280,16 @@ export function ThemePreviewRow({
           {disabled ? lockedText : selected ? "Selected" : "Available"}
         </AppText>
       </View>
-      <AppText style={selected ? styles.selectedMark : styles.chevron}>
-        {selected ? "✓" : ""}
-      </AppText>
+      <View style={styles.selectedIconSlot}>
+        {selected ? (
+          <AppIcon
+            color={colors.text}
+            name="check"
+            size={18}
+            strokeWidth={2.2}
+          />
+        ) : null}
+      </View>
     </Pressable>
   );
 }
@@ -410,16 +426,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       textAlign: "right",
     },
     chevron: {
-      color: colors.muted,
+      alignItems: "center",
       flexShrink: 0,
-      fontSize: 22,
-      fontWeight: v2FontWeight.bold,
-      lineHeight: 22,
+      height: 24,
+      justifyContent: "center",
+      width: 24,
     },
-    selectedMark: {
-      color: colors.primary,
-      fontSize: v2Typography.sectionTitle.fontSize,
-      fontWeight: v2FontWeight.bold,
+    selectedIconSlot: {
+      alignItems: "center",
+      flexShrink: 0,
+      height: 24,
+      justifyContent: "center",
+      width: 24,
     },
     destructiveText: {
       color: colors.danger,

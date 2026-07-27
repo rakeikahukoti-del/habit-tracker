@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { AppText } from "./ui";
+import { AppIcon, AppText } from "./ui";
 import ProgressDots from "./ProgressDots";
 import {
   v2FontWeight,
@@ -296,7 +296,7 @@ function HabitCard({
             },
           ]}
         >
-          <AppText align="center" style={styles.swipeIcon}>✓</AppText>
+          <AppIcon color="#111111" name="check" size={18} strokeWidth={2.4} />
         </Animated.View>
         <Animated.Text
           style={[styles.swipeText, { opacity: completeInstructionOpacity }]}
@@ -338,7 +338,7 @@ function HabitCard({
             },
           ]}
         >
-          <AppText align="center" style={styles.swipeIcon}>↶</AppText>
+          <AppIcon color="#111111" name="undo" size={18} strokeWidth={2.2} />
         </Animated.View>
       </Animated.View>
       <Animated.View
@@ -444,7 +444,12 @@ function HabitCard({
               accessibilityLabel={`${currentStreak} day streak`}
               style={styles.streakBadge}
             >
-              <AppText style={styles.streakIcon}>🔥</AppText>
+              <AppIcon
+                color={completedToday ? themeAccent : colors.muted}
+                name="flame"
+                size={15}
+                strokeWidth={1.6}
+              />
               <AppText
                 color={colors.muted}
                 style={styles.streakText}
@@ -518,11 +523,6 @@ function createStyles(colors, isCompact) {
       height: 34,
       justifyContent: "center",
       width: 34,
-    },
-    swipeIcon: {
-      color: "#111111",
-      ...v2Typography.sectionTitle,
-      fontWeight: v2FontWeight.bold,
     },
     swipeText: {
       color: "#F3F3F3",
@@ -634,10 +634,6 @@ function createStyles(colors, isCompact) {
       justifyContent: "center",
       maxWidth: isCompact ? 58 : 66,
       minHeight: 30,
-    },
-    streakIcon: {
-      fontSize: v2Typography.label.fontSize,
-      lineHeight: v2Typography.caption.lineHeight,
     },
     streakText: {
       flexShrink: 1,

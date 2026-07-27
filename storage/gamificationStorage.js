@@ -12,7 +12,7 @@ import {
   getRankForLevel,
   isPerfectDayForDate,
   normalizeGamificationState,
-  rankThemes,
+  rankMilestones,
 } from "../utils/gamification";
 import { isPlainObject, logStorageError } from "./storageUtils";
 
@@ -26,7 +26,7 @@ export {
   getGamificationLevelInfo,
   getRankForLevel,
   normalizeGamificationState,
-  rankThemes,
+  rankMilestones,
 };
 
 export async function getGamification() {

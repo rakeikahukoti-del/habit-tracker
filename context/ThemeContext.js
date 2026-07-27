@@ -10,14 +10,17 @@ import {
 import { useColorScheme } from "react-native";
 import { themes } from "../constants/colors";
 import { logStorageError } from "../storage/storageUtils";
+import {
+  isSupportedThemePreference,
+  normalizeThemePreference,
+} from "../utils/themePreferences";
 
 const THEME_PREFERENCE_KEY = "momentum:theme-preference";
 const ThemeContext = createContext(null);
-const BASE_THEME_KEYS = ["light", "dark", "system"];
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
-  const [themePreference, setThemePreferenceState] = useState("dark");
+  const [themePreference, setThemePreferenceState] = useState("light");
   const [themeLoaded, setThemeLoaded] = useState(false);
 
   useEffect(() => {
@@ -26,9 +29,17 @@ export function ThemeProvider({ children }) {
     async function loadThemePreference() {
       try {
         const savedPreference = await AsyncStorage.getItem(THEME_PREFERENCE_KEY);
+        const normalizedPreference = normalizeThemePreference(
+          savedPreference,
+          systemScheme
+        );
 
-        if (isMounted && isValidThemePreference(savedPreference)) {
-          setThemePreferenceState(savedPreference);
+        if (isMounted) {
+          setThemePreferenceState(normalizedPreference);
+        }
+
+        if (savedPreference && savedPreference !== normalizedPreference) {
+          await AsyncStorage.setItem(THEME_PREFERENCE_KEY, normalizedPreference);
         }
       } catch (error) {
         logStorageError("Could not read theme preference.", error);
@@ -44,10 +55,10 @@ export function ThemeProvider({ children }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [systemScheme]);
 
   const setThemePreference = useCallback(async (nextPreference) => {
-    if (!isValidThemePreference(nextPreference)) {
+    if (!isSupportedThemePreference(nextPreference)) {
       return;
     }
 
@@ -64,8 +75,7 @@ export function ThemeProvider({ children }) {
     }
   }, [themePreference]);
 
-  const resolvedTheme =
-    themePreference === "system" ? systemScheme || "light" : themePreference;
+  const resolvedTheme = normalizeThemePreference(themePreference, systemScheme);
   const colors = themes[resolvedTheme] || themes.dark;
 
   const value = useMemo(
@@ -81,10 +91,6 @@ export function ThemeProvider({ children }) {
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-}
-
-function isValidThemePreference(preference) {
-  return BASE_THEME_KEYS.includes(preference) || Boolean(themes[preference]);
 }
 
 export function useTheme() {

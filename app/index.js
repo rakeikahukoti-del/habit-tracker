@@ -19,9 +19,8 @@ import { MomentumWolfMark } from "../components/brand";
 import ConfettiBurst from "../components/ConfettiBurst";
 import EmptyState from "../components/EmptyState";
 import HabitCard from "../components/HabitCard";
-import { BadgeMedal } from "../components/progression";
-import { AppText } from "../components/ui";
-import { themes } from "../constants/colors";
+import { BadgeMedal, RankMedal } from "../components/progression";
+import { AppIcon, AppText } from "../components/ui";
 import {
   v2FontWeight,
   v2Layout,
@@ -31,14 +30,13 @@ import {
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useHomeController } from "../hooks/useHomeController";
-import { rankThemes } from "../utils/gamification";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function HomeScreen() {
-  const { colors, setThemePreference } = useTheme();
+  const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
@@ -67,8 +65,6 @@ export default function HomeScreen() {
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
-    setThemeUnlock,
-    themeUnlock,
     toggleProgressExpanded,
     visibleHabits,
   } = useHomeController();
@@ -85,6 +81,7 @@ export default function HomeScreen() {
     levelInfo,
     longestCurrentStreak,
     motivation,
+    rank,
     todayXp,
   } = homeSummary;
   const renderHabitItem = useCallback(
@@ -118,7 +115,7 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <View style={styles.todayHeader}>
           <View>
-            <AppText style={styles.todayTitle}>Today</AppText>
+            <AppText style={styles.todayTitle}>Momentum</AppText>
             <AppText style={styles.todayDate}>{formatTodayDate()}</AppText>
           </View>
           <MomentumWolfMark
@@ -130,36 +127,77 @@ export default function HomeScreen() {
 
         {preferences.showProgressCard ? (
           <View style={styles.progressPanel}>
-            <View style={styles.progressHeader}>
+            <Pressable
+              accessibilityLabel={
+                progressExpanded
+                  ? "Collapse daily progression"
+                  : "Expand daily progression"
+              }
+              accessibilityRole="button"
+              accessibilityState={{ expanded: Boolean(progressExpanded) }}
+              onPress={toggleProgressExpanded}
+              style={({ pressed }) => [
+                styles.progressHeader,
+                pressed && styles.buttonPressed,
+              ]}
+            >
               <View>
-                <AppText style={styles.progressLabel}>Daily progress</AppText>
+                <AppText style={styles.progressLabel}>Daily progression</AppText>
                 <AppText style={styles.progressValue}>{completionLabel}</AppText>
               </View>
-              <AppText style={styles.progressCount}>
-                {completedTodayCount}/{habits.length}
-              </AppText>
-            </View>
+              <View style={styles.progressHeaderRight}>
+                <AppText style={styles.progressCount}>
+                  {completedTodayCount}/{habits.length}
+                </AppText>
+                <AppIcon
+                  color={colors.muted}
+                  name={progressExpanded ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  strokeWidth={2}
+                />
+              </View>
+            </Pressable>
 
-            <View style={styles.progressTrack}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${completionPercentage}%` },
-                ]}
-              />
-            </View>
+            {progressExpanded ? (
+              <>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${completionPercentage}%` },
+                    ]}
+                  />
+                </View>
 
-            <View style={styles.progressMetaRow}>
-              {preferences.showXpRankOnHome ? (
-                <>
-                  <AppText style={styles.progressMeta}>
-                    Level {levelInfo.level}
-                  </AppText>
-                  <AppText style={styles.progressMeta}>{todayXp} XP today</AppText>
-                </>
-              ) : null}
-              <AppText style={styles.progressMeta}>🔥 {longestCurrentStreak}</AppText>
-            </View>
+                <View style={styles.progressMetaRow}>
+                  {preferences.showXpRankOnHome ? (
+                    <>
+                      <AppText style={styles.progressMeta}>
+                        Level {levelInfo.level}
+                      </AppText>
+                      <AppText style={styles.progressMeta}>
+                        {todayXp} XP today
+                      </AppText>
+                      <View style={styles.rankMeta}>
+                        <RankMedal rank={rank} size="mini" />
+                        <AppText style={styles.progressMeta}>{rank}</AppText>
+                      </View>
+                    </>
+                  ) : null}
+                  <View style={styles.streakMeta}>
+                    <AppIcon
+                      color={colors.muted}
+                      name="flame"
+                      size={15}
+                      strokeWidth={1.6}
+                    />
+                    <AppText style={styles.progressMeta}>
+                      {longestCurrentStreak}
+                    </AppText>
+                  </View>
+                </View>
+              </>
+            ) : null}
           </View>
         ) : null}
 
@@ -167,24 +205,6 @@ export default function HomeScreen() {
           <View style={styles.focusNote}>
             <AppText style={styles.focusNoteText}>{motivation}</AppText>
           </View>
-        ) : null}
-
-        {preferences.showProgressCard ? (
-          <Pressable
-            accessibilityLabel={
-              progressExpanded ? "Hide progress detail" : "Show progress detail"
-            }
-            accessibilityRole="button"
-            onPress={toggleProgressExpanded}
-            style={({ pressed }) => [
-              styles.progressTextButton,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            <AppText style={styles.progressTextButtonLabel}>
-              {progressExpanded ? "Hide focus note" : "Show focus note"}
-            </AppText>
-          </Pressable>
         ) : null}
 
         {celebration ? (
@@ -229,7 +249,7 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
-        {badgeUnlock && !completionReward && !perfectDay && !levelUp && !themeUnlock ? (
+        {badgeUnlock && !completionReward && !perfectDay && !levelUp ? (
           <Pressable
             accessibilityLabel={`Dismiss ${badgeUnlock.label} badge unlock`}
             accessibilityRole="button"
@@ -278,7 +298,8 @@ export default function HomeScreen() {
               pressed && styles.buttonPressed,
             ]}
           >
-            <AppText style={styles.inlineAddText}>+ Add</AppText>
+            <AppIcon color={colors.text} name="plus" size={17} strokeWidth={2.2} />
+            <AppText style={styles.inlineAddText}>Add</AppText>
           </Pressable>
         </View>
 
@@ -324,18 +345,13 @@ export default function HomeScreen() {
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <AppText style={styles.rankIcon}>{getRankIcon(levelUp?.rank)}</AppText>
+              <RankMedal rank={levelUp?.rank} size="large" />
               <AppText style={styles.levelModalEyebrow}>Rank up</AppText>
               <AppText style={styles.levelModalTitle}>Level {levelUp?.level}</AppText>
               <AppText style={styles.levelModalRank}>{levelUp?.rank} Rank</AppText>
               <AppText style={styles.levelModalMessage}>
                 Your consistency is turning into momentum.
               </AppText>
-              {levelUp?.themeUnlock ? (
-                <AppText style={styles.levelModalUnlock}>
-                  Theme unlocked: {levelUp.themeUnlock.label}
-                </AppText>
-              ) : null}
               <View style={styles.levelModalTrack}>
                 <View
                   style={[
@@ -363,62 +379,6 @@ export default function HomeScreen() {
       <Modal
         transparent
         animationType="fade"
-        onRequestClose={() => setThemeUnlock(null)}
-        visible={Boolean(themeUnlock) && !completionReward && !perfectDay && !levelUp}
-      >
-        <View style={styles.levelModalBackdrop}>
-          <View style={styles.levelModalCard}>
-            <ScrollView
-              contentContainerStyle={styles.levelModalScrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <AppText style={styles.levelModalEyebrow}>Theme unlocked</AppText>
-              <AppText style={styles.levelModalTitle}>
-                {getThemeUnlockLabel(themeUnlock)} Theme
-              </AppText>
-              <ThemePreview achievement={themeUnlock} styles={styles} />
-              <AppText style={styles.levelModalMessage}>
-                Preview your new rank theme and equip it instantly.
-              </AppText>
-              <View style={styles.modalButtonRow}>
-                <Pressable
-                  accessibilityLabel="Equip unlocked theme later"
-                  accessibilityRole="button"
-                  onPress={() => setThemeUnlock(null)}
-                  style={({ pressed }) => [
-                    styles.levelModalSecondaryButton,
-                    styles.modalButtonFlex,
-                    pressed && styles.buttonPressed,
-                  ]}
-                >
-                  <AppText style={styles.levelModalSecondaryText}>Later</AppText>
-                </Pressable>
-                <Pressable
-                  accessibilityLabel="Equip unlocked theme"
-                  accessibilityRole="button"
-                  onPress={() => {
-                    if (themeUnlock?.themeKey) {
-                      setThemePreference(themeUnlock.themeKey);
-                    }
-                    setThemeUnlock(null);
-                  }}
-                  style={({ pressed }) => [
-                    styles.levelModalButton,
-                    styles.modalButtonFlex,
-                    pressed && styles.buttonPressed,
-                  ]}
-                >
-                  <AppText style={styles.levelModalButtonText}>Equip</AppText>
-                </Pressable>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        transparent
-        animationType="fade"
         onRequestClose={() => setPerfectDay(null)}
         visible={Boolean(perfectDay) && !completionReward}
       >
@@ -428,7 +388,14 @@ export default function HomeScreen() {
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <AppText style={styles.rankIcon}>★</AppText>
+              <View style={styles.modalIconCircle}>
+                <AppIcon
+                  color={colors.accent}
+                  name="star"
+                  size={34}
+                  strokeWidth={2.4}
+                />
+              </View>
               <AppText style={styles.levelModalEyebrow}>Perfect day</AppText>
               <AppText style={styles.levelModalTitle}>All habits complete</AppText>
               <AppText style={styles.levelModalMessage}>
@@ -463,79 +430,6 @@ function formatTodayDate() {
   });
 }
 
-function getRankIcon(rank) {
-  if (rank === "Master") {
-    return "◆";
-  }
-
-  if (rank === "Diamond") {
-    return "◇";
-  }
-
-  if (rank === "Platinum") {
-    return "✦";
-  }
-
-  if (rank === "Gold") {
-    return "★";
-  }
-
-  if (rank === "Silver") {
-    return "●";
-  }
-
-  return "◉";
-}
-
-function getThemeUnlockLabel(achievement) {
-  const theme = rankThemes.find((item) => item.key === achievement?.themeKey);
-
-  return theme?.label || achievement?.title?.replace(" Theme", "") || "New";
-}
-
-function ThemePreview({ achievement, styles }) {
-  const previewColors = themes[achievement?.themeKey] || themes.light;
-
-  return (
-    <View
-      style={[
-        styles.themeUnlockPreview,
-        {
-          backgroundColor: previewColors.card,
-          borderColor: previewColors.border,
-        },
-      ]}
-    >
-      <View style={styles.themeUnlockDots}>
-        <View
-          style={[
-            styles.themeUnlockDot,
-            { backgroundColor: previewColors.primary },
-          ]}
-        />
-        <View
-          style={[
-            styles.themeUnlockDot,
-            { backgroundColor: previewColors.accent },
-          ]}
-        />
-        <View
-          style={[
-            styles.themeUnlockDot,
-            { backgroundColor: previewColors.background },
-          ]}
-        />
-      </View>
-      <AppText style={[styles.themeUnlockName, { color: previewColors.text }]}>
-        {getThemeUnlockLabel(achievement)}
-      </AppText>
-      <AppText style={[styles.themeUnlockMeta, { color: previewColors.muted }]}>
-        Newly unlocked rank theme
-      </AppText>
-    </View>
-  );
-}
-
 function createStyles(colors, { isSmallScreen, isTablet }) {
   return StyleSheet.create({
   safeArea: {
@@ -554,14 +448,14 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 18,
-    paddingTop: isSmallScreen ? 8 : 14,
+    paddingBottom: 14,
+    paddingTop: isSmallScreen ? 6 : 10,
   },
   todayTitle: {
     color: colors.text,
-    fontSize: isSmallScreen ? 26 : 30,
+    fontSize: isSmallScreen ? 24 : 28,
     fontWeight: v2FontWeight.bold,
-    lineHeight: isSmallScreen ? 31 : 36,
+    lineHeight: isSmallScreen ? 29 : 34,
   },
   todayDate: {
     color: colors.muted,
@@ -574,9 +468,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-    marginBottom: 10,
-    paddingVertical: 16,
+    gap: 10,
+    marginBottom: 8,
+    paddingVertical: 14,
   },
   progressHeader: {
     alignItems: "flex-end",
@@ -591,15 +485,19 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   progressValue: {
     color: colors.text,
-    fontSize: isSmallScreen ? 30 : 36,
+    fontSize: isSmallScreen ? 28 : 32,
     fontWeight: v2FontWeight.bold,
-    lineHeight: isSmallScreen ? 35 : 42,
+    lineHeight: isSmallScreen ? 33 : 38,
+  },
+  progressHeaderRight: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: v2Spacing.sm,
   },
   progressCount: {
     color: colors.text,
     fontSize: v2Typography.sectionTitle.fontSize,
     fontWeight: v2FontWeight.bold,
-    paddingBottom: 5,
   },
   progressMetaRow: {
     alignItems: "center",
@@ -612,6 +510,16 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     color: colors.muted,
     fontSize: v2Typography.label.fontSize,
     fontWeight: v2FontWeight.medium,
+  },
+  rankMeta: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: v2Spacing.xs,
+  },
+  streakMeta: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: v2Spacing.xs,
   },
   focusNote: {
     backgroundColor: colors.surface,
@@ -627,18 +535,6 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontSize: v2Typography.body.fontSize,
     fontWeight: v2FontWeight.medium,
     lineHeight: v2Typography.body.lineHeight,
-  },
-  progressTextButton: {
-    alignSelf: "flex-start",
-    marginBottom: 10,
-    minHeight: 34,
-    paddingRight: 12,
-    paddingVertical: 6,
-  },
-  progressTextButtonLabel: {
-    color: colors.primary,
-    fontSize: v2Typography.label.fontSize,
-    fontWeight: v2FontWeight.bold,
   },
   progressTrack: {
     backgroundColor: colors.inputBackground,
@@ -830,6 +726,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     borderColor: colors.border,
     borderRadius: v2Radius.large,
     borderWidth: 1,
+    flexDirection: "row",
+    gap: v2Spacing.xs,
     justifyContent: "center",
     minHeight: 44,
     minWidth: 76,
@@ -897,12 +795,17 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   levelModalScrollContent: {
     alignItems: "stretch",
   },
-  rankIcon: {
-    color: colors.accent,
-    fontSize: 56,
-    fontWeight: v2FontWeight.bold,
-    marginBottom: 8,
-    textAlign: "center",
+  modalIconCircle: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    height: 58,
+    justifyContent: "center",
+    marginBottom: v2Spacing.md,
+    width: 58,
   },
   levelModalEyebrow: {
     color: colors.primary,
@@ -966,30 +869,6 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontSize: 15,
     fontWeight: v2FontWeight.bold,
   },
-  levelModalSecondaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.inputBackground,
-    borderColor: colors.border,
-    borderRadius: v2Radius.large,
-    borderWidth: 1,
-    justifyContent: "center",
-    marginTop: 20,
-    minHeight: 50,
-  },
-  levelModalSecondaryText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: v2FontWeight.bold,
-  },
-  modalButtonRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  modalButtonFlex: {
-    flex: 1,
-    minWidth: 120,
-  },
   buttonPressed: {
     opacity: 0.78,
     transform: [{ scale: 0.98 }],
@@ -997,33 +876,6 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   cardPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.995 }],
-  },
-  themeUnlockPreview: {
-    borderRadius: v2Radius.large,
-    borderWidth: 1,
-    marginTop: 16,
-    padding: 16,
-  },
-  themeUnlockDots: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 14,
-  },
-  themeUnlockDot: {
-    borderColor: colors.border,
-    borderRadius: v2Radius.pill,
-    borderWidth: 1,
-    height: 18,
-    width: 18,
-  },
-  themeUnlockName: {
-    fontSize: 20,
-    fontWeight: v2FontWeight.bold,
-  },
-  themeUnlockMeta: {
-    fontSize: 12,
-    fontWeight: v2FontWeight.medium,
-    marginTop: 4,
   },
   });
 }
