@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -47,7 +47,10 @@ export default function HabitDetailsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const styles = createStyles(colors, { isSmallScreen });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen }),
+    [colors, isSmallScreen]
+  );
   const { id } = useLocalSearchParams();
   const [habit, setHabit] = useState(null);
   const [name, setName] = useState("");

@@ -35,9 +35,7 @@ export async function getHabits() {
     try {
       const parsedHabits = JSON.parse(rawHabits);
 
-      return Array.isArray(parsedHabits)
-        ? normalizeHabitOrder(normalizeHabitList(parsedHabits))
-        : [];
+      return Array.isArray(parsedHabits) ? normalizeHabitOrder(parsedHabits) : [];
     } catch (error) {
       logStorageError("Could not parse saved habits. Backing up raw data.", error);
 

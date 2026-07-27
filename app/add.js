@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -31,7 +31,7 @@ import { addHabit } from "../storage/habitsStorage";
 
 export default function AddHabitScreen() {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState(DEFAULT_HABIT_EMOJI);
   const [category, setCategory] = useState(DEFAULT_HABIT_CATEGORY);

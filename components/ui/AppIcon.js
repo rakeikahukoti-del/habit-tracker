@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { v2Radius } from "../../src/design";
 
@@ -8,7 +9,10 @@ export default function AppIcon({
   strokeWidth = 2,
   style,
 }) {
-  const styles = createStyles(color, size, strokeWidth);
+  const styles = useMemo(
+    () => createStyles(color, size, strokeWidth),
+    [color, size, strokeWidth]
+  );
 
   return (
     <View
@@ -115,9 +119,11 @@ function renderIcon(name, styles) {
   if (
     name === "chevron-up" ||
     name === "chevron-down" ||
+    name === "chevron-left" ||
     name === "chevron-right"
   ) {
     const isUp = name === "chevron-up";
+    const isLeft = name === "chevron-left";
     const isRight = name === "chevron-right";
 
     return (
@@ -127,6 +133,8 @@ function renderIcon(name, styles) {
             styles.line,
             isRight
               ? styles.chevronRightTop
+              : isLeft
+                ? styles.chevronLeftTop
               : isUp
                 ? styles.chevronUpLeft
                 : styles.chevronDownLeft,
@@ -137,6 +145,8 @@ function renderIcon(name, styles) {
             styles.line,
             isRight
               ? styles.chevronRightBottom
+              : isLeft
+                ? styles.chevronLeftBottom
               : isUp
                 ? styles.chevronUpRight
                 : styles.chevronDownRight,
@@ -387,6 +397,18 @@ function createStyles(color, size, strokeWidth) {
       right: 6 * unit,
       top: 14 * unit,
       transform: [{ rotate: "-45deg" }],
+      width: 9 * unit,
+    },
+    chevronLeftTop: {
+      left: 6 * unit,
+      top: 8 * unit,
+      transform: [{ rotate: "-45deg" }],
+      width: 9 * unit,
+    },
+    chevronLeftBottom: {
+      left: 6 * unit,
+      top: 14 * unit,
+      transform: [{ rotate: "45deg" }],
       width: 9 * unit,
     },
     flameOuter: {

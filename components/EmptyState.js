@@ -36,7 +36,7 @@ export default function EmptyState() {
           hitSlop={8}
           style={styles.button}
         >
-          <AppText style={styles.buttonText}>Create First Habit</AppText>
+          <AppText style={styles.buttonText}>Create first habit</AppText>
         </PressableScale>
       </Link>
     </View>
@@ -52,8 +52,10 @@ function createStyles(colors, isSmallScreen) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       marginTop: v2Spacing.xl,
+      maxWidth: 420,
       paddingHorizontal: isSmallScreen ? v2Spacing.lg : v2Spacing.xxl,
       paddingVertical: isSmallScreen ? v2Spacing.xxl : 36,
+      width: "100%",
       ...v2Shadows.low,
       shadowColor: colors.shadow,
       shadowOpacity: 0.08,

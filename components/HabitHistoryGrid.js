@@ -13,7 +13,7 @@ import {
   v2Typography,
 } from "../src/design";
 import { getTodayKey, toDateKey } from "../utils/habitStats";
-import { AppText } from "./ui";
+import { AppIcon, AppText } from "./ui";
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -21,7 +21,10 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const styles = createStyles(colors, isSmallScreen);
+  const styles = useMemo(
+    () => createStyles(colors, isSmallScreen),
+    [colors, isSmallScreen]
+  );
   const [visibleMonth, setVisibleMonth] = useState(() =>
     startOfMonth(new Date())
   );
@@ -76,7 +79,12 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               pressed && styles.buttonPressed,
             ]}
           >
-            <AppText style={styles.monthButtonText}>{"<"}</AppText>
+            <AppIcon
+              color={colors.text}
+              name="chevron-left"
+              size={18}
+              strokeWidth={2}
+            />
           </Pressable>
           <AppText numberOfLines={1} style={styles.monthTitle}>
             {visibleMonth.toLocaleDateString(undefined, {
@@ -97,7 +105,12 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
               pressed && canGoNext && styles.buttonPressed,
             ]}
           >
-            <AppText style={styles.monthButtonText}>{">"}</AppText>
+            <AppIcon
+              color={canGoNext ? colors.text : colors.softText}
+              name="chevron-right"
+              size={18}
+              strokeWidth={2}
+            />
           </Pressable>
         </View>
       </View>
@@ -239,12 +252,6 @@ function createStyles(colors, isSmallScreen) {
     buttonPressed: {
       opacity: 0.78,
       transform: [{ scale: 0.96 }],
-    },
-    monthButtonText: {
-      color: colors.text,
-      fontSize: 18,
-      fontWeight: v2FontWeight.bold,
-      lineHeight: 26,
     },
     monthTitle: {
       color: colors.text,

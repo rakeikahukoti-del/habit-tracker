@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -45,7 +45,10 @@ export default function HabitFormFields({
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
-  const styles = createStyles(colors, isSmallScreen);
+  const styles = useMemo(
+    () => createStyles(colors, isSmallScreen),
+    [colors, isSmallScreen]
+  );
   const reminderInputRef = useRef(null);
 
   function toggleCustomDay(day) {
@@ -61,7 +64,10 @@ export default function HabitFormFields({
     <View style={styles.form}>
       <AppText style={styles.label}>Habit name</AppText>
       <TextInput
+        accessibilityHint="Enter the habit you want to track."
+        accessibilityLabel="Habit name"
         autoFocus={autoFocus}
+        autoCapitalize="sentences"
         onChangeText={(value) => {
           setName(value);
           onNameChange?.();
@@ -198,6 +204,8 @@ export default function HabitFormFields({
 
       <AppText style={styles.label}>Reminder time</AppText>
       <TextInput
+        accessibilityHint="Optional reminder time in 24 hour format, for example 08:30."
+        accessibilityLabel="Reminder time"
         keyboardType="numbers-and-punctuation"
         onChangeText={setReminderTime}
         placeholder="Optional, e.g. 08:30"
