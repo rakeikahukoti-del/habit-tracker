@@ -237,6 +237,12 @@ function HabitCard({
   );
   const swipeActionBackground = SWIPE_COMPLETE_COLOR;
   const undoActionBackground = SWIPE_UNDO_COLOR;
+  const completionLabel = completedToday
+    ? "Completed today"
+    : "Not completed today";
+  const habitCardHint = completedToday
+    ? "Swipe left to undo today's completion, or double tap to open details."
+    : "Swipe right to complete today, or double tap to open details.";
 
   useEffect(
     () => () => {
@@ -372,8 +378,8 @@ function HabitCard({
               },
               { name: "longpress", label: "Reorder habit" },
             ]}
-            accessibilityHint="Swipe right to complete, swipe left to undo, or double tap to open details."
-            accessibilityLabel={`${habit.name}, ${habit.category || "General"}, ${currentStreak} day streak`}
+            accessibilityHint={habitCardHint}
+            accessibilityLabel={`${habit.name}, ${habit.category || "General"}, ${currentStreak} day streak, ${completionLabel}`}
             accessibilityRole="button"
             accessibilityState={{ selected: completedToday }}
             delayLongPress={260}
@@ -427,7 +433,7 @@ function HabitCard({
                 </AppText>
                 <AppText
                   color={colors.muted}
-                  numberOfLines={2}
+                  numberOfLines={1}
                   style={styles.category}
                   variant="caption"
                 >
@@ -612,6 +618,7 @@ function createStyles(colors, isCompact) {
     category: {
       marginTop: 3,
       lineHeight: v2Typography.caption.lineHeight,
+      minWidth: 0,
     },
     rightActions: {
       alignItems: "center",

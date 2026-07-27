@@ -133,12 +133,8 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
           ) : (
             <View key={day.dateKey} style={styles.daySlot}>
               <Pressable
-                accessibilityLabel={`${day.completed ? "Remove" : "Add"} completion for ${day.dateKey}`}
-                accessibilityHint={
-                  day.completed
-                    ? "Double tap to remove this completion."
-                    : "Double tap to add this completion."
-                }
+                accessibilityLabel={getDayAccessibilityLabel(day)}
+                accessibilityHint={getDayAccessibilityHint(day, onToggleDate)}
                 accessibilityRole="button"
                 accessibilityState={{
                   disabled: !onToggleDate || day.isFuture,
@@ -171,6 +167,28 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
       </View>
     </View>
   );
+}
+
+function getDayAccessibilityLabel(day) {
+  if (day.isFuture) {
+    return `${day.dateKey}, future date unavailable`;
+  }
+
+  return `${day.completed ? "Remove" : "Add"} completion for ${day.dateKey}`;
+}
+
+function getDayAccessibilityHint(day, onToggleDate) {
+  if (!onToggleDate) {
+    return "Completion editing is unavailable here.";
+  }
+
+  if (day.isFuture) {
+    return "Future completion dates cannot be changed.";
+  }
+
+  return day.completed
+    ? "Double tap to remove this completion."
+    : "Double tap to add this completion.";
 }
 
 function createStyles(colors, isSmallScreen) {

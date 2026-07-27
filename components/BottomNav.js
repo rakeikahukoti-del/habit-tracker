@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as Haptics from "expo-haptics";
 import { router, usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -24,9 +24,29 @@ export default function BottomNav() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const navigationTimeoutRef = useRef(null);
+  const pendingHrefRef = useRef(null);
   const styles = useMemo(
     () => createStyles(colors, insets.bottom),
     [colors, insets.bottom]
+  );
+
+  useEffect(() => {
+    pendingHrefRef.current = null;
+
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current);
+      navigationTimeoutRef.current = null;
+    }
+  }, [pathname]);
+
+  useEffect(
+    () => () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    },
+    []
   );
 
   return (
@@ -45,10 +65,22 @@ export default function BottomNav() {
               hitSlop={{ bottom: 8, left: 4, right: 4, top: 8 }}
               key={item.key}
               onPress={() => {
-                if (!active) {
-                  triggerNavigationFeedback();
-                  router.push(item.href);
+                if (active || pendingHrefRef.current === item.href) {
+                  return;
                 }
+
+                pendingHrefRef.current = item.href;
+                triggerNavigationFeedback();
+                router.push(item.href);
+
+                if (navigationTimeoutRef.current) {
+                  clearTimeout(navigationTimeoutRef.current);
+                }
+
+                navigationTimeoutRef.current = setTimeout(() => {
+                  pendingHrefRef.current = null;
+                  navigationTimeoutRef.current = null;
+                }, 450);
               }}
               style={({ pressed }) => [
                 styles.item,

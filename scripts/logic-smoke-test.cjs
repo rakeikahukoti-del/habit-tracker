@@ -883,6 +883,34 @@ test("habit reorder persistence saves normalized order values", async () => {
     ),
     [0, 1, 2]
   );
+
+  const movedFirstToLast = await habitsStorage.saveHabitOrder([
+    "two",
+    "three",
+    "one",
+  ]);
+
+  assertJsonEqual(
+    movedFirstToLast.map((habit) => habit.id),
+    ["two", "three", "one"]
+  );
+
+  const movedLastToFirst = await habitsStorage.saveHabitOrder([
+    "one",
+    "unknown",
+    "three",
+    "deleted",
+    "two",
+  ]);
+
+  assertJsonEqual(
+    movedLastToFirst.map((habit) => habit.id),
+    ["one", "three", "two"]
+  );
+  assertJsonEqual(
+    movedLastToFirst.map((habit) => habit.order),
+    [0, 1, 2]
+  );
 });
 
 test("badges sort by tier progression in stable ascending and descending order", () => {

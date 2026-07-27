@@ -226,7 +226,7 @@ export default function ReorderHabitsScreen() {
       scrollEnabled={!draggingId}
       scrollEventThrottle={16}
       scrollRef={scrollRef}
-      subtitle="Hold the handle, then drag the habit into position."
+      subtitle="Long press a habit, then drag it into position."
       title="Reorder habits"
     >
       {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
@@ -303,7 +303,7 @@ function HabitOrderRow({
       ]}
     >
       <Pressable
-        accessibilityHint="Long press, then drag up or down to reorder."
+        accessibilityHint="Long press anywhere on this row, then drag up or down to reorder."
         accessibilityLabel={`Reorder ${habit.name}`}
         accessibilityRole="button"
         accessibilityState={{ busy: isDragging, selected: isDragging }}
