@@ -431,7 +431,7 @@ function HabitCard({
                   style={styles.category}
                   variant="caption"
                 >
-                  {habit.category || "General"} · 10 XP
+                  {habit.category || "General"}
                 </AppText>
               </View>
             </View>

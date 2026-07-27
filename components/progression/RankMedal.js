@@ -66,10 +66,19 @@ export default function RankMedal({
   return (
     <View
       accessibilityLabel={`${rank} rank medal`}
+      accessibilityRole="image"
       accessible
       style={[styles.wrap, style]}
     >
-      <View style={[styles.ribbonWrap, { width: dimensions.medal }]}>
+      <View
+        style={[
+          styles.ribbonWrap,
+          {
+            marginBottom: -dimensions.ribbonOffset,
+            width: dimensions.medal,
+          },
+        ]}
+      >
         <View
           style={[
             styles.ribbon,
@@ -155,6 +164,7 @@ function getDimensions(size) {
       inner: 21,
       medal: 28,
       ribbonHeight: 14,
+      ribbonOffset: 5,
       ribbonWidth: 8,
     };
   }
@@ -165,6 +175,7 @@ function getDimensions(size) {
       inner: 68,
       medal: 88,
       ribbonHeight: 42,
+      ribbonOffset: 14,
       ribbonWidth: 24,
     };
   }
@@ -175,6 +186,7 @@ function getDimensions(size) {
       inner: 34,
       medal: 44,
       ribbonHeight: 22,
+      ribbonOffset: 7,
       ribbonWidth: 13,
     };
   }
@@ -184,6 +196,7 @@ function getDimensions(size) {
     inner: 48,
     medal: 62,
     ribbonHeight: 30,
+    ribbonOffset: 10,
     ribbonWidth: 18,
   };
 }
@@ -196,7 +209,6 @@ const styles = StyleSheet.create({
   ribbonWrap: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: -10,
   },
   ribbon: {
     borderBottomLeftRadius: 3,

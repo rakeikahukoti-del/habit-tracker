@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import * as Haptics from "expo-haptics";
 import { router, usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -23,7 +24,10 @@ export default function BottomNav() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const styles = createStyles(colors, insets.bottom);
+  const styles = useMemo(
+    () => createStyles(colors, insets.bottom),
+    [colors, insets.bottom]
+  );
 
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>

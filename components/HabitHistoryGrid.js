@@ -134,6 +134,11 @@ export default function HabitHistoryGrid({ habit, onToggleDate }) {
             <View key={day.dateKey} style={styles.daySlot}>
               <Pressable
                 accessibilityLabel={`${day.completed ? "Remove" : "Add"} completion for ${day.dateKey}`}
+                accessibilityHint={
+                  day.completed
+                    ? "Double tap to remove this completion."
+                    : "Double tap to add this completion."
+                }
                 accessibilityRole="button"
                 accessibilityState={{
                   disabled: !onToggleDate || day.isFuture,
