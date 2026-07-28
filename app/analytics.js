@@ -11,7 +11,7 @@ import AnalyticsScaffold, {
   AnalyticsHeader,
 } from "../components/analytics/AnalyticsScreen";
 import ProgressDots from "../components/ProgressDots";
-import { AppText, BackIcon, IconButton } from "../components/ui";
+import { AppIcon, AppText, BackIcon, IconButton } from "../components/ui";
 import {
   v2FontWeight,
   v2Radius,
@@ -114,7 +114,7 @@ export default function AnalyticsScreen() {
         ) : null}
 
         {!loading && analytics.habitCount === 0 ? (
-          <EmptyAnalytics styles={styles} />
+          <EmptyAnalytics colors={colors} styles={styles} />
         ) : null}
 
         {!loading && analytics.habitCount > 0 ? (
@@ -320,13 +320,26 @@ function HabitPerformanceRow({ item, styles }) {
   );
 }
 
-function EmptyAnalytics({ styles }) {
+function EmptyAnalytics({ colors, styles }) {
   return (
     <View style={styles.emptyCard}>
       <AppText style={styles.emptyTitle}>Not enough data yet</AppText>
       <AppText style={styles.emptyText}>
-        Complete habits for a few days to begin seeing useful trends.
+        Complete habits for a few days and Momentum will start showing patterns,
+        streak changes, and stronger habits.
       </AppText>
+      <Pressable
+        accessibilityLabel="Create a habit from Analytics"
+        accessibilityRole="button"
+        onPress={() => router.push("/add")}
+        style={({ pressed }) => [
+          styles.emptyAction,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppIcon color={colors.inverseText} name="plus" size={16} />
+        <AppText style={styles.emptyActionText}>Add habit</AppText>
+      </Pressable>
     </View>
   );
 }
@@ -609,6 +622,23 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.body.fontSize,
       lineHeight: v2Typography.body.lineHeight,
       marginTop: v2Spacing.sm,
+      marginBottom: v2Spacing.lg,
+    },
+    emptyAction: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: colors.primary,
+      borderRadius: v2Radius.large,
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: v2Spacing.lg,
+    },
+    emptyActionText: {
+      color: colors.inverseText,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     pressed: {
       opacity: 0.74,
