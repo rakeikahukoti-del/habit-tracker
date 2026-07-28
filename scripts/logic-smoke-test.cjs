@@ -173,9 +173,14 @@ const gamificationLogic = loadModule("utils/gamification.js", (moduleName) => {
 
   return require(moduleName);
 });
+const rankDisplay = loadModule("utils/rankDisplay.js");
 const progressionMilestones = loadModule("utils/progressionMilestones.js", (moduleName) => {
   if (moduleName === "./gamification") {
     return gamificationLogic;
+  }
+
+  if (moduleName === "./rankDisplay") {
+    return rankDisplay;
   }
 
   return require(moduleName);
@@ -198,6 +203,10 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
 
   if (moduleName === "./weeklyReview") {
     return weeklyReview;
+  }
+
+  if (moduleName === "./rankDisplay") {
+    return rankDisplay;
   }
 
   return require(moduleName);
@@ -1205,6 +1214,31 @@ test("rank milestone helper finds the nearest rank target", () => {
   );
 });
 
+test("visible rank display hides legacy Diamond without changing stored logic", () => {
+  assert.strictEqual(gamificationLogic.getRankForLevel(25), "Diamond");
+  assert.strictEqual(rankDisplay.getVisibleRank("Diamond"), "Platinum");
+  assertJsonEqual(rankDisplay.ACTIVE_RANK_LABELS, [
+    "Bronze",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Master",
+  ]);
+  assertJsonEqual(
+    rankDisplay
+      .getVisibleRankMilestones(gamificationLogic.rankMilestones)
+      .map((rankItem) => rankItem.label),
+    ["Bronze", "Silver", "Gold", "Platinum", "Master"]
+  );
+  assert.strictEqual(
+    progressionMilestones.getNextRankMilestone(
+      { currentLevelXp: 0, level: 25 },
+      gamificationLogic.rankMilestones
+    ).label,
+    "Master"
+  );
+});
+
 test("appearance preferences only support Light and Dark with safe legacy migration", () => {
   assertJsonEqual(
     themePreferences.appearanceOptions.map((option) => option.value),
@@ -1349,6 +1383,11 @@ test("badges sort by tier progression in stable ascending and descending order",
 test("visual asset manifest covers rank and achievement identifiers", () => {
   assert(appAssets.brandAssets.appIconDark.endsWith("app-icon-dark.png"));
   assert(appAssets.brandAssets.appIconLight.endsWith("app-icon-light.png"));
+  assert.strictEqual(
+    Object.keys(appAssets.RANK_BADGE_ASSETS).includes("diamond"),
+    false,
+    "active rank assets should not expose a Diamond rank image"
+  );
   assertJsonEqual(appAssets.SUPPLIED_RANK_ASSET_ORDER, [
     "Bronze",
     "Silver",
@@ -1390,6 +1429,11 @@ test("visual asset manifest covers rank and achievement identifiers", () => {
     appAssets.getRankBadgeAsset("Unknown"),
     appAssets.RANK_BADGE_ASSETS.bronze,
     "unknown ranks should use the Bronze fallback"
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Diamond"),
+    appAssets.RANK_BADGE_ASSETS.platinum,
+    "legacy Diamond rank display should use the Platinum visual"
   );
 
   gamificationLogic.rankMilestones.forEach((rankItem) => {

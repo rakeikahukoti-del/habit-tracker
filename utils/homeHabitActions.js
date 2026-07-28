@@ -9,6 +9,7 @@ import {
   isHabitScheduledOnDate,
   wasCompletedToday,
 } from "./habitStats";
+import { getVisibleRank } from "./rankDisplay";
 import { getWeeklyReview } from "./weeklyReview";
 
 export function getVisibleHomeHabits(habits, moveCompletedToBottom = false) {
@@ -80,7 +81,7 @@ export function getHomeSummary(habits, gamification) {
       remainingTodayCount,
       scheduledTodayCount,
     }),
-    rank: getRankForLevel(levelInfo.level),
+    rank: getVisibleRank(getRankForLevel(levelInfo.level)),
     remainingTodayCount,
     scheduledTodayCount,
     todayCountLabel: getTodayCountLabel({
@@ -118,7 +119,7 @@ export function getQueuedRewardsFromMessages(messages, gamification, preferences
         ? {
             level: queuedLevel,
             progress: (levelInfo.currentLevelXp / 100) * 100,
-            rank: getRankForLevel(queuedLevel),
+            rank: getVisibleRank(getRankForLevel(queuedLevel)),
           }
         : null,
     perfectDay:

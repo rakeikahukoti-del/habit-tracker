@@ -40,6 +40,11 @@ import { getHabits } from "../storage/habitsStorage";
 import { sortBadgesByTier } from "../utils/gamification";
 import { getBestStreak, getCurrentStreak } from "../utils/habitStats";
 import { getNextRankMilestone } from "../utils/progressionMilestones";
+import {
+  getNextVisibleRankMilestone,
+  getVisibleRank,
+  getVisibleRankMilestones,
+} from "../utils/rankDisplay";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -97,13 +102,18 @@ export default function RankScreen() {
     () => getGamificationLevelInfo(gamification),
     [gamification]
   );
-  const rank = useMemo(
+  const calculatedRank = useMemo(
     () => getRankForLevel(levelInfo.level),
     [levelInfo.level]
   );
+  const rank = useMemo(() => getVisibleRank(calculatedRank), [calculatedRank]);
+  const visibleRankMilestones = useMemo(
+    () => getVisibleRankMilestones(rankMilestones),
+    []
+  );
   const nextRank = useMemo(
-    () => rankMilestones.find((rankItem) => rankItem.unlockLevel > levelInfo.level),
-    [levelInfo.level]
+    () => getNextVisibleRankMilestone(levelInfo, rankMilestones),
+    [levelInfo]
   );
   const nextMilestone = useMemo(
     () => getNextRankMilestone(levelInfo, rankMilestones),
@@ -222,7 +232,7 @@ export default function RankScreen() {
 
             <Section title="Rank medals" styles={styles}>
               <View style={styles.medalGrid}>
-                {rankMilestones.map((rankItem) => (
+                {visibleRankMilestones.map((rankItem) => (
                   <RankReward
                     key={rankItem.key}
                     locked={levelInfo.level < rankItem.unlockLevel}
@@ -363,9 +373,9 @@ function Section({ children, styles, subtitle, title }) {
 function RankPath({ currentLevel, styles }) {
   return (
     <View style={styles.rankPath}>
-      {rankMilestones.map((rankItem) => {
+      {getVisibleRankMilestones(rankMilestones).map((rankItem) => {
         const unlocked = currentLevel >= rankItem.unlockLevel;
-        const current = getRankForLevel(currentLevel) === rankItem.label;
+        const current = getVisibleRank(getRankForLevel(currentLevel)) === rankItem.label;
 
         return (
           <View

@@ -16,9 +16,10 @@ light-surface in-app branding.
 - Platinum: `assets/ranks/platinum.png`
 - Master: `assets/ranks/master.png`
 
-The app also keeps the existing Diamond fallback asset because the current rank
-logic still includes Diamond. Do not change rank thresholds or persisted rank
-names when updating assets.
+The active visual rank order is Bronze, Silver, Gold, Platinum, Master. The
+underlying legacy rank logic still recognises Diamond for compatibility, but
+Diamond is displayed with the Platinum visual and is not shown as an active
+rank-path step.
 
 Recommended `RankBadge` sizes:
 
@@ -35,8 +36,24 @@ separate recoloured locked assets.
 - Use the light logo on light surfaces.
 - Do not tint the logo.
 - Do not use rank colours as app-wide themes.
+- Use `BrandLogo` for in-app logo rendering.
 
 ## Achievement Protection
 
 Achievements are a separate visual system. Do not replace achievement badges
 with rank badges or change achievement identifiers from this asset map.
+
+## Functional Icons
+
+Use the existing outline icon system for navigation, settings, actions,
+analytics, calendars, and form controls. Do not replace functional UI icons with
+raster logo or rank images.
+
+## Removed Legacy Assets
+
+Legacy root app icons, generated logo variants, generated transparent wolf
+exports, generated adaptive/splash helper files, and generated Diamond/locked
+rank placeholders were removed after the supplied assets were integrated.
+
+Momentum remains a Light/Dark-only app. Rank badge colours are rewards, not app
+themes.

@@ -28,6 +28,7 @@ import {
   getVisibleHomeHabits,
   shouldShowConfetti,
 } from "../utils/homeHabitActions";
+import { getVisibleRank } from "../utils/rankDisplay";
 import {
   getCurrentStreak,
   getTodayKey,
@@ -244,7 +245,7 @@ export function useHomeController() {
       });
       const xpEarned = Math.max(10, award.gamification.xp - previousXp);
       const rewardLevelInfo = getGamificationLevelInfo(award.gamification);
-      const rewardRank = getRankForLevel(rewardLevelInfo.level);
+      const rewardRank = getVisibleRank(getRankForLevel(rewardLevelInfo.level));
 
       await consumeGamificationMessages();
 
@@ -362,6 +363,6 @@ async function maybeShowLevelUp(gamification, messages, setLevelUp) {
   setLevelUp({
     level: levelInfo.level,
     progress: (levelInfo.currentLevelXp / 100) * 100,
-    rank: getRankForLevel(levelInfo.level),
+    rank: getVisibleRank(getRankForLevel(levelInfo.level)),
   });
 }

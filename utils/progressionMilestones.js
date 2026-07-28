@@ -1,18 +1,18 @@
 import { XP_PER_LEVEL } from "./gamification";
+import { getVisibleRankMilestones } from "./rankDisplay";
 
 export function getNextRankMilestone(levelInfo, rankMilestones) {
   const safeLevel = Number.isFinite(levelInfo?.level) ? levelInfo.level : 1;
   const currentLevelXp = Number.isFinite(levelInfo?.currentLevelXp)
     ? levelInfo.currentLevelXp
     : 0;
-  const nextRank = Array.isArray(rankMilestones)
-    ? rankMilestones.find((rank) => rank.unlockLevel > safeLevel)
-    : null;
+  const visibleRankMilestones = getVisibleRankMilestones(rankMilestones);
+  const nextRank = visibleRankMilestones.find(
+    (rank) => rank.unlockLevel > safeLevel
+  );
 
   if (!nextRank) {
-    const finalRank = Array.isArray(rankMilestones)
-      ? rankMilestones[rankMilestones.length - 1]
-      : null;
+    const finalRank = visibleRankMilestones[visibleRankMilestones.length - 1];
 
     return {
       label: finalRank?.label || "Master",
