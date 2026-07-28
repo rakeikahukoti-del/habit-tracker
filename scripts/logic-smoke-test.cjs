@@ -173,6 +173,13 @@ const gamificationLogic = loadModule("utils/gamification.js", (moduleName) => {
 
   return require(moduleName);
 });
+const progressionMilestones = loadModule("utils/progressionMilestones.js", (moduleName) => {
+  if (moduleName === "./gamification") {
+    return gamificationLogic;
+  }
+
+  return require(moduleName);
+});
 const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) => {
   if (moduleName === "./gamification") {
     return gamificationLogic;
@@ -184,7 +191,13 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
 
   return require(moduleName);
 });
-const analyticsReadiness = loadModule("utils/analyticsReadiness.js");
+const analyticsReadiness = loadModule("utils/analyticsReadiness.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const themePreferences = loadModule("utils/themePreferences.js");
 const calendarMonth = loadModule("utils/calendarMonth.js", (moduleName) => {
   if (moduleName === "./habitStats") {
@@ -868,6 +881,73 @@ test("analytics readiness separates building data from meaningful trends", () =>
   );
 });
 
+test("habit analytics readiness handles sparse history and schedules", () => {
+  const now = new Date(2026, 0, 10);
+  const empty = analyticsReadiness.getHabitAnalyticsReadiness(
+    {
+      completedDates: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      frequency: "Daily",
+    },
+    now
+  );
+
+  assert.strictEqual(empty.state, "empty");
+  assert.strictEqual(empty.totalCompletions, 0);
+  assert.strictEqual(
+    analyticsReadiness.getHabitAnalyticsGuidance(empty),
+    "Complete this habit once to start building insight."
+  );
+
+  const building = analyticsReadiness.getHabitAnalyticsReadiness(
+    {
+      completedDates: [
+        "2026-01-05",
+        "2026-01-05",
+        "2026-01-06",
+        "2026-01-12",
+      ],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      customDays: ["Mon"],
+      frequency: "Custom",
+    },
+    now
+  );
+
+  assert.strictEqual(building.state, "building");
+  assert.strictEqual(building.totalCompletions, 1);
+  assert.strictEqual(building.activeDays, 1);
+  assert.strictEqual(building.remainingCompletions, 3);
+  assert.strictEqual(building.remainingActiveDays, 2);
+  assert.match(
+    analyticsReadiness.getHabitAnalyticsGuidance(building),
+    /3 more completions/
+  );
+
+  const ready = analyticsReadiness.getHabitAnalyticsReadiness(
+    {
+      completedDates: [
+        "2026-01-06",
+        "2026-01-07",
+        "2026-01-08",
+        "2026-01-09",
+      ],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      frequency: "Weekdays",
+    },
+    now
+  );
+
+  assert.strictEqual(ready.state, "ready");
+  assert.strictEqual(ready.ready, true);
+  assert.strictEqual(ready.totalCompletions, 4);
+  assert.strictEqual(ready.activeDays, 4);
+  assert.match(
+    analyticsReadiness.getHabitAnalyticsGuidance(ready),
+    /next scheduled day/
+  );
+});
+
 test("first trend unlock persistence is safe and backward-compatible", async () => {
   resetStorage();
 
@@ -880,6 +960,29 @@ test("first trend unlock persistence is safe and backward-compatible", async () 
   asyncStorageFailures.get = true;
   assert.strictEqual(await appPreferencesStorage.hasShownFirstTrendUnlock(), false);
   asyncStorageFailures.get = false;
+});
+
+test("rank milestone helper finds the nearest rank target", () => {
+  assertJsonEqual(
+    progressionMilestones.getNextRankMilestone(
+      { currentLevelXp: 50, level: 4 },
+      gamificationLogic.rankMilestones
+    ),
+    {
+      label: "Silver",
+      level: 5,
+      text: "50 XP to Silver",
+      type: "rank",
+      xpRemaining: 50,
+    }
+  );
+  assert.strictEqual(
+    progressionMilestones.getNextRankMilestone(
+      { currentLevelXp: 0, level: 40 },
+      gamificationLogic.rankMilestones
+    ),
+    null
+  );
 });
 
 test("appearance preferences only support Light and Dark with safe legacy migration", () => {

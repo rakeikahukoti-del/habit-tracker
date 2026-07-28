@@ -39,6 +39,7 @@ import {
 import { getHabits } from "../storage/habitsStorage";
 import { sortBadgesByTier } from "../utils/gamification";
 import { getBestStreak, getCurrentStreak } from "../utils/habitStats";
+import { getNextRankMilestone } from "../utils/progressionMilestones";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -103,6 +104,10 @@ export default function RankScreen() {
   const nextRank = useMemo(
     () => rankMilestones.find((rankItem) => rankItem.unlockLevel > levelInfo.level),
     [levelInfo.level]
+  );
+  const nextMilestone = useMemo(
+    () => getNextRankMilestone(levelInfo, rankMilestones),
+    [levelInfo]
   );
   const earnedBadgeIds = useMemo(
     () => new Set(gamification?.earnedBadges || []),
@@ -172,6 +177,34 @@ export default function RankScreen() {
                   : "Maximum rank reached."}
               </AppText>
             </View>
+
+            {nextMilestone ? (
+              <View
+                accessibilityLabel={`Next milestone. ${nextMilestone.text}. Unlocks at level ${nextMilestone.level}.`}
+                accessible
+                style={styles.nextMilestone}
+              >
+                <View style={styles.nextMilestoneIcon}>
+                  <AppIcon
+                    color={colors.primary}
+                    name="trophy"
+                    size={22}
+                    strokeWidth={2}
+                  />
+                </View>
+                <View style={styles.nextMilestoneText}>
+                  <AppText style={styles.nextMilestoneLabel}>
+                    Next milestone
+                  </AppText>
+                  <AppText style={styles.nextMilestoneTitle}>
+                    {nextMilestone.label}
+                  </AppText>
+                </View>
+                <AppText style={styles.nextMilestoneMeta}>
+                  {nextMilestone.xpRemaining} XP
+                </AppText>
+              </View>
+            ) : null}
 
             <Section title="Rank path" styles={styles}>
               <RankPath currentLevel={levelInfo.level} styles={styles} />
@@ -730,6 +763,53 @@ function createStyles(colors, { isSmallScreen }) {
       gap: v2Spacing.md,
       marginBottom: v2Spacing.xl,
       paddingVertical: v2Spacing.xl,
+    },
+    nextMilestone: {
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
+      minHeight: 68,
+      padding: v2Spacing.lg,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.08,
+    },
+    nextMilestoneIcon: {
+      alignItems: "center",
+      backgroundColor: colors.primarySoft,
+      borderRadius: v2Radius.pill,
+      height: 42,
+      justifyContent: "center",
+      width: 42,
+    },
+    nextMilestoneText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    nextMilestoneLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      textTransform: "uppercase",
+    },
+    nextMilestoneTitle: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginTop: 2,
+    },
+    nextMilestoneMeta: {
+      color: colors.primary,
+      flexShrink: 0,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      maxWidth: "32%",
+      textAlign: "right",
     },
     rankLabel: {
       color: colors.muted,

@@ -20,6 +20,10 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { getHabits } from "../../storage/habitsStorage";
 import {
+  getHabitAnalyticsGuidance,
+  getHabitAnalyticsReadiness,
+} from "../../utils/analyticsReadiness";
+import {
   getHabitPerformance,
   getTodayKey,
   toDateKey,
@@ -80,6 +84,14 @@ export default function IndividualAnalyticsScreen() {
     () => (habit ? getLastThirtyDays(habit) : []),
     [habit]
   );
+  const readiness = useMemo(
+    () => (habit ? getHabitAnalyticsReadiness(habit) : null),
+    [habit]
+  );
+  const guidance = useMemo(
+    () => getHabitAnalyticsGuidance(readiness),
+    [readiness]
+  );
 
   return (
     <AnalyticsScaffold maxWidth={v2Layout.formMaxWidth}>
@@ -110,7 +122,7 @@ export default function IndividualAnalyticsScreen() {
           </View>
         ) : null}
 
-        {!loading && habit && analytics ? (
+        {!loading && habit && analytics && readiness ? (
           <>
             <View style={styles.header}>
               <View style={styles.iconBadge}>
@@ -124,22 +136,30 @@ export default function IndividualAnalyticsScreen() {
               </View>
             </View>
 
-            <View
-              accessibilityLabel={`${analytics.completionRate}% completion rate in the last 30 days`}
-              accessible
-              style={styles.heroMetric}
-            >
-              <AppText style={styles.heroValue}>{analytics.completionRate}%</AppText>
-              <AppText style={styles.heroLabel}>Completion rate</AppText>
-              <View style={styles.heroTrack}>
-                <View
-                  style={[
-                    styles.heroFill,
-                    { width: `${analytics.completionRate}%` },
-                  ]}
-                />
+            {readiness.state === "ready" ? (
+              <View
+                accessibilityLabel={`${analytics.completionRate}% completion rate in the last 30 scheduled days`}
+                accessible
+                style={styles.heroMetric}
+              >
+                <AppText style={styles.heroValue}>{analytics.completionRate}%</AppText>
+                <AppText style={styles.heroLabel}>Completion rate</AppText>
+                <View style={styles.heroTrack}>
+                  <View
+                    style={[
+                      styles.heroFill,
+                      { width: `${analytics.completionRate}%` },
+                    ]}
+                  />
+                </View>
               </View>
-            </View>
+            ) : (
+              <HabitInsightBuildingCard
+                guidance={guidance}
+                readiness={readiness}
+                styles={styles}
+              />
+            )}
 
             <View style={styles.metricList}>
               <MetricRow
@@ -159,6 +179,15 @@ export default function IndividualAnalyticsScreen() {
               />
             </View>
 
+            <View
+              accessibilityLabel={`Focus guidance. ${guidance}`}
+              accessible
+              style={styles.guidanceCard}
+            >
+              <AppText style={styles.guidanceLabel}>Focus</AppText>
+              <AppText style={styles.guidanceText}>{guidance}</AppText>
+            </View>
+
             <Section title="Last 7 days" styles={styles}>
               <View style={styles.weekCard}>
                 <ProgressDots days={analytics.weeklyProgress} compact />
@@ -169,12 +198,68 @@ export default function IndividualAnalyticsScreen() {
               <HistoryGrid days={historyDays} styles={styles} />
             </Section>
 
-            <Section title="Trend" styles={styles}>
-              <MiniTrend points={analytics.trend} styles={styles} />
-            </Section>
+            {readiness.state === "ready" ? (
+              <Section title="Trend" styles={styles}>
+                <MiniTrend points={analytics.trend} styles={styles} />
+              </Section>
+            ) : null}
           </>
         ) : null}
     </AnalyticsScaffold>
+  );
+}
+
+function HabitInsightBuildingCard({ guidance, readiness, styles }) {
+  const title =
+    readiness.state === "empty" ? "No completions yet" : "Insight is building";
+
+  return (
+    <View
+      accessibilityLabel={`${title}. ${readiness.totalCompletions} completions, ${readiness.activeDays} active days, ${readiness.scheduledOpportunities} scheduled days. ${guidance}`}
+      accessible
+      style={styles.buildingCard}
+    >
+      <AppText style={styles.emptyTitle}>{title}</AppText>
+      <AppText style={styles.emptyText}>
+        {readiness.state === "empty"
+          ? "Complete this habit on a scheduled day to begin its progress story."
+          : "A few more real completions will make this habit's pattern clearer."}
+      </AppText>
+
+      <View style={styles.buildingTrack}>
+        <View style={[styles.buildingFill, { width: `${readiness.progress}%` }]} />
+      </View>
+      <AppText style={styles.buildingProgressText}>
+        {readiness.progress}% toward stronger insight
+      </AppText>
+
+      <View style={styles.buildingStats}>
+        <BuildingStat
+          label="Completions"
+          styles={styles}
+          value={`${readiness.totalCompletions}/${readiness.completionGoal}`}
+        />
+        <BuildingStat
+          label="Active days"
+          styles={styles}
+          value={`${readiness.activeDays}/${readiness.activeDayGoal}`}
+        />
+        <BuildingStat
+          label="Scheduled"
+          styles={styles}
+          value={readiness.scheduledOpportunities}
+        />
+      </View>
+    </View>
+  );
+}
+
+function BuildingStat({ label, styles, value }) {
+  return (
+    <View style={styles.buildingStat}>
+      <AppText style={styles.buildingStatValue}>{value}</AppText>
+      <AppText style={styles.buildingStatLabel}>{label}</AppText>
+    </View>
   );
 }
 
@@ -372,6 +457,59 @@ function createStyles(colors, { isSmallScreen }) {
       marginBottom: v2Spacing.xl,
       paddingHorizontal: v2Spacing.lg,
     },
+    buildingCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      marginBottom: v2Spacing.xl,
+      padding: v2Spacing.xl,
+    },
+    buildingTrack: {
+      backgroundColor: colors.surface,
+      borderRadius: v2Radius.pill,
+      height: 8,
+      marginTop: v2Spacing.md,
+      overflow: "hidden",
+    },
+    buildingFill: {
+      backgroundColor: colors.primary,
+      borderRadius: v2Radius.pill,
+      height: "100%",
+    },
+    buildingProgressText: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginTop: v2Spacing.sm,
+    },
+    buildingStats: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.lg,
+    },
+    buildingStat: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexBasis: "30%",
+      flexGrow: 1,
+      minWidth: 92,
+      padding: v2Spacing.md,
+    },
+    buildingStatValue: {
+      color: colors.text,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    buildingStatLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: 2,
+    },
     metricRow: {
       alignItems: "center",
       borderBottomColor: colors.border,
@@ -401,6 +539,27 @@ function createStyles(colors, { isSmallScreen }) {
     section: {
       gap: v2Spacing.md,
       marginBottom: v2Spacing.xl,
+    },
+    guidanceCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      marginBottom: v2Spacing.xl,
+      padding: v2Spacing.lg,
+    },
+    guidanceLabel: {
+      color: colors.primary,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: 4,
+      textTransform: "uppercase",
+    },
+    guidanceText: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
     },
     sectionTitle: {
       color: colors.text,
