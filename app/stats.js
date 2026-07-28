@@ -84,56 +84,71 @@ export default function StatsScreen() {
     () => getProgressOverview(habits, period, gamification),
     [gamification, habits, period]
   );
+  const progressInsight = useMemo(
+    () => getProgressInsight(progress, period),
+    [period, progress]
+  );
 
   return (
     <AnalyticsScreen bottomNav>
-        <AnalyticsHeader
-          subtitle={`Consistency across ${getPeriodLabel(period).toLowerCase()}.`}
-          title="Progress"
-        />
+      <AnalyticsHeader
+        subtitle={`Consistency across ${getPeriodLabel(period).toLowerCase()}.`}
+        title="Progress"
+      />
 
-        <PeriodControl period={period} setPeriod={setPeriod} styles={styles} />
+      <PeriodControl period={period} setPeriod={setPeriod} styles={styles} />
 
-        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
+      {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
 
-        {loading ? (
-          <View style={styles.loadingCard}>
-            <ActivityIndicator color={colors.primary} />
-            <AppText style={styles.loadingText}>Loading progress...</AppText>
-          </View>
-        ) : null}
+      {loading ? (
+        <View style={styles.loadingCard}>
+          <ActivityIndicator color={colors.primary} />
+          <AppText style={styles.loadingText}>Loading progress...</AppText>
+        </View>
+      ) : null}
 
-        {!loading && progress.habitCount === 0 ? (
-          <EmptyProgress colors={colors} styles={styles} />
-        ) : null}
+      {!loading && progress.habitCount === 0 ? (
+        <EmptyProgress colors={colors} styles={styles} />
+      ) : null}
 
-        {!loading && progress.habitCount > 0 ? (
-          <>
-            <View
-              accessibilityLabel={`${progress.completionRate}% completion rate for ${getPeriodLabel(period)}`}
-              accessible
-              style={styles.heroMetric}
-            >
-              <AppText style={styles.heroValue}>{progress.completionRate}%</AppText>
-              <AppText style={styles.heroLabel}>Overall consistency</AppText>
-              <View style={styles.heroTrack}>
-                <View
-                  style={[
-                    styles.heroFill,
-                    { width: `${clampPercentage(progress.completionRate)}%` },
-                  ]}
-                />
-              </View>
-              <AppText style={styles.heroContext}>
-                {progress.completedCount} of {progress.possibleCount} possible
-                completions
-              </AppText>
+      {!loading && progress.habitCount > 0 ? (
+        <>
+          <View
+            accessibilityLabel={`${progress.completionRate}% completion rate for ${getPeriodLabel(period)}. ${progress.completedCount} of ${progress.possibleCount} possible completions.`}
+            accessible
+            style={styles.heroMetric}
+          >
+            <AppText style={styles.heroValue}>{progress.completionRate}%</AppText>
+            <AppText style={styles.heroLabel}>Overall consistency</AppText>
+            <View style={styles.heroTrack}>
+              <View
+                style={[
+                  styles.heroFill,
+                  { width: `${clampPercentage(progress.completionRate)}%` },
+                ]}
+              />
             </View>
+            <AppText style={styles.heroContext}>
+              {progress.completedCount} of {progress.possibleCount} possible
+              completions
+            </AppText>
+          </View>
 
-            <Section title="This week" styles={styles}>
-              <WeeklyVisual days={progress.weeklySummary} styles={styles} />
-            </Section>
+          <View
+            accessibilityLabel={`Progress focus. ${progressInsight.title}. ${progressInsight.body}`}
+            accessible
+            style={styles.insightCard}
+          >
+            <AppText style={styles.insightLabel}>Recent focus</AppText>
+            <AppText style={styles.insightTitle}>{progressInsight.title}</AppText>
+            <AppText style={styles.insightBody}>{progressInsight.body}</AppText>
+          </View>
 
+          <Section title="This week" styles={styles}>
+            <WeeklyVisual days={progress.weeklySummary} styles={styles} />
+          </Section>
+
+          <Section title="Long-term progress" styles={styles}>
             <View style={styles.metricList}>
               <MetricRow
                 label="Current streak"
@@ -161,28 +176,29 @@ export default function StatsScreen() {
                 styles={styles}
               />
             </View>
+          </Section>
 
-            <Section
-              action={
-                <Pressable
-                  accessibilityLabel="Open analytics"
-                  accessibilityRole="button"
-                  onPress={() => router.push("/analytics")}
-                  style={({ pressed }) => [
-                    styles.textAction,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <AppText style={styles.textActionLabel}>Analytics</AppText>
-                </Pressable>
-              }
-              title="Recent history"
-              styles={styles}
-            >
-              <HistoryGrid days={progress.historyDays} styles={styles} />
-            </Section>
-          </>
-        ) : null}
+          <Section
+            action={
+              <Pressable
+                accessibilityLabel="Open analytics"
+                accessibilityRole="button"
+                onPress={() => router.push("/analytics")}
+                style={({ pressed }) => [
+                  styles.textAction,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <AppText style={styles.textActionLabel}>Analytics</AppText>
+              </Pressable>
+            }
+            title="Recent history"
+            styles={styles}
+          >
+            <HistoryGrid days={progress.historyDays} styles={styles} />
+          </Section>
+        </>
+      ) : null}
     </AnalyticsScreen>
   );
 }
@@ -336,6 +352,41 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
+function getProgressInsight(progress, period) {
+  if (!progress || progress.habitCount === 0) {
+    return {
+      body: "Create a habit to begin building progress.",
+      title: "No progress yet",
+    };
+  }
+
+  if (progress.possibleCount === 0) {
+    return {
+      body: "No habits were scheduled in this period.",
+      title: "No scheduled habits",
+    };
+  }
+
+  if (progress.completionRate === 100) {
+    return {
+      body: `Every scheduled habit is complete for this ${getPeriodLabel(period).toLowerCase()}.`,
+      title: "Perfect consistency",
+    };
+  }
+
+  if (progress.currentLongestStreak > 0) {
+    return {
+      body: `${progress.currentLongestStreak} day active streak. Open Analytics to inspect habit-level patterns.`,
+      title: "Streak is active",
+    };
+  }
+
+  return {
+    body: "Open Analytics to see which habit is easiest to rebuild first.",
+    title: "Patterns are building",
+  };
+}
+
 function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     periodControl: {
@@ -430,6 +481,33 @@ function createStyles(colors, { isSmallScreen }) {
       fontWeight: v2FontWeight.medium,
       marginTop: v2Spacing.sm,
     },
+    insightCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      marginBottom: v2Spacing.xl,
+      padding: v2Spacing.lg,
+    },
+    insightLabel: {
+      color: colors.primary,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: 4,
+      textTransform: "uppercase",
+    },
+    insightTitle: {
+      color: colors.text,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    insightBody: {
+      color: colors.muted,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.body.lineHeight,
+      marginTop: v2Spacing.xs,
+    },
     section: {
       gap: v2Spacing.md,
       marginBottom: v2Spacing.xl,
@@ -489,7 +567,6 @@ function createStyles(colors, { isSmallScreen }) {
       borderColor: colors.border,
       borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginBottom: v2Spacing.xl,
       paddingHorizontal: v2Spacing.lg,
     },
     metricRow: {

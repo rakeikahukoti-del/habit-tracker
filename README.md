@@ -8,10 +8,10 @@ Momentum is an offline-first mobile habit tracker built with React Native and Ex
 - Emoji, category, color, frequency, custom days, and optional reminder time
 - Swipe completion, monthly history editing, and manual habit reordering
 - Current streak, best streak, weekly progress, monthly calendar, and analytics
-- XP, levels, ranks, badges, recent achievements, and rank theme unlocks
+- XP, levels, ranks, badges, recent achievements, and rank medals
 - Progress dashboard, Analytics, Rank, Settings, Appearance, and Legal screens
 - Local notifications for habit reminders with permission-safe fallback
-- Light, Dark, System, and unlockable rank themes
+- Light and Dark appearance modes with legacy theme migration
 - Demo data and Master demo data for portfolio walkthroughs
 - JSON export/import for local backup transfer
 - Fully local AsyncStorage persistence

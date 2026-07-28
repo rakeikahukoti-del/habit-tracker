@@ -65,7 +65,7 @@ Future redesign work should preserve:
 - Swipe right to complete and swipe left to undo.
 - Drag-and-drop habit reordering.
 - Completed-habits-to-bottom sorting while preserving manual order within groups.
-- Theme preferences, unlockable rank themes, and system theme handling.
+- Light/Dark theme preferences and backward-compatible legacy theme migration.
 - All app preferences and onboarding state.
 - Demo data, master demo data, JSON export, and JSON import.
 - Existing Expo Router navigation paths.

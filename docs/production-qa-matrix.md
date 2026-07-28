@@ -33,7 +33,7 @@ Use this checklist before portfolio demos, TestFlight/internal testing, or store
 - Badge unlocks do not duplicate after restart.
 - Level-up popup does not repeat after dismissal.
 - Reward popups appear only on Home and one at a time.
-- Demo data and Master demo data recalculate XP, level, rank, badges, themes, and analytics.
+- Demo data and Master demo data recalculate XP, level, rank, badges, and analytics.
 - Maximum rank state displays correctly at Master.
 
 ## Analytics and Progress
@@ -49,8 +49,7 @@ Use this checklist before portfolio demos, TestFlight/internal testing, or store
 - Habit Preferences toggles save and persist.
 - Gamification Preferences toggles affect future Home and popup behavior.
 - Notification Preferences shows permission state without repeated prompts.
-- Appearance preserves Light, Dark, System, and rank theme IDs.
-- Locked themes cannot be selected.
+- Appearance preserves Light and Dark while safely migrating legacy theme IDs.
 - Import JSON rejects invalid data without overwriting current habits.
 - Export JSON includes habits and app metadata.
 - Reset all data confirms before deleting local data.
@@ -75,7 +74,7 @@ Use this checklist before portfolio demos, TestFlight/internal testing, or store
 - Destructive actions explain consequences before confirming.
 - Large text does not hide modal buttons or form save actions.
 - Swipe/drag workflows have tap or settings alternatives.
-- Light, Dark, and rank themes maintain readable contrast.
+- Light and Dark maintain readable contrast.
 
 ## Platforms and Devices
 

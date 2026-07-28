@@ -10,7 +10,17 @@ export function getNextRankMilestone(levelInfo, rankMilestones) {
     : null;
 
   if (!nextRank) {
-    return null;
+    const finalRank = Array.isArray(rankMilestones)
+      ? rankMilestones[rankMilestones.length - 1]
+      : null;
+
+    return {
+      label: finalRank?.label || "Master",
+      level: finalRank?.unlockLevel || safeLevel,
+      text: "Maximum rank reached",
+      type: "complete",
+      xpRemaining: 0,
+    };
   }
 
   const levelsRemaining = nextRank.unlockLevel - safeLevel;

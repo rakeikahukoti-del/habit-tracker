@@ -81,7 +81,11 @@ export default function HomeScreen() {
     levelInfo,
     longestCurrentStreak,
     motivation,
+    nextAction,
     rank,
+    remainingTodayCount,
+    scheduledTodayCount,
+    todayCountLabel,
     todayXp,
   } = homeSummary;
   const renderHabitItem = useCallback(
@@ -130,8 +134,8 @@ export default function HomeScreen() {
             <Pressable
               accessibilityLabel={
                 progressExpanded
-                  ? "Collapse daily progression"
-                  : "Expand daily progression"
+                  ? `Collapse daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${nextAction}.`
+                  : `Expand daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${nextAction}.`
               }
               accessibilityRole="button"
               accessibilityState={{ expanded: Boolean(progressExpanded) }}
@@ -141,14 +145,29 @@ export default function HomeScreen() {
                 pressed && styles.buttonPressed,
               ]}
             >
-              <View>
+              <View style={styles.progressHeaderText}>
                 <AppText style={styles.progressLabel}>Daily progression</AppText>
                 <AppText style={styles.progressValue}>{completionLabel}</AppText>
+                {!progressExpanded ? (
+                  <AppText style={styles.progressCompactHint} numberOfLines={2}>
+                    {nextAction}
+                  </AppText>
+                ) : null}
               </View>
               <View style={styles.progressHeaderRight}>
-                <AppText style={styles.progressCount}>
-                  {completedTodayCount}/{habits.length}
-                </AppText>
+                <View style={styles.progressPill}>
+                  <AppText style={styles.progressCount}>
+                    {todayCountLabel}
+                  </AppText>
+                </View>
+                {!progressExpanded && preferences.showXpRankOnHome ? (
+                  <View style={styles.compactRankPill}>
+                    <RankMedal rank={rank} size="mini" />
+                    <AppText style={styles.compactRankText} numberOfLines={1}>
+                      L{levelInfo.level}
+                    </AppText>
+                  </View>
+                ) : null}
                 <AppIcon
                   color={colors.muted}
                   name={progressExpanded ? "chevron-up" : "chevron-down"}
@@ -192,9 +211,14 @@ export default function HomeScreen() {
                       strokeWidth={1.6}
                     />
                     <AppText style={styles.progressMeta}>
-                      {longestCurrentStreak}
+                      {longestCurrentStreak} streak
                     </AppText>
                   </View>
+                  <AppText style={styles.progressMeta}>
+                    {remainingTodayCount === 0
+                      ? "Scheduled work clear"
+                      : `${remainingTodayCount} remaining`}
+                  </AppText>
                 </View>
               </>
             ) : null}
@@ -203,6 +227,7 @@ export default function HomeScreen() {
 
         {progressExpanded && preferences.showProgressCard ? (
           <View style={styles.focusNote}>
+            <AppText style={styles.focusNoteLabel}>Next action</AppText>
             <AppText style={styles.focusNoteText}>{motivation}</AppText>
           </View>
         ) : null}
@@ -283,7 +308,7 @@ export default function HomeScreen() {
             <View style={styles.listTitleRow}>
               <AppText style={styles.listTitle}>Habits</AppText>
               <AppText style={styles.doneBadgeText}>
-                {completedTodayCount}/{habits.length} done
+                {todayCountLabel}
               </AppText>
             </View>
             <AppText style={styles.listSubtitle}>{habitsSectionMessage}</AppText>
@@ -475,7 +500,12 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   progressHeader: {
     alignItems: "flex-end",
     flexDirection: "row",
+    gap: 12,
     justifyContent: "space-between",
+  },
+  progressHeaderText: {
+    flex: 1,
+    minWidth: 0,
   },
   progressLabel: {
     color: colors.muted,
@@ -489,14 +519,51 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontWeight: v2FontWeight.bold,
     lineHeight: isSmallScreen ? 33 : 38,
   },
+  progressCompactHint: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: 18,
+    marginTop: 3,
+    maxWidth: isSmallScreen ? 190 : 240,
+  },
   progressHeaderRight: {
     alignItems: "center",
     flexDirection: "row",
+    flexShrink: 0,
+    flexWrap: "wrap",
     gap: v2Spacing.sm,
+    justifyContent: "flex-end",
+    maxWidth: "48%",
+  },
+  progressPill: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    minHeight: 34,
+    justifyContent: "center",
+    paddingHorizontal: 10,
   },
   progressCount: {
     color: colors.text,
-    fontSize: v2Typography.sectionTitle.fontSize,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  compactRankPill: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    minHeight: 34,
+    paddingHorizontal: 9,
+  },
+  compactRankText: {
+    color: colors.text,
+    fontSize: v2Typography.caption.fontSize,
     fontWeight: v2FontWeight.bold,
   },
   progressMetaRow: {
@@ -529,6 +596,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     marginBottom: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  focusNoteLabel: {
+    color: colors.primary,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
+    marginBottom: 4,
+    textTransform: "uppercase",
   },
   focusNoteText: {
     color: colors.muted,

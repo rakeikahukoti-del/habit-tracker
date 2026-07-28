@@ -180,28 +180,38 @@ export default function RankScreen() {
 
             {nextMilestone ? (
               <View
-                accessibilityLabel={`Next milestone. ${nextMilestone.text}. Unlocks at level ${nextMilestone.level}.`}
+                accessibilityLabel={
+                  nextMilestone.type === "complete"
+                    ? `${nextMilestone.label} rank complete. Maximum rank reached.`
+                    : `Next milestone. ${nextMilestone.label} unlocks at level ${nextMilestone.level}. ${nextMilestone.xpRemaining} XP remaining.`
+                }
                 accessible
                 style={styles.nextMilestone}
               >
                 <View style={styles.nextMilestoneIcon}>
                   <AppIcon
                     color={colors.primary}
-                    name="trophy"
+                    name={nextMilestone.type === "complete" ? "check" : "trophy"}
                     size={22}
                     strokeWidth={2}
                   />
                 </View>
                 <View style={styles.nextMilestoneText}>
                   <AppText style={styles.nextMilestoneLabel}>
-                    Next milestone
+                    {nextMilestone.type === "complete"
+                      ? "Rank path complete"
+                      : "Next milestone"}
                   </AppText>
                   <AppText style={styles.nextMilestoneTitle}>
-                    {nextMilestone.label}
+                    {nextMilestone.type === "complete"
+                      ? "Master reached"
+                      : nextMilestone.label}
                   </AppText>
                 </View>
                 <AppText style={styles.nextMilestoneMeta}>
-                  {nextMilestone.xpRemaining} XP
+                  {nextMilestone.type === "complete"
+                    ? "Complete"
+                    : `${formatCompactNumber(nextMilestone.xpRemaining)} XP`}
                 </AppText>
               </View>
             ) : null}
@@ -353,15 +363,15 @@ function Section({ children, styles, subtitle, title }) {
 function RankPath({ currentLevel, styles }) {
   return (
     <View style={styles.rankPath}>
-      {rankMilestones.map((theme) => {
-        const unlocked = currentLevel >= theme.unlockLevel;
-        const current = getRankForLevel(currentLevel) === theme.label;
+      {rankMilestones.map((rankItem) => {
+        const unlocked = currentLevel >= rankItem.unlockLevel;
+        const current = getRankForLevel(currentLevel) === rankItem.label;
 
         return (
           <View
-            accessibilityLabel={`${theme.label} rank, unlocks at level ${theme.unlockLevel}, ${unlocked ? "unlocked" : "locked"}`}
+            accessibilityLabel={`${rankItem.label} rank, unlocks at level ${rankItem.unlockLevel}, ${unlocked ? "unlocked" : "locked"}`}
             accessible
-            key={theme.key}
+            key={rankItem.key}
             style={[
               styles.rankStep,
               current && styles.rankStepCurrent,
@@ -375,8 +385,10 @@ function RankPath({ currentLevel, styles }) {
               ]}
             />
             <View style={styles.rankStepText}>
-              <AppText style={styles.rankStepName}>{theme.label}</AppText>
-              <AppText style={styles.rankStepMeta}>Level {theme.unlockLevel}</AppText>
+              <AppText style={styles.rankStepName}>{rankItem.label}</AppText>
+              <AppText style={styles.rankStepMeta}>
+                Level {rankItem.unlockLevel}
+              </AppText>
             </View>
             <AppText style={styles.rankStepState}>
               {current ? "Current" : unlocked ? "Unlocked" : "Locked"}
@@ -402,6 +414,15 @@ function RankReward({ locked, rankItem, styles }) {
       </AppText>
     </View>
   );
+}
+
+function formatCompactNumber(value) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: safeValue >= 1000 ? 1 : 0,
+    notation: safeValue >= 10000 ? "compact" : "standard",
+  }).format(safeValue);
 }
 
 function BadgeTile({ badge, earned, onPress, progress, styles }) {

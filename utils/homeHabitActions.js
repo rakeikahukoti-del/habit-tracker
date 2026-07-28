@@ -3,7 +3,12 @@ import {
   getGamificationLevelInfo,
   getRankForLevel,
 } from "./gamification";
-import { getCurrentStreak, wasCompletedToday } from "./habitStats";
+import {
+  getCurrentStreak,
+  getTodayKey,
+  isHabitScheduledOnDate,
+  wasCompletedToday,
+} from "./habitStats";
 
 export function getVisibleHomeHabits(habits, moveCompletedToBottom = false) {
   const orderedHabits = getOrderedHabits(habits);
@@ -26,27 +31,61 @@ export function getVisibleHomeHabits(habits, moveCompletedToBottom = false) {
 
 export function getHomeSummary(habits, gamification) {
   const safeHabits = getSafeHabits(habits);
-  const completedTodayCount = safeHabits.filter(wasCompletedToday).length;
+  const todayKey = getTodayKey();
+  const scheduledTodayHabits = safeHabits.filter((habit) =>
+    isHabitScheduledOnDate(habit, todayKey)
+  );
+  const scheduledTodayCount = scheduledTodayHabits.length;
+  const completedTodayCount = scheduledTodayHabits.filter(wasCompletedToday).length;
+  const completedAnyTodayCount = safeHabits.filter(wasCompletedToday).length;
   const completionPercentage =
-    safeHabits.length === 0
+    scheduledTodayCount === 0
       ? 0
-      : Math.round((completedTodayCount / safeHabits.length) * 100);
+      : Math.round((completedTodayCount / scheduledTodayCount) * 100);
   const levelInfo = getGamificationLevelInfo(gamification);
+  const remainingTodayCount = Math.max(0, scheduledTodayCount - completedTodayCount);
+  const longestCurrentStreak = safeHabits.reduce(
+    (longest, habit) =>
+      Math.max(longest, getCurrentStreak(habit.completedDates, habit)),
+    0
+  );
 
   return {
+    completedAnyTodayCount,
     completedTodayCount,
     completionLabel:
-      safeHabits.length === 0 ? "0%" : `${completionPercentage}%`,
+      scheduledTodayCount === 0 ? "No habits today" : `${completionPercentage}%`,
     completionPercentage,
-    habitsSectionMessage: getTodayHabitsMessage(completionPercentage),
+    habitsSectionMessage: getTodayHabitsMessage({
+      completedTodayCount,
+      habitCount: safeHabits.length,
+      remainingTodayCount,
+      scheduledTodayCount,
+    }),
     levelInfo,
-    longestCurrentStreak: safeHabits.reduce(
-      (longest, habit) =>
-        Math.max(longest, getCurrentStreak(habit.completedDates, habit)),
-      0
-    ),
-    motivation: getProgressMessage(completionPercentage, safeHabits.length),
+    longestCurrentStreak,
+    motivation: getProgressMessage({
+      completedTodayCount,
+      habitCount: safeHabits.length,
+      longestCurrentStreak,
+      remainingTodayCount,
+      scheduledTodayCount,
+    }),
+    nextAction: getNextHomeAction({
+      completedTodayCount,
+      habitCount: safeHabits.length,
+      longestCurrentStreak,
+      remainingTodayCount,
+      scheduledTodayCount,
+    }),
     rank: getRankForLevel(levelInfo.level),
+    remainingTodayCount,
+    scheduledTodayCount,
+    todayCountLabel: getTodayCountLabel({
+      completedTodayCount,
+      habitCount: safeHabits.length,
+      scheduledTodayCount,
+    }),
     todayXp: getTodayXp(safeHabits),
   };
 }
@@ -112,40 +151,109 @@ export function shouldShowConfetti(messages, preferences) {
   );
 }
 
-export function getProgressMessage(percentage, habitCount) {
+export function getProgressMessage({
+  completedTodayCount,
+  habitCount,
+  longestCurrentStreak,
+  remainingTodayCount,
+  scheduledTodayCount,
+}) {
   if (habitCount === 0) {
     return "Add one habit to start today with momentum.";
   }
 
-  if (percentage === 100) {
-    return "Perfect day. You cleared every habit.";
+  if (scheduledTodayCount === 0) {
+    return "Nothing is scheduled today.";
   }
 
-  if (percentage >= 70) {
-    return "Strong progress. Keep the streak alive.";
+  if (remainingTodayCount === 0) {
+    return "Today is complete.";
   }
 
-  if (percentage >= 35) {
-    return "You are moving. One more check-in helps.";
+  if (completedTodayCount === 0) {
+    return longestCurrentStreak > 0
+      ? "Complete one habit to keep progress moving."
+      : "Choose one habit to begin today.";
   }
 
-  return "Start small. Complete the easiest habit first.";
+  if (remainingTodayCount === 1) {
+    return "One habit remains today.";
+  }
+
+  return "Keep going with the next scheduled habit.";
 }
 
-export function getTodayHabitsMessage(percentage) {
-  if (percentage === 0) {
+export function getTodayHabitsMessage({
+  completedTodayCount,
+  habitCount,
+  remainingTodayCount,
+  scheduledTodayCount,
+}) {
+  if (habitCount === 0) {
+    return "Add a habit to begin.";
+  }
+
+  if (scheduledTodayCount === 0) {
+    return "No habits scheduled today.";
+  }
+
+  if (completedTodayCount === 0) {
     return "Start strong today.";
   }
 
-  if (percentage < 50) {
-    return "Keep building momentum.";
+  if (remainingTodayCount === 0) {
+    return "Today is complete.";
   }
 
-  if (percentage < 100) {
-    return "Almost there.";
+  return remainingTodayCount === 1
+    ? "One habit left."
+    : `${remainingTodayCount} habits left.`;
+}
+
+export function getNextHomeAction({
+  completedTodayCount,
+  habitCount,
+  longestCurrentStreak,
+  remainingTodayCount,
+  scheduledTodayCount,
+}) {
+  if (habitCount === 0) {
+    return "Add your first habit";
   }
 
-  return "Perfect day complete.";
+  if (scheduledTodayCount === 0) {
+    return "No habits scheduled today";
+  }
+
+  if (remainingTodayCount === 0) {
+    return "Today is complete";
+  }
+
+  if (remainingTodayCount === 1) {
+    return "Complete the final habit";
+  }
+
+  if (completedTodayCount === 0 && longestCurrentStreak > 0) {
+    return "Continue the current streak";
+  }
+
+  return "Complete the next habit";
+}
+
+function getTodayCountLabel({
+  completedTodayCount,
+  habitCount,
+  scheduledTodayCount,
+}) {
+  if (habitCount === 0) {
+    return "No habits yet";
+  }
+
+  if (scheduledTodayCount === 0) {
+    return "None today";
+  }
+
+  return `${completedTodayCount}/${scheduledTodayCount} today`;
 }
 
 function getOrderedHabits(habits) {

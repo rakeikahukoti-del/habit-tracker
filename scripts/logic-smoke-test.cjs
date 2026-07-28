@@ -806,8 +806,33 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
   const summary = homeHabitActions.getHomeSummary([], { xp: 3900 });
 
   assert.strictEqual(summary.completedTodayCount, 0);
-  assert.strictEqual(summary.completionLabel, "0%");
+  assert.strictEqual(summary.completionLabel, "No habits today");
   assert.strictEqual(summary.levelInfo.level, 40);
+  assert.strictEqual(summary.nextAction, "Add your first habit");
+  assert.strictEqual(summary.todayCountLabel, "No habits yet");
+
+  const todayKey = habitStats.getTodayKey();
+  const scheduledSummary = homeHabitActions.getHomeSummary(
+    [
+      { id: "done", completedDates: [todayKey], frequency: "Daily" },
+      { id: "open", completedDates: [], frequency: "Daily" },
+      {
+        customDays: [getWeekdayLabel(new Date(Date.now() + 24 * 60 * 60 * 1000))],
+        id: "not-today",
+        completedDates: [],
+        frequency: "Custom",
+      },
+    ],
+    { xp: 120 }
+  );
+
+  assert.strictEqual(scheduledSummary.completedTodayCount, 1);
+  assert.strictEqual(scheduledSummary.scheduledTodayCount, 2);
+  assert.strictEqual(scheduledSummary.remainingTodayCount, 1);
+  assert.strictEqual(scheduledSummary.completionLabel, "50%");
+  assert.strictEqual(scheduledSummary.habitsSectionMessage, "One habit left.");
+  assert.strictEqual(scheduledSummary.nextAction, "Complete the final habit");
+  assert.strictEqual(scheduledSummary.todayCountLabel, "1/2 today");
 
   const rewards = homeHabitActions.getQueuedRewardsFromMessages(
     [
@@ -824,10 +849,6 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
   );
 
   assert.strictEqual(rewards.levelUp.level, 5);
-  assert.strictEqual(
-    Object.prototype.hasOwnProperty.call(rewards, "themeUnlock"),
-    false
-  );
   assert.strictEqual(rewards.badgeUnlock.id, "first-completion");
   assert.strictEqual(rewards.celebration, "Nice work.");
 });
@@ -976,12 +997,18 @@ test("rank milestone helper finds the nearest rank target", () => {
       xpRemaining: 50,
     }
   );
-  assert.strictEqual(
+  assertJsonEqual(
     progressionMilestones.getNextRankMilestone(
       { currentLevelXp: 0, level: 40 },
       gamificationLogic.rankMilestones
     ),
-    null
+    {
+      label: "Master",
+      level: 40,
+      text: "Maximum rank reached",
+      type: "complete",
+      xpRemaining: 0,
+    }
   );
 });
 
