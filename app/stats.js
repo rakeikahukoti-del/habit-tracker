@@ -10,7 +10,7 @@ import { router, useFocusEffect } from "expo-router";
 import AnalyticsScreen, {
   AnalyticsHeader,
 } from "../components/analytics/AnalyticsScreen";
-import { AppText } from "../components/ui";
+import { AppIcon, AppText } from "../components/ui";
 import {
   v2FontWeight,
   v2Radius,
@@ -104,7 +104,7 @@ export default function StatsScreen() {
         ) : null}
 
         {!loading && progress.habitCount === 0 ? (
-          <EmptyProgress styles={styles} />
+          <EmptyProgress colors={colors} styles={styles} />
         ) : null}
 
         {!loading && progress.habitCount > 0 ? (
@@ -300,13 +300,26 @@ function HistoryGrid({ days, styles }) {
   );
 }
 
-function EmptyProgress({ styles }) {
+function EmptyProgress({ colors, styles }) {
   return (
     <View style={styles.emptyCard}>
       <AppText style={styles.emptyTitle}>Not enough data yet</AppText>
       <AppText style={styles.emptyText}>
-        Create a habit and complete it for a few days to begin seeing progress.
+        Create one habit and complete it for a few days to start seeing your
+        consistency.
       </AppText>
+      <Pressable
+        accessibilityLabel="Create a habit from Progress"
+        accessibilityRole="button"
+        onPress={() => router.push("/add")}
+        style={({ pressed }) => [
+          styles.emptyAction,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppIcon name="plus" color={colors.inverseText} size={16} />
+        <AppText style={styles.emptyActionText}>Add habit</AppText>
+      </Pressable>
     </View>
   );
 }
@@ -557,6 +570,23 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.body.fontSize,
       lineHeight: v2Typography.body.lineHeight,
       marginTop: v2Spacing.sm,
+      marginBottom: v2Spacing.lg,
+    },
+    emptyAction: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: colors.primary,
+      borderRadius: v2Radius.large,
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: v2Spacing.lg,
+    },
+    emptyActionText: {
+      color: colors.inverseText,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     pressed: {
       opacity: 0.74,

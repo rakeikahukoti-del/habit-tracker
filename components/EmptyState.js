@@ -1,8 +1,7 @@
-import { StyleSheet, View } from "react-native";
-import { useWindowDimensions } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
-import { AppText, PressableScale } from "./ui";
+import { AppIcon, AppText, PressableScale } from "./ui";
 import {
   v2FontWeight,
   v2Radius,
@@ -27,8 +26,27 @@ export default function EmptyState() {
       />
       <AppText style={styles.title}>No habits yet</AppText>
       <AppText style={styles.message}>
-        Start with one small promise to yourself.
+        Add one small habit. Swipe it complete today, then watch your streak
+        and progress build.
       </AppText>
+      <View
+        accessibilityLabel="How Momentum works"
+        accessible
+        style={styles.tipList}
+      >
+        <TipRow
+          color={colors.muted}
+          icon="check"
+          styles={styles}
+          text="Swipe right to complete a habit."
+        />
+        <TipRow
+          color={colors.muted}
+          icon="progress"
+          styles={styles}
+          text="Progress updates automatically."
+        />
+      </View>
       <Link href="/add" asChild>
         <PressableScale
           accessibilityLabel="Create a new habit"
@@ -39,6 +57,17 @@ export default function EmptyState() {
           <AppText style={styles.buttonText}>Create first habit</AppText>
         </PressableScale>
       </Link>
+    </View>
+  );
+}
+
+function TipRow({ color, icon, styles, text }) {
+  return (
+    <View style={styles.tipRow}>
+      <View style={styles.tipIcon}>
+        <AppIcon color={color} name={icon} size={16} strokeWidth={2} />
+      </View>
+      <AppText style={styles.tipText}>{text}</AppText>
     </View>
   );
 }
@@ -74,9 +103,39 @@ function createStyles(colors, isSmallScreen) {
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       lineHeight: v2Typography.body.lineHeight,
-      marginBottom: v2Spacing.xl,
+      marginBottom: v2Spacing.lg,
       maxWidth: 260,
       textAlign: "center",
+    },
+    tipList: {
+      alignSelf: "stretch",
+      gap: v2Spacing.sm,
+      marginBottom: v2Spacing.xl,
+    },
+    tipRow: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: v2Spacing.md,
+      paddingVertical: v2Spacing.sm,
+    },
+    tipIcon: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 24,
+      minWidth: 24,
+    },
+    tipText: {
+      color: colors.muted,
+      flex: 1,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
     },
     button: {
       alignItems: "center",

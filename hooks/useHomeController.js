@@ -215,9 +215,7 @@ export function useHomeController() {
           return;
         }
 
-        const nextHabits = habits.map((item) =>
-          item.id === habit.id ? savedHabit : item
-        );
+        const nextHabits = await getHabits();
         const nextGamification = await rebuildGamificationFromHabits(
           nextHabits,
           { includeMessage: false }
@@ -237,10 +235,9 @@ export function useHomeController() {
         return;
       }
 
-      const nextHabits = habits.map((item) =>
-        item.id === habit.id ? savedHabit : item
-      );
-      const previousXp = gamification?.xp || 0;
+      const nextHabits = await getHabits();
+      const previousGamification = await getGamification();
+      const previousXp = previousGamification.xp || 0;
       const award = await awardHabitCompletion({
         completedHabit: savedHabit,
         habits: nextHabits,
@@ -291,7 +288,7 @@ export function useHomeController() {
     } finally {
       habitActionInProgressRef.current.delete(habit.id);
     }
-  }, [gamification, habits, preferences]);
+  }, [preferences]);
 
   const toggleProgressExpanded = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

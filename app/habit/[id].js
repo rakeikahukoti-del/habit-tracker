@@ -232,6 +232,10 @@ export default function HabitDetailsScreen() {
   }
 
   function handleToggleHistoryDay(day) {
+    if (!day?.dateKey || day.isFuture || !habit) {
+      return;
+    }
+
     const dateKey = day.dateKey;
     const hasCompletion = habit.completedDates.includes(dateKey);
 
