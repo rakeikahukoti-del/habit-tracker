@@ -1,11 +1,7 @@
-import { StyleSheet, View } from "react-native";
-import {
-  v2FontWeight,
-  v2Radius,
-  v2Typography,
-} from "../../src/design";
+import { Image, StyleSheet, View } from "react-native";
+import { getAchievementBadgeAsset } from "../../constants/assets";
+import { v2Radius } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
-import { AppText } from "../ui";
 
 const tierStyles = {
   Bronze: {
@@ -40,15 +36,6 @@ const tierStyles = {
   },
 };
 
-const groupSymbols = {
-  Consistency: "III",
-  "Daily volume": "V",
-  "Getting started": "I",
-  Progress: "LV",
-  Ranks: "R",
-  "Total completions": "X",
-};
-
 export default function BadgeMedal({
   badge,
   earned = false,
@@ -59,7 +46,7 @@ export default function BadgeMedal({
   const { colors } = useTheme();
   const tier = tierStyles[badge?.tier] || tierStyles.Bronze;
   const size = large ? 112 : 64;
-  const symbol = earned ? groupSymbols[badge?.group] || "M" : "?";
+  const asset = getAchievementBadgeAsset(badge?.id);
 
   return (
     <View
@@ -77,42 +64,24 @@ export default function BadgeMedal({
         style,
       ]}
     >
-      <View
-        style={[
-          styles.inner,
-          {
-            backgroundColor: earned ? tier.inner : colors.surface,
-            borderColor: earned ? tier.border : colors.border,
-          },
-        ]}
-      >
+      {asset ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={asset}
+          style={styles.image}
+        />
+      ) : (
         <View
           style={[
-            styles.symbolPlate,
+            styles.fallback,
             {
+              backgroundColor: earned ? tier.inner : colors.surface,
               borderColor: earned ? tier.border : colors.border,
-              height: large ? 58 : 34,
-              width: large ? 58 : 34,
             },
           ]}
-        >
-          <AppText
-            adjustsFontSizeToFit
-            numberOfLines={1}
-            style={[
-              styles.symbol,
-              {
-                color: earned ? tier.symbol : colors.muted,
-                fontSize: large
-                  ? v2Typography.sectionTitle.fontSize
-                  : v2Typography.caption.fontSize,
-              },
-            ]}
-          >
-            {symbol}
-          </AppText>
-        </View>
-      </View>
+        />
+      )}
     </View>
   );
 }
@@ -128,29 +97,20 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: "center",
     overflow: "hidden",
-    transform: [{ rotate: "45deg" }],
   },
   selected: {
     borderWidth: 2,
   },
-  inner: {
+  image: {
+    height: "100%",
+    width: "100%",
+  },
+  fallback: {
     alignItems: "center",
     borderRadius: v2Radius.medium,
     borderWidth: 1,
     height: "78%",
     justifyContent: "center",
     width: "78%",
-  },
-  symbolPlate: {
-    alignItems: "center",
-    borderRadius: v2Radius.small,
-    borderWidth: 1,
-    justifyContent: "center",
-    transform: [{ rotate: "-45deg" }],
-  },
-  symbol: {
-    fontWeight: v2FontWeight.bold,
-    letterSpacing: 0.4,
-    textAlign: "center",
   },
 });

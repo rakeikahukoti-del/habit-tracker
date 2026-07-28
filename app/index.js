@@ -26,6 +26,7 @@ import {
   v2Layout,
   v2Radius,
   v2Shadows,
+  v2Spacing,
   v2Typography,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";

@@ -10,12 +10,12 @@
     ],
     "scheme": "habittracker",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0D0D0D",
-    "icon": "./assets/momentum-icon.png",
+    "backgroundColor": "#0F1115",
+    "icon": "./assets/branding/app-icon-dark.png",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/momentum-splash.png",
-      "backgroundColor": "#0D0D0D",
+      "image": "./assets/branding/splash-logo.png",
+      "backgroundColor": "#0F1115",
       "resizeMode": "contain"
     },
     "ios": {
@@ -23,12 +23,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/momentum-adaptive-icon.png",
-        "backgroundColor": "#0D0D0D"
+        "foregroundImage": "./assets/branding/adaptive-foreground.png",
+        "backgroundColor": "#0F1115"
       }
     },
     "androidNavigationBar": {
-      "backgroundColor": "#0D0D0D",
+      "backgroundColor": "#0F1115",
       "barStyle": "light-content"
     },
     "web": {

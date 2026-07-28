@@ -232,6 +232,13 @@ const appColors = loadModule("constants/colors.js", (moduleName) => {
 
   return require(moduleName);
 });
+const appAssets = loadModule("constants/assets.js", (moduleName) => {
+  if (moduleName.endsWith(".png")) {
+    return require("path").resolve("constants", moduleName);
+  }
+
+  return require(moduleName);
+});
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
   if (moduleName === "react-native") {
@@ -1337,6 +1344,32 @@ test("badges sort by tier progression in stable ascending and descending order",
     descending.slice(-2).map((badge) => badge.id),
     ["first-completion", "three-day-streak"]
   );
+});
+
+test("visual asset manifest covers rank and achievement identifiers", () => {
+  assert(appAssets.brandAssets.appIconDark.endsWith("app-icon-dark.png"));
+  assert(appAssets.brandAssets.wolfWhiteTransparent.endsWith("wolf-white-transparent.png"));
+  assert(appAssets.logoLockupAssets.horizontalDark.endsWith("horizontal-dark.png"));
+
+  gamificationLogic.rankMilestones.forEach((rankItem) => {
+    const asset = appAssets.getRankBadgeAsset(rankItem.label);
+
+    assert(asset, `${rankItem.label} rank should resolve to an asset`);
+    assert(fs.existsSync(asset), `${rankItem.label} rank asset should exist`);
+  });
+
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Master"),
+    appAssets.rankBadgeAssets.master,
+    "Master rank should use the Master asset"
+  );
+
+  gamificationLogic.badges.forEach((badge) => {
+    const asset = appAssets.getAchievementBadgeAsset(badge.id);
+
+    assert(asset, `${badge.id} should resolve to an achievement asset`);
+    assert(fs.existsSync(asset), `${badge.id} asset should exist`);
+  });
 });
 
 test("imported habits are normalized without corrupting existing storage", async () => {

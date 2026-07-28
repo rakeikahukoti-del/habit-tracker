@@ -1,7 +1,7 @@
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
+import { getRankBadgeAsset } from "../../constants/assets";
 import {
   v2FontWeight,
-  v2Radius,
   v2Spacing,
   v2Typography,
 } from "../../src/design";
@@ -60,8 +60,8 @@ export default function RankMedal({
   style,
 }) {
   const { colors } = useTheme();
-  const palette = rankMedalStyles[rank] || rankMedalStyles.Bronze;
   const dimensions = getDimensions(size);
+  const asset = getRankBadgeAsset(rank);
 
   return (
     <View
@@ -70,74 +70,15 @@ export default function RankMedal({
       accessible
       style={[styles.wrap, style]}
     >
-      <View
-        style={[
-          styles.ribbonWrap,
-          {
-            marginBottom: -dimensions.ribbonOffset,
-            width: dimensions.medal,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.ribbon,
-            styles.ribbonLeft,
-            {
-              backgroundColor: palette.ribbon,
-              height: dimensions.ribbonHeight,
-              width: dimensions.ribbonWidth,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.ribbon,
-            styles.ribbonRight,
-            {
-              backgroundColor: palette.dark,
-              height: dimensions.ribbonHeight,
-              width: dimensions.ribbonWidth,
-            },
-          ]}
-        />
-      </View>
-
-      <View
-        style={[
-          styles.medal,
-          {
-            backgroundColor: palette.accent,
-            borderColor: palette.light,
-            height: dimensions.medal,
-            width: dimensions.medal,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.medalInner,
-            {
-              backgroundColor: palette.secondary,
-              borderColor: palette.dark,
-              height: dimensions.inner,
-              width: dimensions.inner,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.emblem,
-              {
-                borderBottomColor: palette.light,
-                borderLeftWidth: dimensions.emblem / 2,
-                borderRightWidth: dimensions.emblem / 2,
-                borderBottomWidth: dimensions.emblem,
-              },
-            ]}
-          />
-        </View>
-      </View>
+      <Image
+        accessibilityIgnoresInvertColors
+        resizeMode="contain"
+        source={asset}
+        style={{
+          height: dimensions.medal,
+          width: dimensions.medal,
+        }}
+      />
 
       {showLabel ? (
         <AppText
@@ -160,44 +101,24 @@ export function getRankMedalAccent(rank) {
 function getDimensions(size) {
   if (size === "mini") {
     return {
-      emblem: 8,
-      inner: 21,
       medal: 28,
-      ribbonHeight: 14,
-      ribbonOffset: 5,
-      ribbonWidth: 8,
     };
   }
 
   if (size === "large") {
     return {
-      emblem: 24,
-      inner: 68,
       medal: 88,
-      ribbonHeight: 42,
-      ribbonOffset: 14,
-      ribbonWidth: 24,
     };
   }
 
   if (size === "small") {
     return {
-      emblem: 13,
-      inner: 34,
       medal: 44,
-      ribbonHeight: 22,
-      ribbonOffset: 7,
-      ribbonWidth: 13,
     };
   }
 
   return {
-    emblem: 18,
-    inner: 48,
     medal: 62,
-    ribbonHeight: 30,
-    ribbonOffset: 10,
-    ribbonWidth: 18,
   };
 }
 
@@ -205,38 +126,6 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: "center",
     gap: v2Spacing.sm,
-  },
-  ribbonWrap: {
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  ribbon: {
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-  },
-  ribbonLeft: {
-    transform: [{ rotate: "13deg" }],
-  },
-  ribbonRight: {
-    transform: [{ rotate: "-13deg" }],
-  },
-  medal: {
-    alignItems: "center",
-    borderRadius: v2Radius.pill,
-    borderWidth: 2,
-    justifyContent: "center",
-  },
-  medalInner: {
-    alignItems: "center",
-    borderRadius: v2Radius.pill,
-    borderWidth: 1,
-    justifyContent: "center",
-  },
-  emblem: {
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    height: 0,
-    width: 0,
   },
   label: {
     fontWeight: v2FontWeight.bold,
