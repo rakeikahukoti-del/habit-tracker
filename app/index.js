@@ -87,6 +87,7 @@ export default function HomeScreen() {
     scheduledTodayCount,
     todayCountLabel,
     todayXp,
+    weeklyContext,
   } = homeSummary;
   const renderHabitItem = useCallback(
     ({ item }) => (
@@ -229,6 +230,7 @@ export default function HomeScreen() {
           <View style={styles.focusNote}>
             <AppText style={styles.focusNoteLabel}>Next action</AppText>
             <AppText style={styles.focusNoteText}>{motivation}</AppText>
+            <AppText style={styles.weeklyContextText}>{weeklyContext}</AppText>
           </View>
         ) : null}
 
@@ -609,6 +611,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontSize: v2Typography.body.fontSize,
     fontWeight: v2FontWeight.medium,
     lineHeight: v2Typography.body.lineHeight,
+  },
+  weeklyContextText: {
+    color: colors.softText,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: 18,
+    marginTop: 6,
   },
   progressTrack: {
     backgroundColor: colors.inputBackground,

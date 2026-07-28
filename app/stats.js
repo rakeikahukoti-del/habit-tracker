@@ -21,6 +21,7 @@ import { useTheme } from "../context/ThemeContext";
 import { getGamification } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
 import { getProgressOverview } from "../utils/habitStats";
+import { getWeeklyReview } from "../utils/weeklyReview";
 
 const PERIODS = [
   { key: "week", label: "Week" },
@@ -84,10 +85,7 @@ export default function StatsScreen() {
     () => getProgressOverview(habits, period, gamification),
     [gamification, habits, period]
   );
-  const progressInsight = useMemo(
-    () => getProgressInsight(progress, period),
-    [period, progress]
-  );
+  const weeklyReview = useMemo(() => getWeeklyReview(habits), [habits]);
 
   return (
     <AnalyticsScreen bottomNav>
@@ -134,15 +132,9 @@ export default function StatsScreen() {
             </AppText>
           </View>
 
-          <View
-            accessibilityLabel={`Progress focus. ${progressInsight.title}. ${progressInsight.body}`}
-            accessible
-            style={styles.insightCard}
-          >
-            <AppText style={styles.insightLabel}>Recent focus</AppText>
-            <AppText style={styles.insightTitle}>{progressInsight.title}</AppText>
-            <AppText style={styles.insightBody}>{progressInsight.body}</AppText>
-          </View>
+          <Section title="Weekly review" styles={styles}>
+            <WeeklyReviewCard review={weeklyReview} styles={styles} />
+          </Section>
 
           <Section title="This week" styles={styles}>
             <WeeklyVisual days={progress.weeklySummary} styles={styles} />
@@ -281,6 +273,84 @@ function WeeklyVisual({ days, styles }) {
   );
 }
 
+function WeeklyReviewCard({ review, styles }) {
+  return (
+    <View
+      accessibilityLabel={`Weekly review. ${review.summaryLabel} scheduled opportunities completed. ${review.completionRateLabel}. ${review.activeDaysLabel}. ${review.comparison.label}`}
+      accessible
+      style={styles.reviewCard}
+    >
+      <View style={styles.reviewHeader}>
+        <View style={styles.reviewMain}>
+          <AppText style={styles.reviewLabel}>This week</AppText>
+          <AppText style={styles.reviewValue}>{review.summaryLabel}</AppText>
+          <AppText style={styles.reviewCaption}>scheduled completed</AppText>
+        </View>
+        <View style={styles.reviewRatePill}>
+          <AppText style={styles.reviewRateText}>{review.completionRateLabel}</AppText>
+        </View>
+      </View>
+
+      <View style={styles.reviewStats}>
+        <ReviewStat label="Active days" value={review.activeDaysLabel} styles={styles} />
+        <ReviewStat
+          label="Compared with last week"
+          value={
+            review.comparison.available
+              ? review.comparison.label
+              : "Needs more data"
+          }
+          styles={styles}
+        />
+      </View>
+
+      {review.bestHabit || review.focusHabit ? (
+        <View style={styles.reviewHabitRows}>
+          {review.bestHabit ? (
+            <ReviewHabit
+              label="Strongest"
+              habit={review.bestHabit}
+              styles={styles}
+            />
+          ) : null}
+          {review.focusHabit ? (
+            <ReviewHabit
+              label="Needs attention"
+              habit={review.focusHabit}
+              styles={styles}
+            />
+          ) : null}
+        </View>
+      ) : (
+        <AppText style={styles.reviewEmptyText}>{review.context}</AppText>
+      )}
+    </View>
+  );
+}
+
+function ReviewStat({ label, styles, value }) {
+  return (
+    <View style={styles.reviewStat}>
+      <AppText style={styles.reviewStatLabel}>{label}</AppText>
+      <AppText style={styles.reviewStatValue}>{value}</AppText>
+    </View>
+  );
+}
+
+function ReviewHabit({ habit, label, styles }) {
+  return (
+    <View style={styles.reviewHabitRow}>
+      <AppText style={styles.reviewHabitLabel}>{label}</AppText>
+      <AppText numberOfLines={1} style={styles.reviewHabitName}>
+        {habit.name}
+      </AppText>
+      <AppText style={styles.reviewHabitMeta}>
+        {habit.completedCount}/{habit.possibleCount} • {habit.completionRate}%
+      </AppText>
+    </View>
+  );
+}
+
 function MetricRow({ label, styles, value }) {
   return (
     <View style={styles.metricRow}>
@@ -350,41 +420,6 @@ function clampPercentage(value) {
   }
 
   return Math.min(100, Math.max(0, value));
-}
-
-function getProgressInsight(progress, period) {
-  if (!progress || progress.habitCount === 0) {
-    return {
-      body: "Create a habit to begin building progress.",
-      title: "No progress yet",
-    };
-  }
-
-  if (progress.possibleCount === 0) {
-    return {
-      body: "No habits were scheduled in this period.",
-      title: "No scheduled habits",
-    };
-  }
-
-  if (progress.completionRate === 100) {
-    return {
-      body: `Every scheduled habit is complete for this ${getPeriodLabel(period).toLowerCase()}.`,
-      title: "Perfect consistency",
-    };
-  }
-
-  if (progress.currentLongestStreak > 0) {
-    return {
-      body: `${progress.currentLongestStreak} day active streak. Open Analytics to inspect habit-level patterns.`,
-      title: "Streak is active",
-    };
-  }
-
-  return {
-    body: "Open Analytics to see which habit is easiest to rebuild first.",
-    title: "Patterns are building",
-  };
 }
 
 function createStyles(colors, { isSmallScreen }) {
@@ -481,32 +516,125 @@ function createStyles(colors, { isSmallScreen }) {
       fontWeight: v2FontWeight.medium,
       marginTop: v2Spacing.sm,
     },
-    insightCard: {
+    reviewCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
       borderRadius: v2Radius.large,
       borderWidth: 1,
-      marginBottom: v2Spacing.xl,
       padding: v2Spacing.lg,
     },
-    insightLabel: {
+    reviewHeader: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      justifyContent: "space-between",
+    },
+    reviewMain: {
+      flex: 1,
+      minWidth: 0,
+    },
+    reviewLabel: {
       color: colors.primary,
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.bold,
       marginBottom: 4,
       textTransform: "uppercase",
     },
-    insightTitle: {
+    reviewValue: {
       color: colors.text,
-      fontSize: v2Typography.sectionTitle.fontSize,
+      fontSize: isSmallScreen ? 28 : 32,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: isSmallScreen ? 34 : 38,
+    },
+    reviewCaption: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: 2,
+    },
+    reviewRatePill: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      flexShrink: 0,
+      minHeight: 36,
+      justifyContent: "center",
+      paddingHorizontal: v2Spacing.md,
+    },
+    reviewRateText: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
     },
-    insightBody: {
+    reviewStats: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.lg,
+    },
+    reviewStat: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexBasis: "48%",
+      flexGrow: 1,
+      minWidth: 130,
+      padding: v2Spacing.md,
+    },
+    reviewStatLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: 4,
+      textTransform: "uppercase",
+    },
+    reviewStatValue: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: 18,
+    },
+    reviewHabitRows: {
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.lg,
+    },
+    reviewHabitRow: {
+      alignItems: "center",
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      flexDirection: "row",
+      gap: v2Spacing.sm,
+      minHeight: 42,
+      paddingTop: v2Spacing.sm,
+    },
+    reviewHabitLabel: {
+      color: colors.muted,
+      flexBasis: 92,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      textTransform: "uppercase",
+    },
+    reviewHabitName: {
+      color: colors.text,
+      flex: 1,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      minWidth: 0,
+    },
+    reviewHabitMeta: {
+      color: colors.muted,
+      flexShrink: 0,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+    },
+    reviewEmptyText: {
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
       lineHeight: v2Typography.body.lineHeight,
-      marginTop: v2Spacing.xs,
+      marginTop: v2Spacing.lg,
     },
     section: {
       gap: v2Spacing.md,

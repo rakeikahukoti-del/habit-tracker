@@ -9,6 +9,7 @@ import {
   isHabitScheduledOnDate,
   wasCompletedToday,
 } from "./habitStats";
+import { getWeeklyReview } from "./weeklyReview";
 
 export function getVisibleHomeHabits(habits, moveCompletedToBottom = false) {
   const orderedHabits = getOrderedHabits(habits);
@@ -44,6 +45,7 @@ export function getHomeSummary(habits, gamification) {
       : Math.round((completedTodayCount / scheduledTodayCount) * 100);
   const levelInfo = getGamificationLevelInfo(gamification);
   const remainingTodayCount = Math.max(0, scheduledTodayCount - completedTodayCount);
+  const weeklyReview = getWeeklyReview(safeHabits);
   const longestCurrentStreak = safeHabits.reduce(
     (longest, habit) =>
       Math.max(longest, getCurrentStreak(habit.completedDates, habit)),
@@ -87,6 +89,7 @@ export function getHomeSummary(habits, gamification) {
       scheduledTodayCount,
     }),
     todayXp: getTodayXp(safeHabits),
+    weeklyContext: weeklyReview.context,
   };
 }
 

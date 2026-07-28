@@ -180,6 +180,13 @@ const progressionMilestones = loadModule("utils/progressionMilestones.js", (modu
 
   return require(moduleName);
 });
+const weeklyReview = loadModule("utils/weeklyReview.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) => {
   if (moduleName === "./gamification") {
     return gamificationLogic;
@@ -187,6 +194,10 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
 
   if (moduleName === "./habitStats") {
     return habitStats;
+  }
+
+  if (moduleName === "./weeklyReview") {
+    return weeklyReview;
   }
 
   return require(moduleName);
@@ -967,6 +978,118 @@ test("habit analytics readiness handles sparse history and schedules", () => {
     analyticsReadiness.getHabitAnalyticsGuidance(ready),
     /next scheduled day/
   );
+});
+
+test("weekly review summarizes schedule-aware current week data", () => {
+  const now = new Date(2026, 0, 8);
+  const review = weeklyReview.getWeeklyReview(
+    [
+      {
+        completedDates: [
+          "2025-12-29",
+          "2025-12-30",
+          "2026-01-05",
+          "2026-01-06",
+          "2026-01-07",
+          "2026-01-20",
+        ],
+        createdAt: "2025-12-01T00:00:00.000Z",
+        frequency: "Daily",
+        id: "daily",
+        name: "Daily",
+      },
+      {
+        completedDates: ["2025-12-29", "2026-01-05", "2026-01-05"],
+        createdAt: "2025-12-01T00:00:00.000Z",
+        frequency: "Weekdays",
+        id: "weekday",
+        name: "Weekday",
+      },
+    ],
+    now
+  );
+
+  assert.strictEqual(review.completedCount, 4);
+  assert.strictEqual(review.possibleCount, 8);
+  assert.strictEqual(review.completionRate, 50);
+  assert.strictEqual(review.activeDays, 3);
+  assert.strictEqual(review.bestHabit.name, "Daily");
+  assert.strictEqual(review.focusHabit.name, "Weekday");
+  assert.strictEqual(review.comparison.available, true);
+  assert.strictEqual(review.comparison.delta, 12);
+  assert.strictEqual(review.comparison.label, "Up 12% from last week.");
+});
+
+test("weekly review handles sparse schedules without invented comparison", () => {
+  const review = weeklyReview.getWeeklyReview(
+    [
+      {
+        completedDates: ["2026-01-05"],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        customDays: ["Mon"],
+        frequency: "Custom",
+        id: "custom",
+        name: "Custom",
+      },
+    ],
+    new Date(2026, 0, 8)
+  );
+
+  assert.strictEqual(review.completedCount, 1);
+  assert.strictEqual(review.possibleCount, 1);
+  assert.strictEqual(review.completionRate, 100);
+  assert.strictEqual(review.comparison.available, false);
+  assert.strictEqual(review.context, "1 of 1 scheduled habits completed this week.");
+});
+
+test("habit weekly pattern and next scheduled opportunity are deterministic", () => {
+  const todayHabit = {
+    completedDates: [],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    frequency: "Daily",
+  };
+  const completedTodayHabit = {
+    completedDates: ["2026-01-08"],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    frequency: "Daily",
+  };
+  const customHabit = {
+    completedDates: [],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    customDays: ["Mon"],
+    frequency: "Custom",
+  };
+  const noCustomDaysHabit = {
+    completedDates: [],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    customDays: [],
+    frequency: "Custom",
+  };
+  const now = new Date(2026, 0, 8);
+
+  assert.strictEqual(
+    weeklyReview.getNextScheduledOpportunity(todayHabit, now).label,
+    "Scheduled today"
+  );
+  assert.strictEqual(
+    weeklyReview.getNextScheduledOpportunity(completedTodayHabit, now).label,
+    "Next scheduled tomorrow"
+  );
+  assert.strictEqual(
+    weeklyReview.getNextScheduledOpportunity(customHabit, now).dateKey,
+    "2026-01-12"
+  );
+  assert.strictEqual(
+    weeklyReview.getNextScheduledOpportunity(noCustomDaysHabit, now).label,
+    "No scheduled days configured"
+  );
+
+  const pattern = weeklyReview.getHabitWeeklyPattern(completedTodayHabit, now);
+
+  assert.strictEqual(pattern.completedCount, 1);
+  assert.strictEqual(pattern.possibleCount, 4);
+  assert.strictEqual(pattern.completionRate, 25);
+  assert.strictEqual(pattern.nextScheduled.label, "Next scheduled tomorrow");
 });
 
 test("first trend unlock persistence is safe and backward-compatible", async () => {

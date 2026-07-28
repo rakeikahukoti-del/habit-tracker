@@ -28,6 +28,7 @@ import {
   getTodayKey,
   toDateKey,
 } from "../../utils/habitStats";
+import { getHabitWeeklyPattern } from "../../utils/weeklyReview";
 
 export default function IndividualAnalyticsScreen() {
   const { colors } = useTheme();
@@ -92,6 +93,14 @@ export default function IndividualAnalyticsScreen() {
     () => getHabitAnalyticsGuidance(readiness),
     [readiness]
   );
+  const weeklyPattern = useMemo(
+    () => (habit ? getHabitWeeklyPattern(habit) : null),
+    [habit]
+  );
+  const focusGuidance = useMemo(
+    () => getHabitFocusGuidance(guidance, weeklyPattern),
+    [guidance, weeklyPattern]
+  );
 
   return (
     <AnalyticsScaffold maxWidth={v2Layout.formMaxWidth}>
@@ -122,7 +131,7 @@ export default function IndividualAnalyticsScreen() {
           </View>
         ) : null}
 
-        {!loading && habit && analytics && readiness ? (
+        {!loading && habit && analytics && readiness && weeklyPattern ? (
           <>
             <View style={styles.header}>
               <View style={styles.iconBadge}>
@@ -180,13 +189,17 @@ export default function IndividualAnalyticsScreen() {
             </View>
 
             <View
-              accessibilityLabel={`Focus guidance. ${guidance}`}
+              accessibilityLabel={`Focus guidance. ${focusGuidance}`}
               accessible
               style={styles.guidanceCard}
             >
               <AppText style={styles.guidanceLabel}>Focus</AppText>
-              <AppText style={styles.guidanceText}>{guidance}</AppText>
+              <AppText style={styles.guidanceText}>{focusGuidance}</AppText>
             </View>
+
+            <Section title="This week" styles={styles}>
+              <HabitWeekCard pattern={weeklyPattern} styles={styles} />
+            </Section>
 
             <Section title="Last 7 days" styles={styles}>
               <View style={styles.weekCard}>
@@ -259,6 +272,53 @@ function BuildingStat({ label, styles, value }) {
     <View style={styles.buildingStat}>
       <AppText style={styles.buildingStatValue}>{value}</AppText>
       <AppText style={styles.buildingStatLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function HabitWeekCard({ pattern, styles }) {
+  return (
+    <View
+      accessibilityLabel={`This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${pattern.comparison.label}. ${pattern.nextScheduled.label}.`}
+      accessible
+      style={styles.habitWeekCard}
+    >
+      <View style={styles.habitWeekHeader}>
+        <View style={styles.habitWeekMain}>
+          <AppText style={styles.habitWeekLabel}>Scheduled completed</AppText>
+          <AppText style={styles.habitWeekValue}>{pattern.summaryLabel}</AppText>
+        </View>
+        <View style={styles.habitWeekRatePill}>
+          <AppText style={styles.habitWeekRateText}>
+            {pattern.completionRateLabel}
+          </AppText>
+        </View>
+      </View>
+      <View style={styles.habitWeekRows}>
+        <HabitWeekRow
+          label="Compared with last week"
+          styles={styles}
+          value={
+            pattern.comparison.available
+              ? pattern.comparison.label
+              : "Needs more data"
+          }
+        />
+        <HabitWeekRow
+          label="Next scheduled"
+          styles={styles}
+          value={pattern.nextScheduled.label}
+        />
+      </View>
+    </View>
+  );
+}
+
+function HabitWeekRow({ label, styles, value }) {
+  return (
+    <View style={styles.habitWeekRow}>
+      <AppText style={styles.habitWeekRowLabel}>{label}</AppText>
+      <AppText style={styles.habitWeekRowValue}>{value}</AppText>
     </View>
   );
 }
@@ -341,6 +401,22 @@ function clampPercentage(value) {
   }
 
   return Math.min(100, Math.max(0, value));
+}
+
+function getHabitFocusGuidance(guidance, weeklyPattern) {
+  if (!weeklyPattern?.nextScheduled?.available) {
+    return guidance;
+  }
+
+  if (weeklyPattern.nextScheduled.timing === "today") {
+    return "This habit is scheduled today.";
+  }
+
+  if (weeklyPattern.hasScheduledData && weeklyPattern.completionRate === 100) {
+    return `${weeklyPattern.nextScheduled.label}. This week is complete so far.`;
+  }
+
+  return weeklyPattern.nextScheduled.label;
 }
 
 function getLastThirtyDays(habit) {
@@ -539,6 +615,80 @@ function createStyles(colors, { isSmallScreen }) {
     section: {
       gap: v2Spacing.md,
       marginBottom: v2Spacing.xl,
+    },
+    habitWeekCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      padding: v2Spacing.lg,
+    },
+    habitWeekHeader: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      justifyContent: "space-between",
+    },
+    habitWeekMain: {
+      flex: 1,
+      minWidth: 0,
+    },
+    habitWeekLabel: {
+      color: colors.primary,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: 4,
+      textTransform: "uppercase",
+    },
+    habitWeekValue: {
+      color: colors.text,
+      fontSize: isSmallScreen ? 28 : 32,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: isSmallScreen ? 34 : 38,
+    },
+    habitWeekRatePill: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      flexShrink: 0,
+      minHeight: 34,
+      justifyContent: "center",
+      paddingHorizontal: v2Spacing.md,
+    },
+    habitWeekRateText: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    habitWeekRows: {
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.lg,
+      paddingTop: v2Spacing.md,
+    },
+    habitWeekRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.xs,
+      justifyContent: "space-between",
+    },
+    habitWeekRowLabel: {
+      color: colors.muted,
+      flex: 1,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      minWidth: 130,
+    },
+    habitWeekRowValue: {
+      color: colors.text,
+      flex: 1,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: 18,
+      minWidth: 130,
+      textAlign: "right",
     },
     guidanceCard: {
       backgroundColor: colors.surface,
