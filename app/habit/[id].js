@@ -42,6 +42,7 @@ import {
   getWeeklyProgress,
   wasCompletedToday,
 } from "../../utils/habitStats";
+import { getHabitWeeklyPattern } from "../../utils/weeklyReview";
 
 export default function HabitDetailsScreen() {
   const { colors } = useTheme();
@@ -286,6 +287,7 @@ export default function HabitDetailsScreen() {
   const currentStreak = getCurrentStreak(habit.completedDates, habit);
   const bestStreak = getBestStreak(habit.completedDates, habit);
   const weeklyProgress = getWeeklyProgress(habit);
+  const weeklyPattern = getHabitWeeklyPattern(habit);
   const completedToday = wasCompletedToday(habit);
   const icon = emoji || habit.emoji || DEFAULT_HABIT_EMOJI;
 
@@ -374,6 +376,12 @@ export default function HabitDetailsScreen() {
             </View>
           </View>
 
+          <HabitWeeklySummary
+            habitId={habit.id}
+            pattern={weeklyPattern}
+            styles={styles}
+          />
+
           <HabitHistoryGrid habit={habit} onToggleDate={handleToggleHistoryDay} />
 
           <View style={styles.form}>
@@ -404,6 +412,66 @@ function StatBlock({ label, value, styles }) {
     <View style={styles.statBlock}>
       <AppText style={styles.statValue}>{value}</AppText>
       <AppText style={styles.statLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function HabitWeeklySummary({ habitId, pattern, styles }) {
+  return (
+    <View style={styles.weeklyCard}>
+      <View
+        accessibilityLabel={`This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${pattern.comparison.label}. ${pattern.nextScheduled.label}.`}
+        accessible
+        style={styles.weeklyHeader}
+      >
+        <View style={styles.weeklyMain}>
+          <AppText style={styles.cardLabel}>This week</AppText>
+          <AppText style={styles.weeklyValue}>{pattern.summaryLabel}</AppText>
+          <AppText style={styles.weeklyCaption}>scheduled completed</AppText>
+        </View>
+        <View style={styles.weeklyRatePill}>
+          <AppText style={styles.weeklyRateText}>{pattern.completionRateLabel}</AppText>
+        </View>
+      </View>
+
+      <View style={styles.weeklyRows}>
+        <WeeklyRow
+          label="Compared with last week"
+          styles={styles}
+          value={
+            pattern.comparison.available
+              ? pattern.comparison.label
+              : "Needs more data"
+          }
+        />
+        <WeeklyRow
+          label="Next scheduled"
+          styles={styles}
+          value={pattern.nextScheduled.label}
+        />
+      </View>
+
+      <Pressable
+        accessibilityLabel="Open deeper habit analytics"
+        accessibilityRole="button"
+        hitSlop={6}
+        onPress={() => router.push(`/analytics/${habitId}`)}
+        style={({ pressed }) => [
+          styles.analyticsButton,
+          pressed && styles.buttonPressed,
+        ]}
+      >
+        <AppText style={styles.analyticsButtonText}>View analytics</AppText>
+      </Pressable>
+    </View>
+  );
+}
+
+function WeeklyRow({ label, styles, value }) {
+  return (
+    <View style={styles.weeklyRow}>
+      <AppText style={styles.weeklyRowLabel}>{label}</AppText>
+      <AppText style={styles.weeklyRowValue}>{value}</AppText>
     </View>
   );
 }
@@ -486,6 +554,99 @@ function createStyles(colors, { isSmallScreen }) {
     fontSize: v2Typography.caption.fontSize,
     fontWeight: v2FontWeight.medium,
     marginTop: 4,
+  },
+  weeklyCard: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    marginBottom: 18,
+    padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
+    ...v2Shadows.low,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.08,
+  },
+  weeklyHeader: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: v2Spacing.md,
+    justifyContent: "space-between",
+  },
+  weeklyMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+  weeklyValue: {
+    color: colors.text,
+    fontSize: isSmallScreen ? 28 : 32,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: isSmallScreen ? 34 : 38,
+  },
+  weeklyCaption: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    marginTop: 2,
+  },
+  weeklyRatePill: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    flexShrink: 0,
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: v2Spacing.md,
+  },
+  weeklyRateText: {
+    color: colors.text,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  weeklyRows: {
+    borderTopColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: v2Spacing.sm,
+    marginTop: v2Spacing.lg,
+    paddingTop: v2Spacing.md,
+  },
+  weeklyRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: v2Spacing.xs,
+    justifyContent: "space-between",
+  },
+  weeklyRowLabel: {
+    color: colors.muted,
+    flex: 1,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    minWidth: 130,
+  },
+  weeklyRowValue: {
+    color: colors.text,
+    flex: 1,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: 18,
+    minWidth: 130,
+    textAlign: "right",
+  },
+  analyticsButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginTop: v2Spacing.lg,
+    minHeight: 40,
+    paddingHorizontal: v2Spacing.lg,
+  },
+  analyticsButtonText: {
+    color: colors.primary,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   form: {
     gap: v2Spacing.md,

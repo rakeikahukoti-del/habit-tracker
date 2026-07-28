@@ -1017,7 +1017,20 @@ test("weekly review summarizes schedule-aware current week data", () => {
   assert.strictEqual(review.focusHabit.name, "Weekday");
   assert.strictEqual(review.comparison.available, true);
   assert.strictEqual(review.comparison.delta, 12);
-  assert.strictEqual(review.comparison.label, "Up 12% from last week.");
+  assert.strictEqual(
+    review.comparison.label,
+    "Up 12% from the same days last week."
+  );
+  assertJsonEqual(
+    review.breakdown.map((habit) => ({
+      name: habit.name,
+      status: habit.status,
+    })),
+    [
+      { name: "Weekday", status: "On track" },
+      { name: "Daily", status: "One scheduled completion remaining" },
+    ]
+  );
 });
 
 test("weekly review handles sparse schedules without invented comparison", () => {
@@ -1040,6 +1053,7 @@ test("weekly review handles sparse schedules without invented comparison", () =>
   assert.strictEqual(review.completionRate, 100);
   assert.strictEqual(review.comparison.available, false);
   assert.strictEqual(review.context, "1 of 1 scheduled habits completed this week.");
+  assert.strictEqual(review.breakdown[0].status, "Complete this week");
 });
 
 test("habit weekly pattern and next scheduled opportunity are deterministic", () => {
@@ -1090,6 +1104,55 @@ test("habit weekly pattern and next scheduled opportunity are deterministic", ()
   assert.strictEqual(pattern.possibleCount, 4);
   assert.strictEqual(pattern.completionRate, 25);
   assert.strictEqual(pattern.nextScheduled.label, "Next scheduled tomorrow");
+  assert.strictEqual(pattern.status, "On track");
+});
+
+test("weekly review breakdown sorts attention, progress, complete, then unscheduled", () => {
+  const review = weeklyReview.getWeeklyReview(
+    [
+      {
+        completedDates: [],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        frequency: "Daily",
+        id: "attention",
+        name: "Attention",
+      },
+      {
+        completedDates: ["2026-01-05"],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        frequency: "Daily",
+        id: "progress",
+        name: "Progress",
+      },
+      {
+        completedDates: ["2026-01-05", "2026-01-06"],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        customDays: ["Mon", "Tue"],
+        frequency: "Custom",
+        id: "complete",
+        name: "Complete",
+      },
+      {
+        completedDates: [],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        customDays: ["Sun"],
+        frequency: "Custom",
+        id: "unscheduled",
+        name: "Unscheduled",
+      },
+    ],
+    new Date(2026, 0, 6)
+  );
+
+  assertJsonEqual(
+    review.breakdown.map((habit) => [habit.name, habit.status]),
+    [
+      ["Attention", "Needs more completed days"],
+      ["Progress", "One scheduled completion remaining"],
+      ["Complete", "Complete this week"],
+      ["Unscheduled", "No scheduled days this week"],
+    ]
+  );
 });
 
 test("first trend unlock persistence is safe and backward-compatible", async () => {

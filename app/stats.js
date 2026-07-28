@@ -43,6 +43,7 @@ export default function StatsScreen() {
   const [gamification, setGamification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [weeklyDetailsExpanded, setWeeklyDetailsExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -133,7 +134,13 @@ export default function StatsScreen() {
           </View>
 
           <Section title="Weekly review" styles={styles}>
-            <WeeklyReviewCard review={weeklyReview} styles={styles} />
+            <WeeklyReviewCard
+              colors={colors}
+              expanded={weeklyDetailsExpanded}
+              onToggle={() => setWeeklyDetailsExpanded((value) => !value)}
+              review={weeklyReview}
+              styles={styles}
+            />
           </Section>
 
           <Section title="This week" styles={styles}>
@@ -273,14 +280,14 @@ function WeeklyVisual({ days, styles }) {
   );
 }
 
-function WeeklyReviewCard({ review, styles }) {
+function WeeklyReviewCard({ colors, expanded, onToggle, review, styles }) {
   return (
-    <View
-      accessibilityLabel={`Weekly review. ${review.summaryLabel} scheduled opportunities completed. ${review.completionRateLabel}. ${review.activeDaysLabel}. ${review.comparison.label}`}
-      accessible
-      style={styles.reviewCard}
-    >
-      <View style={styles.reviewHeader}>
+    <View style={styles.reviewCard}>
+      <View
+        accessibilityLabel={`Weekly review. ${review.dateRange}. ${review.weekStatus}. ${review.summaryLabel} scheduled opportunities completed. ${review.completionRateLabel}. ${review.activeDaysLabel}. ${review.comparison.label}`}
+        accessible
+        style={styles.reviewHeader}
+      >
         <View style={styles.reviewMain}>
           <AppText style={styles.reviewLabel}>This week</AppText>
           <AppText style={styles.reviewValue}>{review.summaryLabel}</AppText>
@@ -294,12 +301,71 @@ function WeeklyReviewCard({ review, styles }) {
       <View style={styles.reviewStats}>
         <ReviewStat label="Active days" value={review.activeDaysLabel} styles={styles} />
         <ReviewStat
+          label="Missed so far"
+          value={review.missedCount}
+          styles={styles}
+        />
+        <ReviewStat
           label="Compared with last week"
           value={
             review.comparison.available
               ? review.comparison.label
               : "Needs more data"
           }
+          styles={styles}
+        />
+      </View>
+
+      <Pressable
+        accessibilityLabel={
+          expanded ? "Hide weekly review details" : "Show weekly review details"
+        }
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.reviewToggle,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppText style={styles.reviewToggleText}>
+          {expanded ? "Hide details" : "Show details"}
+        </AppText>
+        <AppIcon
+          color={colors.primary}
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          strokeWidth={2}
+        />
+      </Pressable>
+
+      {expanded ? <WeeklyReviewDetails review={review} styles={styles} /> : null}
+    </View>
+  );
+}
+
+function WeeklyReviewDetails({ review, styles }) {
+  return (
+    <View
+      accessibilityLabel={`Weekly review details for ${review.dateRange}.`}
+      accessible
+      style={styles.reviewDetails}
+    >
+      <View style={styles.reviewDetailGrid}>
+        <ReviewStat label="Date range" value={review.dateRange} styles={styles} />
+        <ReviewStat
+          label="Week status"
+          value={review.weekStatus}
+          styles={styles}
+        />
+        <ReviewStat
+          label="Scheduled"
+          value={review.possibleCount}
+          styles={styles}
+        />
+        <ReviewStat
+          label="Completed"
+          value={review.completedCount}
           styles={styles}
         />
       </View>
@@ -324,6 +390,42 @@ function WeeklyReviewCard({ review, styles }) {
       ) : (
         <AppText style={styles.reviewEmptyText}>{review.context}</AppText>
       )}
+
+      {review.breakdown.length > 0 ? (
+        <View style={styles.breakdownList}>
+          <AppText style={styles.breakdownTitle}>Habit breakdown</AppText>
+          {review.breakdown.map((habit) => (
+            <WeeklyHabitBreakdownRow
+              habit={habit}
+              key={habit.id || habit.name}
+              styles={styles}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function WeeklyHabitBreakdownRow({ habit, styles }) {
+  return (
+    <View
+      accessibilityLabel={`${habit.name}. ${habit.completedCount} of ${habit.possibleCount} scheduled opportunities completed. ${habit.completionRate}%. ${habit.status}.`}
+      accessible
+      style={styles.breakdownRow}
+    >
+      <View style={styles.breakdownText}>
+        <AppText numberOfLines={2} style={styles.breakdownName}>
+          {habit.name}
+        </AppText>
+        <AppText style={styles.breakdownStatus}>{habit.status}</AppText>
+      </View>
+      <View style={styles.breakdownMetric}>
+        <AppText style={styles.breakdownRate}>{habit.completionRate}%</AppText>
+        <AppText style={styles.breakdownCount}>
+          {habit.completedCount}/{habit.possibleCount}
+        </AppText>
+      </View>
     </View>
   );
 }
@@ -596,6 +698,34 @@ function createStyles(colors, { isSmallScreen }) {
       fontWeight: v2FontWeight.bold,
       lineHeight: 18,
     },
+    reviewToggle: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+      marginTop: v2Spacing.lg,
+      minHeight: 40,
+      paddingHorizontal: v2Spacing.md,
+    },
+    reviewToggleText: {
+      color: colors.primary,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    reviewDetails: {
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      marginTop: v2Spacing.lg,
+      paddingTop: v2Spacing.lg,
+    },
+    reviewDetailGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+    },
     reviewHabitRows: {
       gap: v2Spacing.sm,
       marginTop: v2Spacing.lg,
@@ -635,6 +765,60 @@ function createStyles(colors, { isSmallScreen }) {
       fontWeight: v2FontWeight.medium,
       lineHeight: v2Typography.body.lineHeight,
       marginTop: v2Spacing.lg,
+    },
+    breakdownList: {
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.lg,
+    },
+    breakdownTitle: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: 2,
+    },
+    breakdownRow: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      minHeight: 62,
+      padding: v2Spacing.md,
+    },
+    breakdownText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    breakdownName: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: 18,
+    },
+    breakdownStatus: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: 16,
+      marginTop: 3,
+    },
+    breakdownMetric: {
+      alignItems: "flex-end",
+      flexShrink: 0,
+      minWidth: 56,
+    },
+    breakdownRate: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    breakdownCount: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: 2,
     },
     section: {
       gap: v2Spacing.md,

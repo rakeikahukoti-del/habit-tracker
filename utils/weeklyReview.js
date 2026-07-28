@@ -14,6 +14,7 @@ export function getWeeklyReview(habits, now = new Date()) {
   const current = getPeriodSummary(safeHabits, currentDays, toDateKey(today));
   const previous = getPeriodSummary(safeHabits, previousDays, toDateKey(today));
   const comparison = getComparison(current, previous);
+  const dateRange = getDateRangeLabel(currentDays);
 
   return {
     activeDays: current.activeDays,
@@ -21,18 +22,22 @@ export function getWeeklyReview(habits, now = new Date()) {
       current.activeDays === 1 ? "day" : "days"
     }`,
     bestHabit: current.bestHabit,
+    breakdown: current.breakdown,
     completedCount: current.completedCount,
     comparison,
     completionRate: current.completionRate,
     completionRateLabel:
       current.possibleCount === 0 ? "No scheduled habits" : `${current.completionRate}%`,
     context: getWeeklyContext(current, comparison),
+    dateRange,
     days: current.days,
     focusHabit: current.focusHabit,
     hasScheduledData: current.possibleCount > 0,
+    missedCount: current.missedCount,
     possibleCount: current.possibleCount,
     previousCompletionRate: previous.completionRate,
     summaryLabel: `${current.completedCount} of ${current.possibleCount}`,
+    weekStatus: "Week in progress",
   };
 }
 
@@ -61,9 +66,11 @@ export function getHabitWeeklyPattern(habit, now = new Date()) {
     completionRateLabel:
       current.possibleCount === 0 ? "No scheduled days" : `${current.completionRate}%`,
     hasScheduledData: current.possibleCount > 0,
+    missedCount: current.missedCount,
     nextScheduled,
     possibleCount: current.possibleCount,
     summaryLabel: `${current.completedCount} of ${current.possibleCount}`,
+    status: current.breakdown[0]?.status || "No scheduled days this week",
   };
 }
 
@@ -152,14 +159,17 @@ function getPeriodSummary(habits, days, todayKey) {
   const rankedHabitSummaries = habitSummaries.filter(
     (summary) => summary.possibleCount > 0
   );
+  const breakdown = getSortedHabitBreakdown(habitSummaries);
 
   return {
     activeDays,
     bestHabit: getBestHabitSummary(rankedHabitSummaries),
+    breakdown,
     completedCount,
     completionRate,
     days: daySummaries,
     focusHabit: getFocusHabitSummary(rankedHabitSummaries),
+    missedCount: Math.max(0, possibleCount - completedCount),
     possibleCount,
   };
 }
@@ -183,6 +193,7 @@ function getHabitPeriodSummary(habit, days, todayKey) {
     completedDateKeys,
     completionRate,
     habit,
+    missedCount: Math.max(0, possibleCount - completedCount),
     possibleCount,
     scheduledDateKeys,
   };
@@ -217,9 +228,65 @@ function formatHabitSummary(summary) {
     completedCount: summary.completedCount,
     completionRate: summary.completionRate,
     id: summary.habit?.id || "",
+    missedCount: summary.missedCount,
     name: summary.habit?.name || "Unnamed habit",
     possibleCount: summary.possibleCount,
   };
+}
+
+function getSortedHabitBreakdown(habitSummaries) {
+  return habitSummaries
+    .map((summary) => ({
+      ...formatHabitSummary(summary),
+      sortGroup: getWeeklyStatusSortGroup(summary),
+      status: getWeeklyHabitStatus(summary),
+    }))
+    .sort(
+      (first, second) =>
+        first.sortGroup - second.sortGroup ||
+        first.completionRate - second.completionRate ||
+        second.possibleCount - first.possibleCount ||
+        first.name.localeCompare(second.name)
+    )
+    .map(({ sortGroup, ...summary }) => summary);
+}
+
+function getWeeklyHabitStatus(summary) {
+  if (summary.possibleCount === 0) {
+    return "No scheduled days this week";
+  }
+
+  if (summary.completedCount === summary.possibleCount) {
+    return "Complete this week";
+  }
+
+  const remaining = summary.possibleCount - summary.completedCount;
+
+  if (remaining === 1) {
+    return "One scheduled completion remaining";
+  }
+
+  if (summary.completedCount > 0) {
+    return "On track";
+  }
+
+  return "Needs more completed days";
+}
+
+function getWeeklyStatusSortGroup(summary) {
+  if (summary.possibleCount === 0) {
+    return 3;
+  }
+
+  if (summary.completedCount === summary.possibleCount) {
+    return 2;
+  }
+
+  if (summary.completedCount > 0) {
+    return 1;
+  }
+
+  return 0;
 }
 
 function getComparison(current, previous) {
@@ -240,14 +307,16 @@ function getComparison(current, previous) {
     return {
       available: true,
       delta,
-      label: "Same as last week.",
+      label: "Same as the same days last week.",
     };
   }
 
   return {
     available: true,
     delta,
-    label: `${delta > 0 ? "Up" : "Down"} ${Math.abs(delta)}% from last week.`,
+    label: `${delta > 0 ? "Up" : "Down"} ${Math.abs(
+      delta
+    )}% from the same days last week.`,
   };
 }
 
@@ -283,6 +352,30 @@ function getStartOfWeek(date) {
   const mondayOffset = (localDate.getDay() + 6) % WEEK_LENGTH;
 
   return addDays(localDate, -mondayOffset);
+}
+
+function getDateRangeLabel(days) {
+  if (!Array.isArray(days) || days.length === 0) {
+    return "";
+  }
+
+  const firstDay = days[0];
+  const lastDay = days[days.length - 1];
+  const sameMonth =
+    firstDay.getMonth() === lastDay.getMonth() &&
+    firstDay.getFullYear() === lastDay.getFullYear();
+  const firstLabel = firstDay.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    ...(sameMonth ? {} : { year: "numeric" }),
+  });
+  const lastLabel = lastDay.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  return `${firstLabel} - ${lastLabel}`;
 }
 
 function getNextScheduledLabel(date, today, offset) {
