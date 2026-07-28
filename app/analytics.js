@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,8 +19,16 @@ import {
   v2Typography,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
+import {
+  hasShownFirstTrendUnlock,
+  setFirstTrendUnlockShown,
+} from "../storage/appPreferences";
 import { getGamification } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
+import {
+  getAnalyticsReadiness,
+  shouldShowFirstTrendUnlock,
+} from "../utils/analyticsReadiness";
 import { getDeepAnalytics } from "../utils/habitStats";
 
 const PERIODS = [
@@ -41,8 +49,10 @@ export default function AnalyticsScreen() {
   const [period, setPeriod] = useState("month");
   const [habits, setHabits] = useState([]);
   const [gamification, setGamification] = useState(null);
+  const [firstTrendUnlockShown, setFirstTrendUnlockShownState] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [trendUnlockVisible, setTrendUnlockVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,9 +61,14 @@ export default function AnalyticsScreen() {
       async function loadAnalytics() {
         try {
           setError("");
-          const [storedHabits, storedGamification] = await Promise.all([
+          const [
+            storedHabits,
+            storedGamification,
+            storedFirstTrendUnlockShown,
+          ] = await Promise.all([
             getHabits(),
             getGamification(),
+            hasShownFirstTrendUnlock(),
           ]);
 
           if (!isActive) {
@@ -62,6 +77,7 @@ export default function AnalyticsScreen() {
 
           setHabits(storedHabits);
           setGamification(storedGamification);
+          setFirstTrendUnlockShownState(storedFirstTrendUnlockShown);
         } catch {
           if (isActive) {
             setError("Could not load analytics. Try again.");
@@ -85,6 +101,19 @@ export default function AnalyticsScreen() {
     () => getDeepAnalytics(habits, period, gamification),
     [gamification, habits, period]
   );
+  const readiness = useMemo(() => getAnalyticsReadiness(habits), [habits]);
+
+  useEffect(() => {
+    if (!shouldShowFirstTrendUnlock(readiness, firstTrendUnlockShown)) {
+      return;
+    }
+
+    setTrendUnlockVisible(true);
+    setFirstTrendUnlockShownState(true);
+    setFirstTrendUnlockShown().catch(() => {
+      // The banner is non-critical; persistence can recover on a future visit.
+    });
+  }, [firstTrendUnlockShown, readiness]);
 
   return (
     <AnalyticsScaffold bottomNav>
@@ -117,8 +146,23 @@ export default function AnalyticsScreen() {
           <EmptyAnalytics colors={colors} styles={styles} />
         ) : null}
 
-        {!loading && analytics.habitCount > 0 ? (
+        {!loading && readiness.isBuilding ? (
+          <DataBuildingAnalytics
+            readiness={readiness}
+            styles={styles}
+          />
+        ) : null}
+
+        {!loading && analytics.habitCount > 0 && readiness.ready ? (
           <>
+            {trendUnlockVisible ? (
+              <TrendUnlockBanner
+                colors={colors}
+                onDismiss={() => setTrendUnlockVisible(false)}
+                styles={styles}
+              />
+            ) : null}
+
             <Section title="Consistency trend" styles={styles}>
               <TrendChart
                 points={analytics.trendPoints}
@@ -342,6 +386,107 @@ function EmptyAnalytics({ colors, styles }) {
       </Pressable>
     </View>
   );
+}
+
+function DataBuildingAnalytics({ readiness, styles }) {
+  return (
+    <View
+      accessibilityLabel={`Analytics data is building. ${readiness.habitCount} active habits, ${readiness.totalCompletions} completions, ${readiness.activeDays} active days.`}
+      accessible
+      style={styles.buildingCard}
+    >
+      <AppText style={styles.emptyTitle}>Analytics are building</AppText>
+      <AppText style={styles.emptyText}>
+        Tracking has started. Keep completing habits and Momentum will unlock
+        clearer patterns soon.
+      </AppText>
+
+      <View style={styles.buildingTrack}>
+        <View
+          style={[
+            styles.buildingFill,
+            { width: `${readiness.progress}%` },
+          ]}
+        />
+      </View>
+      <AppText style={styles.buildingProgressText}>
+        {readiness.progress}% toward first trend
+      </AppText>
+
+      <View style={styles.buildingStats}>
+        <BuildingStat
+          label="Habits"
+          styles={styles}
+          value={readiness.habitCount}
+        />
+        <BuildingStat
+          label="Completions"
+          styles={styles}
+          value={`${readiness.totalCompletions}/${readiness.completionGoal}`}
+        />
+        <BuildingStat
+          label="Active days"
+          styles={styles}
+          value={`${readiness.activeDays}/${readiness.activeDayGoal}`}
+        />
+      </View>
+
+      <AppText style={styles.buildingHint}>
+        Next: {getBuildingHint(readiness)}
+      </AppText>
+    </View>
+  );
+}
+
+function BuildingStat({ label, styles, value }) {
+  return (
+    <View style={styles.buildingStat}>
+      <AppText style={styles.buildingStatValue}>{value}</AppText>
+      <AppText style={styles.buildingStatLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function TrendUnlockBanner({ colors, onDismiss, styles }) {
+  return (
+    <Pressable
+      accessibilityLabel="First trend unlocked. Analytics can now show useful patterns."
+      accessibilityRole="button"
+      accessibilityHint="Double tap to dismiss this message."
+      onPress={onDismiss}
+      style={({ pressed }) => [
+        styles.unlockBanner,
+        pressed && styles.pressed,
+      ]}
+    >
+      <View style={styles.unlockIcon}>
+        <AppIcon name="analytics" color={colors.primary} size={18} />
+      </View>
+      <View style={styles.unlockText}>
+        <AppText style={styles.unlockTitle}>First trend unlocked</AppText>
+        <AppText style={styles.unlockMessage}>
+          You have enough history for Momentum to show useful patterns.
+        </AppText>
+      </View>
+      <AppText style={styles.unlockDismiss}>Got it</AppText>
+    </Pressable>
+  );
+}
+
+function getBuildingHint(readiness) {
+  if (readiness.remainingCompletions > 0 && readiness.remainingActiveDays > 0) {
+    return `${readiness.remainingCompletions} more completions across ${readiness.remainingActiveDays} more active days.`;
+  }
+
+  if (readiness.remainingCompletions > 0) {
+    return `${readiness.remainingCompletions} more completions.`;
+  }
+
+  if (readiness.remainingActiveDays > 0) {
+    return `${readiness.remainingActiveDays} more active days.`;
+  }
+
+  return "keep completing habits to strengthen the trend.";
 }
 
 function formatTrendDelta(delta) {
@@ -637,6 +782,106 @@ function createStyles(colors, { isSmallScreen }) {
     },
     emptyActionText: {
       color: colors.inverseText,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    buildingCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      padding: v2Spacing.xl,
+    },
+    buildingTrack: {
+      backgroundColor: colors.surface,
+      borderRadius: v2Radius.pill,
+      height: 8,
+      marginTop: v2Spacing.md,
+      overflow: "hidden",
+    },
+    buildingFill: {
+      backgroundColor: colors.primary,
+      borderRadius: v2Radius.pill,
+      height: "100%",
+    },
+    buildingProgressText: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginTop: v2Spacing.sm,
+    },
+    buildingStats: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.lg,
+    },
+    buildingStat: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexBasis: "30%",
+      flexGrow: 1,
+      minWidth: 92,
+      padding: v2Spacing.md,
+    },
+    buildingStatValue: {
+      color: colors.text,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    buildingStatLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: 2,
+    },
+    buildingHint: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
+      marginTop: v2Spacing.lg,
+    },
+    unlockBanner: {
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderColor: colors.primary,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.lg,
+      minHeight: 64,
+      padding: v2Spacing.md,
+    },
+    unlockIcon: {
+      alignItems: "center",
+      backgroundColor: colors.primarySoft,
+      borderRadius: v2Radius.pill,
+      height: 38,
+      justifyContent: "center",
+      width: 38,
+    },
+    unlockText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    unlockTitle: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    unlockMessage: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.caption.lineHeight,
+      marginTop: 2,
+    },
+    unlockDismiss: {
+      color: colors.primary,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
     },

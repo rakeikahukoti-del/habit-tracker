@@ -5,6 +5,7 @@ const ONBOARDING_COMPLETE_KEY = "momentum:onboarding-complete";
 const LAST_SHOWN_LEVEL_KEY = "momentum:last-shown-level";
 const MOVE_COMPLETED_TO_BOTTOM_KEY = "momentum:move-completed-to-bottom";
 const APP_PREFERENCES_KEY = "momentum:app-preferences";
+const FIRST_TREND_UNLOCK_SHOWN_KEY = "momentum:first-trend-unlock-shown";
 
 export const defaultAppPreferences = {
   enableDailyReminders: true,
@@ -57,6 +58,26 @@ export async function setLastShownLevel(level) {
     await AsyncStorage.setItem(LAST_SHOWN_LEVEL_KEY, String(safeLevel));
   } catch (error) {
     logStorageError("Could not save last shown level.", error);
+    throw error;
+  }
+}
+
+export async function hasShownFirstTrendUnlock() {
+  try {
+    const value = await AsyncStorage.getItem(FIRST_TREND_UNLOCK_SHOWN_KEY);
+
+    return value === "true";
+  } catch (error) {
+    logStorageError("Could not read first trend unlock state.", error);
+    return false;
+  }
+}
+
+export async function setFirstTrendUnlockShown() {
+  try {
+    await AsyncStorage.setItem(FIRST_TREND_UNLOCK_SHOWN_KEY, "true");
+  } catch (error) {
+    logStorageError("Could not save first trend unlock state.", error);
     throw error;
   }
 }

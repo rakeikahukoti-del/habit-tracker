@@ -184,6 +184,7 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
 
   return require(moduleName);
 });
+const analyticsReadiness = loadModule("utils/analyticsReadiness.js");
 const themePreferences = loadModule("utils/themePreferences.js");
 const calendarMonth = loadModule("utils/calendarMonth.js", (moduleName) => {
   if (moduleName === "./habitStats") {
@@ -215,6 +216,17 @@ const habitNotifications = loadModule("notifications/habitNotifications.js", (mo
 
   if (moduleName === "expo-notifications") {
     return expoNotificationsMock;
+  }
+
+  return require(moduleName);
+});
+const appPreferencesStorage = loadModule("storage/appPreferences.js", (moduleName) => {
+  if (moduleName === "@react-native-async-storage/async-storage") {
+    return { __esModule: true, default: asyncStorageMock };
+  }
+
+  if (moduleName === "./storageUtils") {
+    return storageUtils;
   }
 
   return require(moduleName);
@@ -805,6 +817,69 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
   );
   assert.strictEqual(rewards.badgeUnlock.id, "first-completion");
   assert.strictEqual(rewards.celebration, "Nice work.");
+});
+
+test("analytics readiness separates building data from meaningful trends", () => {
+  const building = analyticsReadiness.getAnalyticsReadiness([
+    {
+      id: "habit-one",
+      completedDates: ["2026-01-01", "2026-01-02"],
+    },
+  ]);
+
+  assert.strictEqual(building.habitCount, 1);
+  assert.strictEqual(building.totalCompletions, 2);
+  assert.strictEqual(building.activeDays, 2);
+  assert.strictEqual(building.isBuilding, true);
+  assert.strictEqual(building.ready, false);
+  assert.strictEqual(
+    analyticsReadiness.shouldShowFirstTrendUnlock(building, false),
+    false
+  );
+
+  const ready = analyticsReadiness.getAnalyticsReadiness([
+    {
+      id: "habit-one",
+      completedDates: [
+        "2026-01-01",
+        "2026-01-02",
+        "2026-01-03",
+        "2026-01-04",
+      ],
+    },
+    {
+      id: "habit-two",
+      completedDates: ["2026-01-02", "2026-01-04", "bad-date"],
+    },
+  ]);
+
+  assert.strictEqual(ready.totalCompletions, 6);
+  assert.strictEqual(ready.activeDays, 4);
+  assert.strictEqual(ready.isBuilding, false);
+  assert.strictEqual(ready.ready, true);
+  assert.strictEqual(ready.progress, 100);
+  assert.strictEqual(
+    analyticsReadiness.shouldShowFirstTrendUnlock(ready, false),
+    true
+  );
+  assert.strictEqual(
+    analyticsReadiness.shouldShowFirstTrendUnlock(ready, true),
+    false
+  );
+});
+
+test("first trend unlock persistence is safe and backward-compatible", async () => {
+  resetStorage();
+
+  assert.strictEqual(await appPreferencesStorage.hasShownFirstTrendUnlock(), false);
+
+  await appPreferencesStorage.setFirstTrendUnlockShown();
+
+  assert.strictEqual(await appPreferencesStorage.hasShownFirstTrendUnlock(), true);
+
+  asyncStorageFailures.get = true;
+  assert.strictEqual(await appPreferencesStorage.hasShownFirstTrendUnlock(), false);
+  asyncStorageFailures.get = false;
 });
 
 test("appearance preferences only support Light and Dark with safe legacy migration", () => {
