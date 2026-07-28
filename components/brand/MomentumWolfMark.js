@@ -1,5 +1,4 @@
-import { Image, StyleSheet, View } from "react-native";
-import { brandAssets } from "../../constants/assets";
+import BrandLogo from "../BrandLogo";
 import { v2Colors } from "../../src/design";
 
 export default function MomentumWolfMark({
@@ -9,26 +8,16 @@ export default function MomentumWolfMark({
   size = 96,
   style,
 }) {
-  const source = shouldUseBlackLogo(color, cutoutColor)
-    ? brandAssets.wolfBlackTransparent
-    : brandAssets.wolfWhiteTransparent;
+  const variant = shouldUseBlackLogo(color, cutoutColor) ? "light" : "dark";
 
   return (
-    <View
-      accessibilityIgnoresInvertColors
-      accessibilityLabel={decorative ? undefined : "Momentum wolf logo"}
-      accessibilityRole={decorative ? undefined : "image"}
-      accessible={!decorative}
-      importantForAccessibility={decorative ? "no" : "auto"}
-      style={[styles.wrap, { height: size, width: size }, style]}
-    >
-      <Image
-        accessibilityIgnoresInvertColors
-        resizeMode="contain"
-        source={source}
-        style={styles.image}
-      />
-    </View>
+    <BrandLogo
+      accessibilityLabel="Momentum wolf logo"
+      decorative={decorative}
+      size={size}
+      style={style}
+      variant={variant}
+    />
   );
 }
 
@@ -64,14 +53,3 @@ function getLuminance(hex) {
 
   return (red * 299 + green * 587 + blue * 114) / 255000;
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  image: {
-    height: "100%",
-    width: "100%",
-  },
-});

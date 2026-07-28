@@ -1348,8 +1348,49 @@ test("badges sort by tier progression in stable ascending and descending order",
 
 test("visual asset manifest covers rank and achievement identifiers", () => {
   assert(appAssets.brandAssets.appIconDark.endsWith("app-icon-dark.png"));
-  assert(appAssets.brandAssets.wolfWhiteTransparent.endsWith("wolf-white-transparent.png"));
-  assert(appAssets.logoLockupAssets.horizontalDark.endsWith("horizontal-dark.png"));
+  assert(appAssets.brandAssets.appIconLight.endsWith("app-icon-light.png"));
+  assertJsonEqual(appAssets.SUPPLIED_RANK_ASSET_ORDER, [
+    "Bronze",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Master",
+  ]);
+  assert.strictEqual(
+    gamificationLogic.rankMilestones[gamificationLogic.rankMilestones.length - 1].label,
+    "Master",
+    "Master should remain the final rank threshold"
+  );
+  assertJsonEqual(
+    gamificationLogic.rankMilestones.map((rankItem) => rankItem.unlockLevel),
+    [1, 5, 10, 15, 25, 40],
+    "existing rank thresholds should not change"
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Bronze"),
+    appAssets.RANK_BADGE_ASSETS.bronze
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Silver"),
+    appAssets.RANK_BADGE_ASSETS.silver
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Gold"),
+    appAssets.RANK_BADGE_ASSETS.gold
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Platinum"),
+    appAssets.RANK_BADGE_ASSETS.platinum
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Master"),
+    appAssets.RANK_BADGE_ASSETS.master
+  );
+  assert.strictEqual(
+    appAssets.getRankBadgeAsset("Unknown"),
+    appAssets.RANK_BADGE_ASSETS.bronze,
+    "unknown ranks should use the Bronze fallback"
+  );
 
   gamificationLogic.rankMilestones.forEach((rankItem) => {
     const asset = appAssets.getRankBadgeAsset(rankItem.label);
@@ -1360,7 +1401,7 @@ test("visual asset manifest covers rank and achievement identifiers", () => {
 
   assert.strictEqual(
     appAssets.getRankBadgeAsset("Master"),
-    appAssets.rankBadgeAssets.master,
+    appAssets.RANK_BADGE_ASSETS.master,
     "Master rank should use the Master asset"
   );
 

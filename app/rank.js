@@ -407,7 +407,7 @@ function RankReward({ locked, rankItem, styles }) {
       accessible
       style={[styles.medalReward, locked && styles.medalRewardLocked]}
     >
-      <RankMedal rank={rankItem.label} size="small" />
+      <RankMedal locked={locked} rank={rankItem.label} size="small" />
       <AppText style={styles.medalName}>{rankItem.label}</AppText>
       <AppText style={styles.medalMeta}>
         {locked ? `Unlocks at level ${rankItem.unlockLevel}` : "Unlocked"}

@@ -1,4 +1,4 @@
-export const brandAssets = {
+export const BRAND_ASSETS = {
   appIconDark: require("../assets/branding/app-icon-dark.png"),
   appIconLight: require("../assets/branding/app-icon-light.png"),
   adaptiveForeground: require("../assets/branding/adaptive-foreground.png"),
@@ -9,14 +9,14 @@ export const brandAssets = {
   wolfWhiteTransparent: require("../assets/branding/wolf-white-transparent.png"),
 };
 
-export const logoLockupAssets = {
+export const LOGO_LOCKUP_ASSETS = {
   horizontalDark: require("../assets/branding/lockups/horizontal-dark.png"),
   horizontalLight: require("../assets/branding/lockups/horizontal-light.png"),
   stackedDark: require("../assets/branding/lockups/stacked-dark.png"),
   stackedLight: require("../assets/branding/lockups/stacked-light.png"),
 };
 
-export const rankBadgeAssets = {
+export const RANK_BADGE_ASSETS = {
   bronze: require("../assets/ranks/bronze.png"),
   diamond: require("../assets/ranks/diamond.png"),
   gold: require("../assets/ranks/gold.png"),
@@ -26,7 +26,15 @@ export const rankBadgeAssets = {
   silver: require("../assets/ranks/silver.png"),
 };
 
-export const achievementBadgeAssets = {
+export const SUPPLIED_RANK_ASSET_ORDER = [
+  "Bronze",
+  "Silver",
+  "Gold",
+  "Platinum",
+  "Master",
+];
+
+export const ACHIEVEMENT_BADGE_ASSETS = {
   "fifty-total-completions": require("../assets/achievements/fifty-total-completions.png"),
   "first-completion": require("../assets/achievements/first-completion.png"),
   "first-habit-created": require("../assets/achievements/first-habit-created.png"),
@@ -58,9 +66,14 @@ export const achievementBadgeAssets = {
 export function getRankBadgeAsset(rank) {
   const key = typeof rank === "string" ? rank.toLowerCase() : "bronze";
 
-  return rankBadgeAssets[key] || rankBadgeAssets.bronze;
+  return RANK_BADGE_ASSETS[key] || RANK_BADGE_ASSETS.bronze;
 }
 
 export function getAchievementBadgeAsset(badgeId) {
-  return achievementBadgeAssets[badgeId] || null;
+  return ACHIEVEMENT_BADGE_ASSETS[badgeId] || null;
 }
+
+export const brandAssets = BRAND_ASSETS;
+export const logoLockupAssets = LOGO_LOCKUP_ASSETS;
+export const rankBadgeAssets = RANK_BADGE_ASSETS;
+export const achievementBadgeAssets = ACHIEVEMENT_BADGE_ASSETS;

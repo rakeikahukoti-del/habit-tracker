@@ -1,5 +1,5 @@
-import { Image, StyleSheet, View } from "react-native";
-import { getRankBadgeAsset } from "../../constants/assets";
+import { StyleSheet, View } from "react-native";
+import RankBadge from "../RankBadge";
 import {
   v2FontWeight,
   v2Spacing,
@@ -54,6 +54,7 @@ const rankMedalStyles = {
 };
 
 export default function RankMedal({
+  locked = false,
   rank = "Bronze",
   size = "medium",
   showLabel = false,
@@ -61,7 +62,6 @@ export default function RankMedal({
 }) {
   const { colors } = useTheme();
   const dimensions = getDimensions(size);
-  const asset = getRankBadgeAsset(rank);
 
   return (
     <View
@@ -70,15 +70,7 @@ export default function RankMedal({
       accessible
       style={[styles.wrap, style]}
     >
-      <Image
-        accessibilityIgnoresInvertColors
-        resizeMode="contain"
-        source={asset}
-        style={{
-          height: dimensions.medal,
-          width: dimensions.medal,
-        }}
-      />
+      <RankBadge decorative locked={locked} rank={rank} size={dimensions.medal} />
 
       {showLabel ? (
         <AppText
