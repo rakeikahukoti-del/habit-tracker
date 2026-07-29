@@ -29,6 +29,7 @@ import {
   getAnalyticsReadiness,
   shouldShowFirstTrendUnlock,
 } from "../utils/analyticsReadiness";
+import { getFirstWeekProgressMessage } from "../utils/firstUseExperience";
 import { getDeepAnalytics } from "../utils/habitStats";
 
 const PERIODS = [
@@ -397,8 +398,10 @@ function DataBuildingAnalytics({ readiness, styles }) {
     >
       <AppText style={styles.emptyTitle}>Analytics are building</AppText>
       <AppText style={styles.emptyText}>
-        Tracking has started. Keep completing habits and Momentum will unlock
-        clearer patterns soon.
+        {getFirstWeekProgressMessage({
+          habitCount: readiness.habitCount,
+          readiness,
+        })}
       </AppText>
 
       <View style={styles.buildingTrack}>

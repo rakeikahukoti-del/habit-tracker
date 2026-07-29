@@ -4,8 +4,10 @@ import { AppState, LayoutAnimation } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import {
   defaultAppPreferences,
+  dismissFirstSwipeHint,
   getAppPreferences,
   getLastShownLevel,
+  hasDismissedFirstSwipeHint,
   hasCompletedOnboarding,
   setLastShownLevel,
 } from "../storage/appPreferences";
@@ -34,6 +36,7 @@ import {
   getTodayKey,
   wasCompletedToday,
 } from "../utils/habitStats";
+import { getFirstSwipeHintState } from "../utils/firstUseExperience";
 
 export function useHomeController() {
   const [habits, setHabits] = useState([]);
@@ -50,6 +53,7 @@ export function useHomeController() {
   const [moveCompletedToBottom, setMoveCompletedToBottom] = useState(false);
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
+  const [swipeHintVisible, setSwipeHintVisible] = useState(false);
   const habitActionInProgressRef = useRef(new Set());
   const todayKeyRef = useRef(getTodayKey());
 
@@ -74,11 +78,13 @@ export function useHomeController() {
       const [
         storedHabits,
         storedPreferences,
+        firstSwipeHintDismissed,
         messages,
         storedGamification,
       ] = await Promise.all([
         getHabits(),
         getAppPreferences(),
+        hasDismissedFirstSwipeHint(),
         consumeGamificationMessages(),
         getGamification(),
       ]);
@@ -91,6 +97,13 @@ export function useHomeController() {
       setMoveCompletedToBottom(storedPreferences.moveCompletedToBottom);
       setPreferences(storedPreferences);
       setGamification(storedGamification);
+      setSwipeHintVisible(
+        getFirstSwipeHintState({
+          dismissed: firstSwipeHintDismissed,
+          habits: storedHabits,
+          swipeEnabled: storedPreferences.enableSwipeToComplete,
+        }).shouldShow
+      );
 
       setProgressExpanded((currentValue) =>
         currentValue === null ? storedHabits.length <= 3 : currentValue
@@ -195,6 +208,16 @@ export function useHomeController() {
     }
   }, [loadHabits]);
 
+  const dismissSwipeHint = useCallback(async () => {
+    setSwipeHintVisible(false);
+
+    try {
+      await dismissFirstSwipeHint();
+    } catch {
+      // Guidance can recover on the next load if persistence fails.
+    }
+  }, []);
+
   const handleToggleComplete = useCallback(async (habit, options = {}) => {
     if (habitActionInProgressRef.current.has(habit.id)) {
       return;
@@ -248,6 +271,7 @@ export function useHomeController() {
       const rewardRank = getVisibleRank(getRankForLevel(rewardLevelInfo.level));
 
       await consumeGamificationMessages();
+      await dismissSwipeHint();
 
       setHabits(nextHabits);
       setGamification(award.gamification);
@@ -289,7 +313,7 @@ export function useHomeController() {
     } finally {
       habitActionInProgressRef.current.delete(habit.id);
     }
-  }, [preferences]);
+  }, [dismissSwipeHint, preferences]);
 
   const toggleProgressExpanded = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -321,11 +345,13 @@ export function useHomeController() {
     preferences,
     progressExpanded,
     refreshing,
+    dismissSwipeHint,
     setBadgeUnlock,
     setCelebration,
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
+    swipeHintVisible,
     toggleProgressExpanded,
     visibleHabits,
   };

@@ -6,6 +6,7 @@ const LAST_SHOWN_LEVEL_KEY = "momentum:last-shown-level";
 const MOVE_COMPLETED_TO_BOTTOM_KEY = "momentum:move-completed-to-bottom";
 const APP_PREFERENCES_KEY = "momentum:app-preferences";
 const FIRST_TREND_UNLOCK_SHOWN_KEY = "momentum:first-trend-unlock-shown";
+const FIRST_SWIPE_HINT_DISMISSED_KEY = "momentum:first-swipe-hint-dismissed";
 
 export const defaultAppPreferences = {
   enableDailyReminders: true,
@@ -78,6 +79,26 @@ export async function setFirstTrendUnlockShown() {
     await AsyncStorage.setItem(FIRST_TREND_UNLOCK_SHOWN_KEY, "true");
   } catch (error) {
     logStorageError("Could not save first trend unlock state.", error);
+    throw error;
+  }
+}
+
+export async function hasDismissedFirstSwipeHint() {
+  try {
+    const value = await AsyncStorage.getItem(FIRST_SWIPE_HINT_DISMISSED_KEY);
+
+    return value === "true";
+  } catch (error) {
+    logStorageError("Could not read first swipe hint state.", error);
+    return false;
+  }
+}
+
+export async function dismissFirstSwipeHint() {
+  try {
+    await AsyncStorage.setItem(FIRST_SWIPE_HINT_DISMISSED_KEY, "true");
+  } catch (error) {
+    logStorageError("Could not save first swipe hint state.", error);
     throw error;
   }
 }

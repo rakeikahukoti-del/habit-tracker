@@ -256,6 +256,13 @@ const achievementProgress = loadModule("utils/achievementProgress.js", (moduleNa
 
   return require(moduleName);
 });
+const firstUseExperience = loadModule("utils/firstUseExperience.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
   if (moduleName === "react-native") {
@@ -1191,6 +1198,176 @@ test("first trend unlock persistence is safe and backward-compatible", async () 
   asyncStorageFailures.get = true;
   assert.strictEqual(await appPreferencesStorage.hasShownFirstTrendUnlock(), false);
   asyncStorageFailures.get = false;
+});
+
+test("onboarding and first swipe hint persistence are safe", async () => {
+  resetStorage();
+
+  assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), false);
+  await appPreferencesStorage.completeOnboarding();
+  assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), true);
+
+  assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
+  await appPreferencesStorage.dismissFirstSwipeHint();
+  assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), true);
+
+  asyncStorageFailures.get = true;
+  assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), false);
+  assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
+  asyncStorageFailures.get = false;
+});
+
+test("first swipe hint eligibility is action-based and one-time", () => {
+  const todayKey = "2026-01-05";
+  const freshHabit = {
+    completedDates: [],
+    createdAt: todayKey,
+    frequency: "Daily",
+    id: "first",
+  };
+  const completedHabit = {
+    ...freshHabit,
+    completedDates: [todayKey],
+  };
+  const unscheduledHabit = {
+    ...freshHabit,
+    customDays: ["Tue"],
+    frequency: "Custom",
+  };
+
+  assert.strictEqual(
+    firstUseExperience.getFirstSwipeHintState({
+      dismissed: false,
+      habits: [freshHabit],
+      swipeEnabled: true,
+      todayKey,
+    }).shouldShow,
+    true
+  );
+  assert.strictEqual(
+    firstUseExperience.getFirstSwipeHintState({
+      dismissed: true,
+      habits: [freshHabit],
+      swipeEnabled: true,
+      todayKey,
+    }).shouldShow,
+    false,
+    "manual dismissal should suppress future first-swipe hints"
+  );
+  assert.strictEqual(
+    firstUseExperience.getFirstSwipeHintState({
+      dismissed: false,
+      habits: [completedHabit],
+      swipeEnabled: true,
+      todayKey,
+    }).shouldShow,
+    false,
+    "first completion should suppress future first-swipe hints"
+  );
+  assert.strictEqual(
+    firstUseExperience.getFirstSwipeHintState({
+      dismissed: false,
+      habits: [unscheduledHabit],
+      swipeEnabled: true,
+      todayKey,
+    }).shouldShow,
+    false,
+    "no actionable habits today should hide the first-swipe hint"
+  );
+  assert.strictEqual(
+    firstUseExperience.getFirstSwipeHintState({
+      dismissed: false,
+      habits: [freshHabit],
+      swipeEnabled: false,
+      todayKey,
+    }).shouldShow,
+    false,
+    "disabled swipe preference should hide swipe guidance"
+  );
+});
+
+test("first-use progress copy explains sparse first-week analytics", () => {
+  assert.strictEqual(
+    firstUseExperience.getFirstWeekProgressMessage({
+      habitCount: 0,
+      readiness: { state: "empty" },
+    }),
+    "Create one habit to start building your first week."
+  );
+  assert.strictEqual(
+    firstUseExperience.getFirstWeekProgressMessage({
+      habitCount: 1,
+      readiness: { isBuilding: true, state: "building" },
+    }),
+    "Momentum is building your first trend from the habits you complete."
+  );
+  assert.strictEqual(
+    firstUseExperience.getFirstWeekProgressMessage({
+      habitCount: 1,
+      readiness: { isBuilding: false, state: "ready" },
+    }),
+    "Your first-week trend is ready."
+  );
+});
+
+test("first completion reward is not duplicated after recalculation", () => {
+  const habit = {
+    completedDates: ["2026-01-05"],
+    createdAt: "2026-01-05",
+    frequency: "Daily",
+    id: "first",
+  };
+  const previousState = {
+    earnedBadges: [
+      "first-habit-created",
+      "first-completion",
+      "first-perfect-day",
+    ],
+    pendingMessages: [],
+    perfectDayBonusDates: ["2026-01-05"],
+    recentAchievements: [],
+    xp: 35,
+  };
+  const recalculated = gamificationLogic.calculateGamificationState({
+    habits: [habit],
+    includeMessage: true,
+    now: "2026-01-05T12:00:00.000Z",
+    previousState,
+  });
+
+  assert.strictEqual(recalculated.newBadgeUnlocks.length, 0);
+  assert.strictEqual(
+    recalculated.state.earnedBadges.filter((id) => id === "first-completion").length,
+    1
+  );
+  assert.strictEqual(
+    recalculated.state.pendingMessages.some(
+      (message) => message.badgeId === "first-completion"
+    ),
+    false
+  );
+});
+
+test("first-day completion state stays restrained and accurate", () => {
+  const todayKey = habitStats.getTodayKey();
+  const summary = homeHabitActions.getHomeSummary(
+    [
+      {
+        completedDates: [todayKey],
+        createdAt: todayKey,
+        frequency: "Daily",
+        id: "first",
+      },
+    ],
+    { xp: 35 }
+  );
+
+  assert.strictEqual(summary.completedTodayCount, 1);
+  assert.strictEqual(summary.remainingTodayCount, 0);
+  assert.strictEqual(summary.habitsSectionMessage, "Today is complete.");
+  assert.strictEqual(summary.motivation, "Today is complete.");
+  assert.strictEqual(summary.nextAction, "Today is complete");
+  assert.strictEqual(summary.todayXp, 35);
 });
 
 test("rank milestone helper finds the nearest rank target", () => {

@@ -1,11 +1,12 @@
 import {
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
 import { router } from "expo-router";
-import { MomentumWolfMark, MomentumWordmark } from "../components/brand";
+import BrandLogo from "../components/BrandLogo";
 import { AppText, PressableScale } from "../components/ui";
 import {
   v2FontWeight,
@@ -19,7 +20,7 @@ import { useTheme } from "../context/ThemeContext";
 import { completeOnboarding } from "../storage/appPreferences";
 
 export default function OnboardingScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
@@ -32,29 +33,37 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.container}>
         <View style={styles.brand}>
-          <MomentumWolfMark size={94} />
-          <MomentumWordmark width={190} />
+          <BrandLogo
+            decorative
+            size={isSmallScreen ? 76 : 88}
+            variant={isDark ? "dark" : "light"}
+          />
+          <AppText style={styles.wordmark}>MOMENTUM</AppText>
         </View>
-        <AppText style={styles.eyebrow}>Welcome</AppText>
+        <AppText style={styles.eyebrow}>Start simple</AppText>
         <AppText style={styles.title}>
-          Build discipline through consistency.
+          Build better habits one day at a time.
         </AppText>
         <AppText style={styles.subtitle}>
-          Choose the habits that matter. Complete them each day. Momentum tracks
-          the progress you build.
+          Create habits, complete what is scheduled, and review the progress you
+          build over time.
         </AppText>
 
         <View style={styles.points}>
           <AppText style={styles.point}>
-            Today shows the habits in front of you.
+            Home keeps today focused.
           </AppText>
           <AppText style={styles.point}>
-            Progress and Rank show consistency over time.
+            Progress shows streaks, trends, and weekly context.
           </AppText>
           <AppText style={styles.point}>
-            Your habit data stays on this device.
+            XP and ranks reward consistency without pressure.
           </AppText>
         </View>
 
@@ -68,6 +77,7 @@ export default function OnboardingScreen() {
           <AppText style={styles.buttonText}>Start tracking</AppText>
         </PressableScale>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -78,9 +88,12 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       backgroundColor: colors.background,
       flex: 1,
     },
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: "center",
+    },
     container: {
       alignSelf: "center",
-      flex: 1,
       justifyContent: "center",
       maxWidth: isTablet ? 620 : "100%",
       padding: isSmallScreen
@@ -89,9 +102,17 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       width: "100%",
     },
     brand: {
-      alignItems: "flex-start",
-      gap: v2Spacing.lg,
-      marginBottom: v2Spacing.xxl,
+      alignItems: "center",
+      alignSelf: "flex-start",
+      gap: v2Spacing.md,
+      marginBottom: v2Spacing.xl,
+    },
+    wordmark: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: v2FontWeight.medium,
+      letterSpacing: 8,
+      lineHeight: 24,
     },
     eyebrow: {
       color: colors.primary,
