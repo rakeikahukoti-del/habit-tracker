@@ -62,6 +62,8 @@ export default function HomeScreen() {
     progressExpanded,
     refreshing,
     dismissSwipeHint,
+    dismissReturnMessage,
+    returnExperience,
     setBadgeUnlock,
     setCelebration,
     setCompletionReward,
@@ -307,6 +309,33 @@ export default function HomeScreen() {
         ) : null}
 
         {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
+
+        {returnExperience?.shouldShow ? (
+          <Pressable
+            accessibilityHint="Dismisses this return message for today."
+            accessibilityLabel={`${returnExperience.message}. Double tap to dismiss.`}
+            accessibilityRole="button"
+            onPress={dismissReturnMessage}
+            style={({ pressed }) => [
+              styles.returnCard,
+              pressed && styles.cardPressed,
+            ]}
+          >
+            <View style={styles.returnIcon}>
+              <AppIcon
+                color={colors.primary}
+                name="home"
+                size={18}
+                strokeWidth={2}
+              />
+            </View>
+            <View style={styles.returnText}>
+              <AppText style={styles.returnTitle}>Today</AppText>
+              <AppText style={styles.returnBody}>{returnExperience.message}</AppText>
+            </View>
+            <AppText style={styles.returnDismiss}>Dismiss</AppText>
+          </Pressable>
+        ) : null}
 
         {swipeHintVisible ? (
           <Pressable
@@ -814,6 +843,54 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     ...v2Shadows.low,
     shadowColor: colors.shadow,
     shadowOpacity: 0.08,
+  },
+  returnCard: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: v2Spacing.md,
+    marginBottom: 8,
+    minHeight: 68,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    ...v2Shadows.low,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.08,
+  },
+  returnIcon: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.medium,
+    borderWidth: 1,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  returnText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  returnTitle: {
+    color: colors.text,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  returnBody: {
+    color: colors.muted,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: v2Typography.caption.lineHeight,
+    marginTop: 2,
+  },
+  returnDismiss: {
+    color: colors.primary,
+    flexShrink: 0,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   swipeHintIcon: {
     alignItems: "center",

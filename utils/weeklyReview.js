@@ -270,7 +270,7 @@ function getWeeklyHabitStatus(summary) {
     return "On track";
   }
 
-  return "Needs more completed days";
+  return "No completions yet this week";
 }
 
 function getWeeklyStatusSortGroup(summary) {

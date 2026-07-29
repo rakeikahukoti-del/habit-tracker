@@ -42,6 +42,7 @@ import {
   getWeeklyProgress,
   wasCompletedToday,
 } from "../../utils/habitStats";
+import { getHabitRecoveryContext } from "../../utils/returnExperience";
 import { getHabitWeeklyPattern } from "../../utils/weeklyReview";
 
 export default function HabitDetailsScreen() {
@@ -288,6 +289,7 @@ export default function HabitDetailsScreen() {
   const bestStreak = getBestStreak(habit.completedDates, habit);
   const weeklyProgress = getWeeklyProgress(habit);
   const weeklyPattern = getHabitWeeklyPattern(habit);
+  const recoveryContext = getHabitRecoveryContext(habit);
   const completedToday = wasCompletedToday(habit);
   const icon = emoji || habit.emoji || DEFAULT_HABIT_EMOJI;
 
@@ -374,6 +376,29 @@ export default function HabitDetailsScreen() {
                 styles={styles}
               />
             </View>
+          </View>
+
+          <View
+            accessibilityLabel={`Habit context. Last completed ${recoveryContext.lastCompletedLabel}. ${recoveryContext.nextScheduledLabel}. Your best streak remains ${bestStreak} days.`}
+            accessible
+            style={styles.recoveryCard}
+          >
+            <WeeklyRow
+              label="Last completed"
+              styles={styles}
+              value={recoveryContext.lastCompletedLabel}
+            />
+            <WeeklyRow
+              label="Next scheduled"
+              styles={styles}
+              value={recoveryContext.nextScheduledLabel}
+            />
+            {currentStreak === 0 && bestStreak > 0 ? (
+              <AppText style={styles.recoveryNote}>
+                Complete the next scheduled day to begin a new current streak.
+                Your best streak remains recorded.
+              </AppText>
+            ) : null}
           </View>
 
           <HabitWeeklySummary
@@ -554,6 +579,25 @@ function createStyles(colors, { isSmallScreen }) {
     fontSize: v2Typography.caption.fontSize,
     fontWeight: v2FontWeight.medium,
     marginTop: 4,
+  },
+  recoveryCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    gap: v2Spacing.sm,
+    marginBottom: 18,
+    padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
+  },
+  recoveryNote: {
+    borderTopColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: v2Typography.label.lineHeight,
+    marginTop: v2Spacing.xs,
+    paddingTop: v2Spacing.md,
   },
   weeklyCard: {
     backgroundColor: colors.card,

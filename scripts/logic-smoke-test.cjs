@@ -263,6 +263,17 @@ const firstUseExperience = loadModule("utils/firstUseExperience.js", (moduleName
 
   return require(moduleName);
 });
+const returnExperience = loadModule("utils/returnExperience.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  if (moduleName === "./weeklyReview") {
+    return weeklyReview;
+  }
+
+  return require(moduleName);
+});
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
   if (moduleName === "react-native") {
@@ -1178,7 +1189,7 @@ test("weekly review breakdown sorts attention, progress, complete, then unschedu
   assertJsonEqual(
     review.breakdown.map((habit) => [habit.name, habit.status]),
     [
-      ["Attention", "Needs more completed days"],
+      ["Attention", "No completions yet this week"],
       ["Progress", "One scheduled completion remaining"],
       ["Complete", "Complete this week"],
       ["Unscheduled", "No scheduled days this week"],
@@ -1210,10 +1221,17 @@ test("onboarding and first swipe hint persistence are safe", async () => {
   assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
   await appPreferencesStorage.dismissFirstSwipeHint();
   assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), true);
+  assert.strictEqual(await appPreferencesStorage.getReturnGuidanceDismissedDate(), "");
+  await appPreferencesStorage.dismissReturnGuidance("2026-01-05");
+  assert.strictEqual(
+    await appPreferencesStorage.getReturnGuidanceDismissedDate(),
+    "2026-01-05"
+  );
 
   asyncStorageFailures.get = true;
   assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), false);
   assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
+  assert.strictEqual(await appPreferencesStorage.getReturnGuidanceDismissedDate(), "");
   asyncStorageFailures.get = false;
 });
 
@@ -1368,6 +1386,160 @@ test("first-day completion state stays restrained and accurate", () => {
   assert.strictEqual(summary.motivation, "Today is complete.");
   assert.strictEqual(summary.nextAction, "Today is complete");
   assert.strictEqual(summary.todayXp, 35);
+});
+
+test("return guidance distinguishes scheduled and unscheduled inactivity", () => {
+  const dailyReturn = returnExperience.getReturnExperienceState({
+    habits: [
+      {
+        completedDates: ["2026-01-06"],
+        createdAt: "2026-01-01",
+        frequency: "Daily",
+        id: "daily",
+      },
+    ],
+    todayKey: "2026-01-08",
+  });
+
+  assert.strictEqual(dailyReturn.shouldShow, true);
+  assert.strictEqual(dailyReturn.state, "scheduled-return");
+  assert.strictEqual(dailyReturn.inactiveCalendarDays, 1);
+  assert.strictEqual(dailyReturn.missedScheduledOpportunities, 1);
+  assert.strictEqual(dailyReturn.actionableHabitCount, 1);
+  assert.strictEqual(dailyReturn.message, "Welcome back. Start with one habit today.");
+
+  const weekdayReturn = returnExperience.getReturnExperienceState({
+    habits: [
+      {
+        completedDates: ["2026-01-02"],
+        createdAt: "2026-01-01",
+        frequency: "Weekdays",
+        id: "weekday",
+      },
+    ],
+    todayKey: "2026-01-05",
+  });
+
+  assert.strictEqual(weekdayReturn.shouldShow, true);
+  assert.strictEqual(weekdayReturn.state, "unscheduled-return");
+  assert.strictEqual(weekdayReturn.missedScheduledOpportunities, 0);
+  assert.strictEqual(
+    weekdayReturn.message,
+    "Welcome back. One habit is available today."
+  );
+});
+
+test("return guidance suppresses new users, empty habits, dismissed days, and future completions", () => {
+  assert.strictEqual(
+    returnExperience.getReturnExperienceState({
+      habits: [],
+      todayKey: "2026-01-08",
+    }).shouldShow,
+    false
+  );
+  assert.strictEqual(
+    returnExperience.getReturnExperienceState({
+      habits: [{ completedDates: [], createdAt: "2026-01-08", frequency: "Daily" }],
+      todayKey: "2026-01-08",
+    }).shouldShow,
+    false
+  );
+  assert.strictEqual(
+    returnExperience.getReturnExperienceState({
+      dismissedDate: "2026-01-08",
+      habits: [
+        {
+          completedDates: ["2026-01-05"],
+          createdAt: "2026-01-01",
+          frequency: "Daily",
+        },
+      ],
+      todayKey: "2026-01-08",
+    }).shouldShow,
+    false
+  );
+  assert.strictEqual(
+    returnExperience.getReturnExperienceState({
+      habits: [
+        {
+          completedDates: ["2026-01-09", "bad"],
+          createdAt: "2026-01-01",
+          frequency: "Daily",
+        },
+      ],
+      todayKey: "2026-01-08",
+    }).shouldShow,
+    false,
+    "future and invalid completions should not create return guidance"
+  );
+});
+
+test("return guidance reports next scheduled day without counting future opportunities as missed", () => {
+  const state = returnExperience.getReturnExperienceState({
+    habits: [
+      {
+        completedDates: ["2026-01-05"],
+        createdAt: "2026-01-01",
+        customDays: ["Thu"],
+        frequency: "Custom",
+      },
+    ],
+    todayKey: "2026-01-07",
+  });
+
+  assert.strictEqual(state.shouldShow, true);
+  assert.strictEqual(state.missedScheduledOpportunities, 0);
+  assert.strictEqual(state.actionableHabitCount, 0);
+  assert.strictEqual(state.nextScheduledOpportunity.dateKey, "2026-01-08");
+  assert.strictEqual(
+    state.message,
+    "Welcome back. Your next scheduled habit is tomorrow."
+  );
+});
+
+test("habit recovery context preserves best streak while current streak resets", () => {
+  const habit = {
+    completedDates: ["2026-01-01", "2026-01-02", "2026-01-03"],
+    createdAt: "2026-01-01",
+    frequency: "Daily",
+  };
+  const context = returnExperience.getHabitRecoveryContext(habit, "2026-01-08");
+
+  assert.strictEqual(habitStats.getCurrentStreak(habit.completedDates, habit), 0);
+  assert.strictEqual(habitStats.getBestStreak(habit.completedDates, habit), 3);
+  assert.strictEqual(context.lastCompletedDateKey, "2026-01-03");
+  assert.strictEqual(context.nextScheduledOpportunity.dateKey, "2026-01-08");
+});
+
+test("inactivity recalculation preserves existing XP, rank, and earned achievements", () => {
+  const previousState = {
+    earnedBadges: [
+      "first-habit-created",
+      "first-completion",
+      "first-perfect-day",
+    ],
+    pendingMessages: [],
+    perfectDayBonusDates: ["2026-01-01"],
+    recentAchievements: [],
+    xp: 35,
+  };
+  const result = gamificationLogic.calculateGamificationState({
+    habits: [
+      {
+        completedDates: ["2026-01-01"],
+        createdAt: "2026-01-01",
+        frequency: "Daily",
+      },
+    ],
+    includeMessage: true,
+    now: "2026-01-08T12:00:00.000Z",
+    previousState,
+  });
+
+  assert.strictEqual(result.state.xp, previousState.xp);
+  assert(result.state.earnedBadges.includes("first-habit-created"));
+  assert(result.state.earnedBadges.includes("first-completion"));
+  assert.strictEqual(gamificationLogic.getRankForLevel(1), "Bronze");
 });
 
 test("rank milestone helper finds the nearest rank target", () => {

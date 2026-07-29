@@ -5,8 +5,10 @@ import { router, useFocusEffect } from "expo-router";
 import {
   defaultAppPreferences,
   dismissFirstSwipeHint,
+  dismissReturnGuidance,
   getAppPreferences,
   getLastShownLevel,
+  getReturnGuidanceDismissedDate,
   hasDismissedFirstSwipeHint,
   hasCompletedOnboarding,
   setLastShownLevel,
@@ -37,6 +39,7 @@ import {
   wasCompletedToday,
 } from "../utils/habitStats";
 import { getFirstSwipeHintState } from "../utils/firstUseExperience";
+import { getReturnExperienceState } from "../utils/returnExperience";
 
 export function useHomeController() {
   const [habits, setHabits] = useState([]);
@@ -54,6 +57,7 @@ export function useHomeController() {
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
   const [swipeHintVisible, setSwipeHintVisible] = useState(false);
+  const [returnExperience, setReturnExperience] = useState(null);
   const habitActionInProgressRef = useRef(new Set());
   const todayKeyRef = useRef(getTodayKey());
 
@@ -79,12 +83,14 @@ export function useHomeController() {
         storedHabits,
         storedPreferences,
         firstSwipeHintDismissed,
+        returnGuidanceDismissedDate,
         messages,
         storedGamification,
       ] = await Promise.all([
         getHabits(),
         getAppPreferences(),
         hasDismissedFirstSwipeHint(),
+        getReturnGuidanceDismissedDate(),
         consumeGamificationMessages(),
         getGamification(),
       ]);
@@ -103,6 +109,12 @@ export function useHomeController() {
           habits: storedHabits,
           swipeEnabled: storedPreferences.enableSwipeToComplete,
         }).shouldShow
+      );
+      setReturnExperience(
+        getReturnExperienceState({
+          dismissedDate: returnGuidanceDismissedDate,
+          habits: storedHabits,
+        })
       );
 
       setProgressExpanded((currentValue) =>
@@ -218,6 +230,20 @@ export function useHomeController() {
     }
   }, []);
 
+  const dismissReturnMessage = useCallback(async () => {
+    const todayKey = getTodayKey();
+
+    setReturnExperience((currentValue) =>
+      currentValue ? { ...currentValue, shouldShow: false } : currentValue
+    );
+
+    try {
+      await dismissReturnGuidance(todayKey);
+    } catch {
+      // Return guidance is informational and should never block habit updates.
+    }
+  }, []);
+
   const handleToggleComplete = useCallback(async (habit, options = {}) => {
     if (habitActionInProgressRef.current.has(habit.id)) {
       return;
@@ -272,6 +298,7 @@ export function useHomeController() {
 
       await consumeGamificationMessages();
       await dismissSwipeHint();
+      await dismissReturnMessage();
 
       setHabits(nextHabits);
       setGamification(award.gamification);
@@ -313,7 +340,7 @@ export function useHomeController() {
     } finally {
       habitActionInProgressRef.current.delete(habit.id);
     }
-  }, [dismissSwipeHint, preferences]);
+  }, [dismissReturnMessage, dismissSwipeHint, preferences]);
 
   const toggleProgressExpanded = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -346,6 +373,8 @@ export function useHomeController() {
     progressExpanded,
     refreshing,
     dismissSwipeHint,
+    dismissReturnMessage,
+    returnExperience,
     setBadgeUnlock,
     setCelebration,
     setCompletionReward,

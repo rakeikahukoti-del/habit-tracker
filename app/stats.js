@@ -301,7 +301,7 @@ function WeeklyReviewCard({ colors, expanded, onToggle, review, styles }) {
       <View style={styles.reviewStats}>
         <ReviewStat label="Active days" value={review.activeDaysLabel} styles={styles} />
         <ReviewStat
-          label="Missed so far"
+          label="Open so far"
           value={review.missedCount}
           styles={styles}
         />
@@ -381,7 +381,7 @@ function WeeklyReviewDetails({ review, styles }) {
           ) : null}
           {review.focusHabit ? (
             <ReviewHabit
-              label="Needs attention"
+              label="Focus"
               habit={review.focusHabit}
               styles={styles}
             />

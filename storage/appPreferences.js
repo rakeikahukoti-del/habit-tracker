@@ -7,6 +7,8 @@ const MOVE_COMPLETED_TO_BOTTOM_KEY = "momentum:move-completed-to-bottom";
 const APP_PREFERENCES_KEY = "momentum:app-preferences";
 const FIRST_TREND_UNLOCK_SHOWN_KEY = "momentum:first-trend-unlock-shown";
 const FIRST_SWIPE_HINT_DISMISSED_KEY = "momentum:first-swipe-hint-dismissed";
+const RETURN_GUIDANCE_DISMISSED_DATE_KEY =
+  "momentum:return-guidance-dismissed-date";
 
 export const defaultAppPreferences = {
   enableDailyReminders: true,
@@ -99,6 +101,32 @@ export async function dismissFirstSwipeHint() {
     await AsyncStorage.setItem(FIRST_SWIPE_HINT_DISMISSED_KEY, "true");
   } catch (error) {
     logStorageError("Could not save first swipe hint state.", error);
+    throw error;
+  }
+}
+
+export async function getReturnGuidanceDismissedDate() {
+  try {
+    const value = await AsyncStorage.getItem(RETURN_GUIDANCE_DISMISSED_DATE_KEY);
+
+    return isValidDateKey(value) ? value : "";
+  } catch (error) {
+    logStorageError("Could not read return guidance state.", error);
+    return "";
+  }
+}
+
+export async function dismissReturnGuidance(dateKey) {
+  const safeDateKey = isValidDateKey(dateKey) ? dateKey : "";
+
+  if (!safeDateKey) {
+    return;
+  }
+
+  try {
+    await AsyncStorage.setItem(RETURN_GUIDANCE_DISMISSED_DATE_KEY, safeDateKey);
+  } catch (error) {
+    logStorageError("Could not save return guidance state.", error);
     throw error;
   }
 }
@@ -196,4 +224,8 @@ function sanitizeAppPreferences(preferences) {
 
     return nextPreferences;
   }, {});
+}
+
+function isValidDateKey(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
