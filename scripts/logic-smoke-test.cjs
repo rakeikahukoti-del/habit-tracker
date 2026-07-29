@@ -274,6 +274,13 @@ const returnExperience = loadModule("utils/returnExperience.js", (moduleName) =>
 
   return require(moduleName);
 });
+const personalRecords = loadModule("utils/personalRecords.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
   if (moduleName === "react-native") {
@@ -1945,6 +1952,92 @@ test("achievement snapshot safely derives progress from habit history", () => {
   assert.strictEqual(snapshot.highestDailyCompletionCount, 2);
   assert.strictEqual(snapshot.level, 6);
   assert.strictEqual(snapshot.perfectDays, 1);
+});
+
+test("personal records ignore duplicate, invalid, and future completion dates", () => {
+  const now = new Date(2026, 0, 15);
+  const habits = [
+    {
+      id: "daily",
+      name: "Daily",
+      completedDates: [
+        "2026-01-01",
+        "2026-01-02",
+        "2026-01-02",
+        "bad",
+        "2026-01-20",
+      ],
+      createdAt: "2026-01-01",
+      frequency: "Daily",
+    },
+    {
+      id: "weekdays",
+      name: "Weekdays",
+      completedDates: ["2026-01-01", "2026-01-02", "2026-01-05"],
+      createdAt: "2026-01-01",
+      frequency: "Weekdays",
+    },
+  ];
+  const lifetime = personalRecords.getLifetimeStats(habits, { xp: 55 }, now);
+  const records = personalRecords.getPersonalRecords(habits, { xp: 55 }, now);
+  const byId = Object.fromEntries(records.map((record) => [record.id, record]));
+
+  assert.strictEqual(lifetime.totalCompletions, 5);
+  assert.strictEqual(lifetime.totalXpEarned, 55);
+  assert.strictEqual(lifetime.totalPerfectDays, 2);
+  assert.strictEqual(byId["longest-overall-streak"].rawValue, 3);
+  assert.strictEqual(byId["most-completions-day"].rawValue, 2);
+  assert.strictEqual(byId["most-completions-day"].achievedAt, "2026-01-01");
+  assert.strictEqual(byId["perfect-day-run"].rawValue, 2);
+  assert.strictEqual(byId["highest-xp-day"].rawValue, 45);
+  assert.strictEqual(byId["most-completed-habit"].rawValue, 3);
+});
+
+test("personal records expose deterministic monthly, quarterly, and yearly aggregates", () => {
+  const now = new Date(2026, 1, 10);
+  const habits = [
+    {
+      id: "habit",
+      name: "Habit",
+      completedDates: ["2026-01-01", "2026-01-02", "2026-02-02"],
+      createdAt: "2026-01-01",
+      frequency: "Daily",
+    },
+  ];
+  const months = personalRecords.getMonthlyAggregates(habits, now);
+  const quarters = personalRecords.getQuarterlyAggregates(habits, now);
+  const years = personalRecords.getYearlyAggregates(habits, now);
+  const review = personalRecords.getMonthlyReview(habits, null, now);
+
+  assert.strictEqual(months.find((month) => month.key === "2026-01").completedCount, 2);
+  assert.strictEqual(months.find((month) => month.key === "2026-02").completedCount, 1);
+  assert.strictEqual(quarters[0].key, "2026-Q1");
+  assert.strictEqual(quarters[0].completedCount, 3);
+  assert.strictEqual(years[0].key, "2026");
+  assert.strictEqual(years[0].completedCount, 3);
+  assert.strictEqual(review.label, "February 2026");
+  assert.strictEqual(review.totalCompletions, 1);
+});
+
+test("habit milestones are informational and based on actual completions", () => {
+  const completions = Array.from({ length: 26 }, (_, index) => {
+    const date = new Date(2026, 0, index + 1);
+
+    return habitStats.toDateKey(date);
+  });
+  const milestones = personalRecords.getHabitMilestones(
+    {
+      completedDates: [...completions, completions[0], "bad", "2099-01-01"],
+      createdAt: "2026-01-01",
+      frequency: "Daily",
+    },
+    new Date(2026, 1, 1)
+  );
+
+  assert.strictEqual(milestones.completionCount, 26);
+  assertJsonEqual(milestones.completedMilestones, [10, 25]);
+  assert.strictEqual(milestones.nextMilestone, 50);
+  assert.strictEqual(milestones.progressToNext, 52);
 });
 
 test("imported habits are normalized without corrupting existing storage", async () => {
