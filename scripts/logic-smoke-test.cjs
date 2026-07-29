@@ -248,6 +248,14 @@ const appAssets = loadModule("constants/assets.js", (moduleName) => {
 
   return require(moduleName);
 });
+const achievementConstants = loadModule("constants/achievements.js");
+const achievementProgress = loadModule("utils/achievementProgress.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
   if (moduleName === "react-native") {
@@ -1455,6 +1463,139 @@ test("visual asset manifest covers rank and achievement identifiers", () => {
     assert(asset, `${badge.id} should resolve to an achievement asset`);
     assert(fs.existsSync(asset), `${badge.id} asset should exist`);
   });
+});
+
+test("achievement icon metadata is complete and separated from rank assets", () => {
+  gamificationLogic.badges.forEach((badge) => {
+    const meta = achievementConstants.getAchievementIconMeta(badge.id);
+
+    assert.strictEqual(typeof meta.iconName, "string");
+    assert.strictEqual(typeof meta.accent, "string");
+    assert.strictEqual(
+      Object.prototype.hasOwnProperty.call(meta, "assetPath"),
+      false,
+      `${badge.id} should not resolve through a rank or logo asset path`
+    );
+  });
+
+  assertJsonEqual(
+    achievementConstants.getAchievementIconMeta("unknown-achievement"),
+    achievementConstants.ACHIEVEMENT_ICON_FALLBACK
+  );
+  assert.strictEqual(
+    JSON.stringify(achievementConstants.ACHIEVEMENT_ICON_MAP).includes("assets/ranks"),
+    false,
+    "achievement icon metadata should not import rank assets"
+  );
+  assert.strictEqual(
+    JSON.stringify(achievementConstants.ACHIEVEMENT_ICON_MAP).includes("wolf"),
+    false,
+    "achievement icon metadata should not import wolf/logo assets"
+  );
+});
+
+test("achievement progress clamps values and handles locked, unlocked, and unknown badges", () => {
+  assertJsonEqual(
+    achievementProgress.createProgress(140, 100),
+    {
+      complete: true,
+      max: 100,
+      measurable: true,
+      percent: 100,
+      remaining: 0,
+      value: 100,
+    }
+  );
+  assertJsonEqual(
+    achievementProgress.createProgress(5, 0),
+    {
+      complete: false,
+      max: 0,
+      measurable: false,
+      percent: 0,
+      remaining: null,
+      value: 0,
+    }
+  );
+
+  const locked = achievementProgress.getAchievementProgress(
+    { id: "three-day-streak" },
+    { longestStreak: 2 },
+    false
+  );
+  const unlocked = achievementProgress.getAchievementProgress(
+    { id: "three-day-streak" },
+    { longestStreak: 2 },
+    true
+  );
+  const unknown = achievementProgress.getAchievementProgress(
+    { id: "future-badge" },
+    {},
+    false
+  );
+
+  assert.strictEqual(locked.value, 2);
+  assert.strictEqual(locked.max, 3);
+  assert.strictEqual(locked.complete, false);
+  assert.strictEqual(unlocked.value, 3);
+  assert.strictEqual(unlocked.complete, true);
+  assert.strictEqual(achievementProgress.getAchievementProgressLabel(unlocked), "Unlocked");
+  assert.strictEqual(unknown.measurable, false);
+  assert.strictEqual(achievementProgress.getAchievementProgressLabel(unknown), "Locked");
+});
+
+test("closest achievement selection is deterministic and excludes unlocked badges", () => {
+  const sampleBadges = [
+    { id: "three-day-streak", label: "Three" },
+    { id: "seven-day-streak", label: "Seven" },
+    { id: "ten-total-completions", label: "Ten" },
+    { id: "first-habit-created", label: "First" },
+  ];
+  const closest = achievementProgress.getClosestAchievements({
+    badges: sampleBadges,
+    earnedBadgeIds: new Set(["first-habit-created", "ten-total-completions"]),
+    limit: 2,
+    snapshot: {
+      completionCount: 9,
+      hasHabit: 1,
+      longestStreak: 2,
+    },
+  });
+
+  assertJsonEqual(
+    closest.map((item) => item.badge.id),
+    ["three-day-streak", "seven-day-streak"],
+    "closest badges should tie-break by input order after progress and remaining"
+  );
+  assert.strictEqual(
+    closest.some((item) => item.badge.id === "ten-total-completions"),
+    false,
+    "earned badges should be excluded from closest locked achievements"
+  );
+});
+
+test("achievement snapshot safely derives progress from habit history", () => {
+  const snapshot = achievementProgress.getAchievementSnapshot({
+    gamification: { perfectDayBonusDates: ["2026-01-03"] },
+    habits: [
+      {
+        completedDates: ["2026-01-01", "2026-01-01", "bad"],
+        frequency: "Daily",
+      },
+      {
+        completedDates: ["2026-01-01", "2026-01-02"],
+        frequency: "Daily",
+      },
+    ],
+    level: 6,
+  });
+
+  assert.strictEqual(snapshot.completionCount, 3);
+  assert.strictEqual(snapshot.hasCompletion, 1);
+  assert.strictEqual(snapshot.hasHabit, 1);
+  assert.strictEqual(snapshot.highestDailyCompletionCount, 2);
+  assert.strictEqual(snapshot.level, 6);
+  assert.strictEqual(snapshot.perfectDays, 1);
 });
 
 test("imported habits are normalized without corrupting existing storage", async () => {

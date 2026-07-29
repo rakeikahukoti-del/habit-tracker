@@ -37,14 +37,25 @@ import {
   rankMilestones,
 } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
+import {
+  getAchievementProgress,
+  getAchievementProgressLabel,
+  getAchievementSnapshot,
+  getAchievementSummary,
+  getAchievementUnlockDate,
+  getClosestAchievements,
+} from "../utils/achievementProgress";
 import { sortBadgesByTier } from "../utils/gamification";
-import { getBestStreak, getCurrentStreak } from "../utils/habitStats";
 import { getNextRankMilestone } from "../utils/progressionMilestones";
 import {
   getNextVisibleRankMilestone,
   getVisibleRank,
   getVisibleRankMilestones,
 } from "../utils/rankDisplay";
+import {
+  getAchievementIconMeta,
+  getRecentAchievementIconName,
+} from "../constants/achievements";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -133,8 +144,28 @@ export default function RankScreen() {
   );
   const badgePreview = showAllBadges ? sortedBadges : sortedBadges.slice(0, 8);
   const progressionSnapshot = useMemo(
-    () => getProgressionSnapshot({ gamification, habits, level: levelInfo.level }),
+    () => getAchievementSnapshot({ gamification, habits, level: levelInfo.level }),
     [gamification, habits, levelInfo.level]
+  );
+  const achievementSummary = useMemo(
+    () =>
+      getAchievementSummary({
+        badges,
+        earnedBadgeIds,
+        recentAchievements: gamification?.recentAchievements,
+        snapshot: progressionSnapshot,
+      }),
+    [earnedBadgeIds, gamification, progressionSnapshot]
+  );
+  const closestBadges = useMemo(
+    () =>
+      getClosestAchievements({
+        badges,
+        earnedBadgeIds,
+        limit: 3,
+        snapshot: progressionSnapshot,
+      }),
+    [earnedBadgeIds, progressionSnapshot]
   );
 
   function toggleBadges() {
@@ -152,6 +183,7 @@ export default function RankScreen() {
             onClose={() => setSelectedBadge(null)}
             progress={selectedBadge?.progress}
             styles={styles}
+            unlockedAt={selectedBadge?.unlockedAt}
             visible={Boolean(selectedBadge)}
           />
           <AchievementDetailModal
@@ -244,10 +276,35 @@ export default function RankScreen() {
             </Section>
 
             <Section
-              subtitle={`${earnedBadges.length} of ${badges.length} earned`}
-              title="Badges"
+              subtitle={`${achievementSummary.earnedCount} of ${achievementSummary.totalCount} unlocked`}
+              title="Achievements"
               styles={styles}
             >
+              <AchievementSummary
+                summary={achievementSummary}
+                styles={styles}
+              />
+              {closestBadges.length > 0 ? (
+                <View style={styles.closestBlock}>
+                  <AppText style={styles.closestTitle}>Closest unlocks</AppText>
+                  {closestBadges.map(({ badge, progress }) => (
+                    <ClosestBadgeRow
+                      badge={badge}
+                      key={badge.id}
+                      onPress={() =>
+                        setSelectedBadge({
+                          badge,
+                          earned: false,
+                          progress,
+                          unlockedAt: null,
+                        })
+                      }
+                      progress={progress}
+                      styles={styles}
+                    />
+                  ))}
+                </View>
+              ) : null}
               <View style={styles.badgeControls}>
                 {["asc", "desc"].map((direction) => {
                   const selected = badgeSortDirection === direction;
@@ -298,7 +355,15 @@ export default function RankScreen() {
               <View style={styles.badgeGrid}>
                 {badgePreview.map((badge) => {
                   const earned = earnedBadgeIds.has(badge.id);
-                  const progress = getBadgeProgress(badge, progressionSnapshot);
+                  const progress = getAchievementProgress(
+                    badge,
+                    progressionSnapshot,
+                    earned
+                  );
+                  const unlockedAt = getAchievementUnlockDate(
+                    badge.id,
+                    gamification?.recentAchievements
+                  );
 
                   return (
                     <BadgeTile
@@ -306,10 +371,11 @@ export default function RankScreen() {
                       earned={earned}
                       key={badge.id}
                       onPress={() =>
-                        setSelectedBadge({ badge, earned, progress })
+                        setSelectedBadge({ badge, earned, progress, unlockedAt })
                       }
                       progress={progress}
                       styles={styles}
+                      unlockedAt={unlockedAt}
                     />
                   );
                 })}
@@ -435,13 +501,93 @@ function formatCompactNumber(value) {
   }).format(safeValue);
 }
 
-function BadgeTile({ badge, earned, onPress, progress, styles }) {
-  const accent = getBadgeTierAccent(badge.tier);
+function AchievementSummary({ summary, styles }) {
+  const closestBadge = summary.closest?.badge;
+
+  return (
+    <View style={styles.achievementSummary}>
+      <SummaryMetric
+        label="Unlocked"
+        styles={styles}
+        value={`${summary.earnedCount}/${summary.totalCount}`}
+      />
+      <SummaryMetric
+        label="Complete"
+        styles={styles}
+        value={`${summary.percent}%`}
+      />
+      <SummaryMetric
+        label="Next"
+        styles={styles}
+        value={closestBadge ? closestBadge.label : "All done"}
+      />
+    </View>
+  );
+}
+
+function SummaryMetric({ label, styles, value }) {
+  return (
+    <View style={styles.summaryMetric}>
+      <AppText numberOfLines={2} style={styles.summaryValue}>
+        {value}
+      </AppText>
+      <AppText style={styles.summaryLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function ClosestBadgeRow({ badge, onPress, progress, styles }) {
+  const meta = getAchievementIconMeta(badge.id);
 
   return (
     <Pressable
-      accessibilityLabel={`View ${badge.label} badge details, ${earned ? "earned" : "locked"}`}
+      accessibilityLabel={`${badge.label}, ${getAchievementProgressLabel(progress)} toward unlock`}
       accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.closestRow,
+        pressed && styles.pressed,
+      ]}
+    >
+      <View
+        style={[
+          styles.closestMark,
+          { borderColor: meta.accent },
+        ]}
+      >
+        <AppIcon
+          color={meta.accent}
+          name={meta.iconName}
+          size={20}
+          strokeWidth={2}
+        />
+      </View>
+      <View style={styles.closestText}>
+        <AppText numberOfLines={1} style={styles.closestName}>
+          {badge.label}
+        </AppText>
+        <AppText style={styles.closestMeta}>
+          {progress?.remaining === 1
+            ? "1 step remaining"
+            : `${progress?.remaining ?? 0} steps remaining`}
+        </AppText>
+      </View>
+      <AppText style={styles.closestProgress}>
+        {getAchievementProgressLabel(progress)}
+      </AppText>
+    </Pressable>
+  );
+}
+
+function BadgeTile({ badge, earned, onPress, progress, styles, unlockedAt }) {
+  const accent = getBadgeTierAccent(badge.tier);
+  const progressLabel = getAchievementProgressLabel(progress, earned);
+
+  return (
+    <Pressable
+      accessibilityLabel={`View ${badge.label} achievement details, ${earned ? "unlocked" : `locked, ${progressLabel}`}`}
+      accessibilityRole="button"
+      accessibilityState={{ selected: earned }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.badgeTile,
@@ -460,7 +606,11 @@ function BadgeTile({ badge, earned, onPress, progress, styles }) {
           </AppText>
         </View>
         <AppText numberOfLines={2} style={styles.badgeMeta}>
-          {earned ? badge.tier : getProgressLabel(progress)}
+          {earned
+            ? unlockedAt
+              ? `Unlocked ${formatAchievementDate(unlockedAt)}`
+              : "Unlocked"
+            : progressLabel}
         </AppText>
         {!earned && progress?.max ? (
           <View style={styles.badgeMiniTrack}>
@@ -491,7 +641,7 @@ function AchievementRow({ achievement, colors, onPress, styles }) {
       <View style={styles.achievementMark}>
         <AppIcon
           color={colors.text}
-          name={getAchievementIconName(achievement.type)}
+          name={getRecentAchievementIconName(achievement.type)}
           size={22}
           strokeWidth={2}
         />
@@ -511,7 +661,15 @@ function AchievementRow({ achievement, colors, onPress, styles }) {
   );
 }
 
-function BadgeDetailModal({ badge, earned, onClose, progress, styles, visible }) {
+function BadgeDetailModal({
+  badge,
+  earned,
+  onClose,
+  progress,
+  styles,
+  unlockedAt,
+  visible,
+}) {
   if (!badge) {
     return null;
   }
@@ -531,25 +689,31 @@ function BadgeDetailModal({ badge, earned, onClose, progress, styles, visible })
           >
             <BadgeMedal badge={badge} earned={earned} large />
             <AppText style={styles.modalEyebrow}>
-              {earned ? "Badge earned" : "Locked badge"}
+              {earned ? "Achievement unlocked" : "Locked achievement"}
             </AppText>
             <AppText style={styles.modalTitle}>{badge.label}</AppText>
             <AppText style={styles.modalDescription}>{badge.description}</AppText>
             <View style={styles.modalMetaRow}>
               <AppText style={styles.modalMeta}>{badge.tier}</AppText>
               <AppText style={styles.modalMeta}>{badge.rarity}</AppText>
+              <AppText style={styles.modalMeta}>
+                {getAchievementProgressLabel(progress, earned)}
+              </AppText>
+              {earned && unlockedAt ? (
+                <AppText style={styles.modalMeta}>
+                  {formatAchievementDate(unlockedAt)}
+                </AppText>
+              ) : null}
             </View>
-            {!earned ? (
-              <View style={styles.requirementBox}>
-                <AppText style={styles.requirementLabel}>Requirement</AppText>
-                <AppText style={styles.requirementText}>{badge.description}</AppText>
-                {progress?.max ? (
-                  <AppText style={styles.requirementText}>
-                    Progress: {progress.value} / {progress.max}
-                  </AppText>
-                ) : null}
-              </View>
-            ) : null}
+            <View style={styles.requirementBox}>
+              <AppText style={styles.requirementLabel}>Requirement</AppText>
+              <AppText style={styles.requirementText}>{badge.description}</AppText>
+              {progress?.measurable ? (
+                <AppText style={styles.requirementText}>
+                  Current progress: {progress.value} / {progress.max}
+                </AppText>
+              ) : null}
+            </View>
             <Pressable
               accessibilityLabel="Close badge details"
               accessibilityRole="button"
@@ -589,7 +753,7 @@ function AchievementDetailModal({ achievement, colors, onClose, styles, visible 
             <View style={styles.achievementModalMark}>
               <AppIcon
                 color={colors.text}
-                name={getAchievementIconName(achievement.type)}
+                name={getRecentAchievementIconName(achievement.type)}
                 size={28}
                 strokeWidth={2.2}
               />
@@ -627,123 +791,6 @@ function AchievementDetailModal({ achievement, colors, onClose, styles, visible 
       </View>
     </Modal>
   );
-}
-
-function getProgressionSnapshot({ gamification, habits, level }) {
-  const completionCount = habits.reduce(
-    (count, habit) => count + (habit.completedDates || []).length,
-    0
-  );
-  const longestStreak = habits.reduce(
-    (longest, habit) =>
-      Math.max(
-        longest,
-        getCurrentStreak(habit.completedDates, habit),
-        getBestStreak(habit.completedDates, habit)
-      ),
-    0
-  );
-  const highestDailyCompletionCount = getHighestDailyCompletionCount(habits);
-
-  return {
-    completionCount,
-    hasCompletion: completionCount > 0,
-    hasHabit: habits.length > 0,
-    highestDailyCompletionCount,
-    level,
-    longestStreak,
-    perfectDays: gamification?.perfectDayBonusDates?.length || 0,
-  };
-}
-
-function getBadgeProgress(badge, snapshot) {
-  const thresholds = {
-    "three-day-streak": ["longestStreak", 3],
-    "seven-day-streak": ["longestStreak", 7],
-    "fourteen-day-streak": ["longestStreak", 14],
-    "thirty-day-streak": ["longestStreak", 30],
-    "sixty-day-streak": ["longestStreak", 60],
-    "one-hundred-day-streak": ["longestStreak", 100],
-    "three-habits-one-day": ["highestDailyCompletionCount", 3],
-    "five-habits-one-day": ["highestDailyCompletionCount", 5],
-    "ten-habits-one-day": ["highestDailyCompletionCount", 10],
-    "ten-total-completions": ["completionCount", 10],
-    "fifty-total-completions": ["completionCount", 50],
-    "one-hundred-total-completions": ["completionCount", 100],
-    "two-fifty-total-completions": ["completionCount", 250],
-    "five-hundred-total-completions": ["completionCount", 500],
-    "reach-level-five": ["level", 5],
-    "reach-level-ten": ["level", 10],
-    "reach-level-twenty-five": ["level", 25],
-    "reach-level-forty": ["level", 40],
-    "unlock-silver": ["level", 5],
-    "unlock-gold": ["level", 10],
-    "unlock-platinum": ["level", 15],
-    "unlock-diamond": ["level", 25],
-    "unlock-master": ["level", 40],
-  };
-  const mapped = thresholds[badge.id];
-
-  if (badge.id === "first-habit-created") {
-    return { max: 1, value: snapshot.hasHabit ? 1 : 0 };
-  }
-
-  if (badge.id === "first-completion") {
-    return { max: 1, value: snapshot.hasCompletion ? 1 : 0 };
-  }
-
-  if (badge.id === "first-perfect-day") {
-    return { max: 1, value: Math.min(1, snapshot.perfectDays) };
-  }
-
-  if (!mapped) {
-    return null;
-  }
-
-  return {
-    max: mapped[1],
-    value: Math.min(snapshot[mapped[0]] || 0, mapped[1]),
-  };
-}
-
-function getProgressLabel(progress) {
-  if (!progress?.max) {
-    return "Locked";
-  }
-
-  return `${progress.value} / ${progress.max}`;
-}
-
-function getHighestDailyCompletionCount(habits) {
-  const counts = {};
-
-  habits.forEach((habit) => {
-    (habit.completedDates || []).forEach((dateKey) => {
-      counts[dateKey] = (counts[dateKey] || 0) + 1;
-    });
-  });
-
-  return Math.max(0, ...Object.values(counts));
-}
-
-function getAchievementIconName(type) {
-  if (type === "badge") {
-    return "trophy";
-  }
-
-  if (type === "perfect-day") {
-    return "star";
-  }
-
-  if (type === "theme") {
-    return "rank";
-  }
-
-  if (type === "level") {
-    return "progress";
-  }
-
-  return "analytics";
 }
 
 function formatAchievementType(type) {
@@ -978,6 +1025,92 @@ function createStyles(colors, { isSmallScreen }) {
       backgroundColor: colors.text,
       borderRadius: v2Radius.pill,
       height: "100%",
+    },
+    achievementSummary: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+    },
+    summaryMetric: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      flexBasis: isSmallScreen ? "100%" : 0,
+      flexGrow: 1,
+      gap: 4,
+      minHeight: 74,
+      padding: v2Spacing.md,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.07,
+    },
+    summaryValue: {
+      color: colors.text,
+      fontSize: v2Typography.cardTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.cardTitle.lineHeight,
+    },
+    summaryLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      textTransform: "uppercase",
+    },
+    closestBlock: {
+      gap: v2Spacing.sm,
+    },
+    closestTitle: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    closestRow: {
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      minHeight: 66,
+      paddingHorizontal: v2Spacing.md,
+      paddingVertical: v2Spacing.sm,
+      ...v2Shadows.low,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.07,
+    },
+    closestMark: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      height: 38,
+      justifyContent: "center",
+      width: 38,
+    },
+    closestText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    closestName: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    closestMeta: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: 2,
+    },
+    closestProgress: {
+      color: colors.primary,
+      flexShrink: 0,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      maxWidth: 74,
+      textAlign: "right",
     },
     badgeControls: {
       flexDirection: "row",
