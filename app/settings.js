@@ -27,6 +27,10 @@ import {
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import {
+  resetAppPreferences,
+  resetOnboarding,
+} from "../storage/appPreferences";
+import {
   getGamification,
   getGamificationLevelInfo,
 } from "../storage/gamificationStorage";
@@ -158,6 +162,46 @@ export default function SettingsScreen() {
     );
   }
 
+  function confirmResetOnboarding() {
+    Alert.alert(
+      "Reset onboarding?",
+      "Momentum will show onboarding again the next time the app starts.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset onboarding",
+          style: "destructive",
+          onPress: () =>
+            runDataAction(
+              resetOnboarding,
+              "Onboarding reset.",
+              "Could not reset onboarding. Please try again."
+            ),
+        },
+      ]
+    );
+  }
+
+  function confirmResetPreferences() {
+    Alert.alert(
+      "Reset preferences?",
+      "This restores app preferences to their defaults. Habits and progress stay intact.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset preferences",
+          style: "destructive",
+          onPress: () =>
+            runDataAction(
+              resetAppPreferences,
+              "Preferences reset.",
+              "Could not reset preferences. Please try again."
+            ),
+        },
+      ]
+    );
+  }
+
   async function handleExportData() {
     if (actionLoadingRef.current) {
       return;
@@ -231,35 +275,47 @@ export default function SettingsScreen() {
     >
       <SettingsMessage>{message}</SettingsMessage>
 
-      <SettingsSection title="Habits">
-        <SettingsRow
-          description="Sorting, swipe, and reorder behavior."
-          onPress={() => router.push("/habit-preferences")}
-          title="Habit preferences"
-        />
-        <SettingsRow
-          description="Drag habits into your preferred Home order."
-          onPress={() => router.push("/reorder-habits")}
-          title="Reorder habits"
-        />
-      </SettingsSection>
-
-      <SettingsSection title="Experience">
+      <SettingsSection title="General">
         <SettingsRow
           description="Choose Light or Dark mode."
+          icon="settings"
           onPress={() => router.push("/appearance")}
           title="Appearance"
           value={formatThemeLabel(resolvedTheme)}
         />
         <SettingsRow
-          description="Home progress, reward popups, and haptics."
-          onPress={() => router.push("/gamification-preferences")}
-          title="Gamification"
-        />
-        <SettingsRow
-          description="Daily reminder preference."
+          description="Reminder access and daily reminder preference."
+          icon="flame"
           onPress={() => router.push("/notification-preferences")}
           title="Notifications"
+        />
+        <SettingsRow
+          description="Sorting, swipe, and reorder behavior."
+          icon="settings"
+          onPress={() => router.push("/habit-preferences")}
+          title="Habit preferences"
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Progress">
+        <SettingsRow
+          description="Levels, rank, achievements, and badges."
+          icon="rank"
+          onPress={() => router.push("/rank")}
+          title="Rank and achievements"
+          value={`Level ${level}`}
+        />
+        <SettingsRow
+          description="Completion trends and habit insights."
+          icon="analytics"
+          onPress={() => router.push("/analytics")}
+          title="Analytics"
+        />
+        <SettingsRow
+          description="Home progress, reward popups, and haptics."
+          icon="star"
+          onPress={() => router.push("/gamification-preferences")}
+          title="Reward preferences"
         />
       </SettingsSection>
 
@@ -271,6 +327,7 @@ export default function SettingsScreen() {
           <>
             <SettingsRow
               disabled={actionLoading}
+              icon="plus"
               onPress={confirmLoadDemoData}
               title="Load demo data"
               value={actionLoading ? "Working" : undefined}
@@ -278,6 +335,7 @@ export default function SettingsScreen() {
             <SettingsRow
               description="Loads a high-progress sample profile."
               disabled={actionLoading}
+              icon="rank"
               onPress={confirmLoadMasterDemoData}
               title="Load Master demo"
             />
@@ -285,42 +343,70 @@ export default function SettingsScreen() {
         ) : null}
         <SettingsRow
           disabled={actionLoading}
+          icon="analytics"
           onPress={handleExportData}
           title="Export JSON"
         />
         <SettingsRow
           disabled={actionLoading}
+          icon="plus"
           onPress={() => setModalMode("import")}
           title="Import JSON"
         />
-        <SettingsRow
-          destructive
-          disabled={actionLoading}
-          onPress={confirmResetAllData}
-          showChevron={false}
-          title="Reset all data"
-        />
       </SettingsSection>
 
-      <SettingsSection title="Legal">
+      <SettingsSection title="Application">
         <SettingsRow
+          description="Personal habit tracking only. No account or backend."
+          icon="home"
+          showChevron={false}
+          title="About Momentum"
+          value={`v${packageJson.version}`}
+        />
+        <SettingsRow
+          icon="settings"
           onPress={() => router.push("/privacy")}
           title="Privacy Policy"
         />
-        <SettingsRow onPress={() => router.push("/terms")} title="Terms of Use" />
         <SettingsRow
+          icon="settings"
+          onPress={() => router.push("/terms")}
+          title="Terms of Use"
+        />
+        <SettingsRow
+          icon="settings"
           onPress={() => router.push("/disclaimer")}
           title="Disclaimer"
         />
       </SettingsSection>
 
-      <SettingsSection title="About">
-        <SettingsRow showChevron={false} title="App version" value={packageJson.version} />
+      <SettingsSection
+        footer="These actions are local to this device and require confirmation."
+        title="Danger Zone"
+      >
         <SettingsRow
-          description="Personal habit tracking only. No account or backend."
+          destructive
+          disabled={actionLoading}
+          icon="undo"
+          onPress={confirmResetAllData}
           showChevron={false}
-          title="App info"
-          value={`Level ${level}`}
+          title="Reset all data"
+        />
+        <SettingsRow
+          destructive
+          disabled={actionLoading}
+          icon="undo"
+          onPress={confirmResetOnboarding}
+          showChevron={false}
+          title="Reset onboarding"
+        />
+        <SettingsRow
+          destructive
+          disabled={actionLoading}
+          icon="undo"
+          onPress={confirmResetPreferences}
+          showChevron={false}
+          title="Reset preferences"
         />
       </SettingsSection>
 

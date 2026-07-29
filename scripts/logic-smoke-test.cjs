@@ -1224,6 +1224,8 @@ test("onboarding and first swipe hint persistence are safe", async () => {
   assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), false);
   await appPreferencesStorage.completeOnboarding();
   assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), true);
+  await appPreferencesStorage.resetOnboarding();
+  assert.strictEqual(await appPreferencesStorage.hasCompletedOnboarding(), false);
 
   assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
   await appPreferencesStorage.dismissFirstSwipeHint();
@@ -1240,6 +1242,27 @@ test("onboarding and first swipe hint persistence are safe", async () => {
   assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
   assert.strictEqual(await appPreferencesStorage.getReturnGuidanceDismissedDate(), "");
   asyncStorageFailures.get = false;
+});
+
+test("app preferences reset to defaults while preserving legacy compatibility", async () => {
+  resetStorage();
+  await appPreferencesStorage.saveAppPreferences({
+    ...appPreferencesStorage.defaultAppPreferences,
+    enableDailyReminders: false,
+    moveCompletedToBottom: true,
+    showProgressCard: false,
+  });
+
+  assert.strictEqual(
+    JSON.parse(asyncStorageStore["momentum:app-preferences"]).showProgressCard,
+    false
+  );
+  assert.strictEqual(asyncStorageStore["momentum:move-completed-to-bottom"], "true");
+
+  const resetPreferences = await appPreferencesStorage.resetAppPreferences();
+
+  assertJsonEqual(resetPreferences, appPreferencesStorage.defaultAppPreferences);
+  assert.strictEqual(asyncStorageStore["momentum:move-completed-to-bottom"], "false");
 });
 
 test("first swipe hint eligibility is action-based and one-time", () => {

@@ -42,6 +42,15 @@ export async function completeOnboarding() {
   }
 }
 
+export async function resetOnboarding() {
+  try {
+    await AsyncStorage.removeItem(ONBOARDING_COMPLETE_KEY);
+  } catch (error) {
+    logStorageError("Could not reset onboarding state.", error);
+    throw error;
+  }
+}
+
 export async function getLastShownLevel() {
   try {
     const value = await AsyncStorage.getItem(LAST_SHOWN_LEVEL_KEY);
@@ -189,6 +198,10 @@ export async function saveAppPreferences(preferences) {
     logStorageError("Could not save app preferences.", error);
     throw error;
   }
+}
+
+export async function resetAppPreferences() {
+  return saveAppPreferences(defaultAppPreferences);
 }
 
 export async function setAppPreference(key, value) {

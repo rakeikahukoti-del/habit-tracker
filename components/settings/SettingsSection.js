@@ -133,6 +133,7 @@ export function SettingsRow({
   description,
   disabled = false,
   destructive = false,
+  icon,
   onPress,
   right,
   showChevron = Boolean(onPress),
@@ -156,6 +157,16 @@ export function SettingsRow({
         pressed && onPress && styles.pressed,
       ]}
     >
+      {icon ? (
+        <View style={styles.rowIcon} importantForAccessibility="no">
+          <AppIcon
+            color={destructive ? colors.danger : colors.primary}
+            name={icon}
+            size={18}
+            strokeWidth={2}
+          />
+        </View>
+      ) : null}
       <View style={styles.rowText}>
         <AppText
           numberOfLines={2}
@@ -403,6 +414,17 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     rowText: {
       flex: 1,
       minWidth: 0,
+    },
+    rowIcon: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexShrink: 0,
+      height: 34,
+      justifyContent: "center",
+      width: 34,
     },
     trailingControl: {
       flexShrink: 0,
