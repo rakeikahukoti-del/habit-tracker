@@ -8,6 +8,7 @@ import AppText from "./AppText";
 import PressableScale from "./PressableScale";
 
 export default function IconButton({
+  accessibilityState,
   children,
   color,
   disabled = false,
@@ -23,6 +24,7 @@ export default function IconButton({
     <PressableScale
       {...props}
       accessibilityRole="button"
+      accessibilityState={{ ...accessibilityState, disabled }}
       disabled={disabled}
       hitSlop={8}
       style={[

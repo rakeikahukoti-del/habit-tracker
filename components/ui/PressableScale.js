@@ -3,6 +3,7 @@ import { Animated, Pressable } from "react-native";
 import { v2Motion } from "../../src/design";
 
 export default function PressableScale({
+  accessibilityState,
   children,
   disabled = false,
   onPressIn,
@@ -33,6 +34,10 @@ export default function PressableScale({
   return (
     <Pressable
       {...props}
+      accessibilityState={{
+        ...accessibilityState,
+        disabled: Boolean(disabled || accessibilityState?.disabled),
+      }}
       disabled={disabled}
       onPressIn={(event) => {
         if (!disabled) {
@@ -42,7 +47,10 @@ export default function PressableScale({
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        animate(1);
+        if (!disabled) {
+          animate(1);
+        }
+
         onPressOut?.(event);
       }}
     >

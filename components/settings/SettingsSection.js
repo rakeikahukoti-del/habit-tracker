@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -36,7 +37,10 @@ export function SettingsScreen({
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -74,7 +78,10 @@ export function SettingsHeader({
   title,
 }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen: false, isTablet: false }),
+    [colors]
+  );
 
   return (
     <View style={styles.header}>
@@ -96,7 +103,10 @@ export function SettingsHeader({
 
 export function SettingsMessage({ tone = "info", children }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen: false, isTablet: false }),
+    [colors]
+  );
 
   if (!children) {
     return null;
@@ -117,7 +127,10 @@ export function SettingsMessage({ tone = "info", children }) {
 
 export function SettingsSection({ children, footer, title }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen: false, isTablet: false }),
+    [colors]
+  );
 
   return (
     <View style={styles.section}>
@@ -141,7 +154,10 @@ export function SettingsRow({
   value,
 }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen: false, isTablet: false }),
+    [colors]
+  );
 
   return (
     <Pressable
@@ -252,7 +268,10 @@ export function ThemePreviewRow({
   selected = false,
 }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors, { isSmallScreen: false, isTablet: false });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen: false, isTablet: false }),
+    [colors]
+  );
 
   return (
     <Pressable

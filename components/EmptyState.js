@@ -1,7 +1,7 @@
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
-import { AppIcon, AppText, PressableScale } from "./ui";
+import { AppIcon, AppText, PrimaryButton } from "./ui";
 import {
   v2FontWeight,
   v2Radius,
@@ -48,14 +48,13 @@ export default function EmptyState() {
         />
       </View>
       <Link href="/add" asChild>
-        <PressableScale
+        <PrimaryButton
           accessibilityLabel="Create a new habit"
-          accessibilityRole="button"
           hitSlop={8}
           style={styles.button}
         >
-          <AppText style={styles.buttonText}>Create first habit</AppText>
-        </PressableScale>
+          Create first habit
+        </PrimaryButton>
       </Link>
     </View>
   );
@@ -138,18 +137,7 @@ function createStyles(colors, isSmallScreen) {
       lineHeight: v2Typography.label.lineHeight,
     },
     button: {
-      alignItems: "center",
-      backgroundColor: colors.primary,
-      borderRadius: v2Radius.large,
-      justifyContent: "center",
-      minHeight: 48,
       paddingHorizontal: v2Spacing.xl,
-      paddingVertical: v2Spacing.md,
-    },
-    buttonText: {
-      color: colors.inverseText,
-      fontSize: v2Typography.button.fontSize,
-      fontWeight: v2FontWeight.bold,
     },
   });
 }

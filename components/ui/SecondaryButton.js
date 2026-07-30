@@ -9,6 +9,7 @@ import AppText from "./AppText";
 import PressableScale from "./PressableScale";
 
 export default function SecondaryButton({
+  accessibilityState,
   children,
   disabled = false,
   style,
@@ -21,6 +22,7 @@ export default function SecondaryButton({
     <PressableScale
       {...props}
       accessibilityRole="button"
+      accessibilityState={{ ...accessibilityState, disabled }}
       disabled={disabled}
       style={[
         styles.button,
