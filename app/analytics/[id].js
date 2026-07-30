@@ -28,6 +28,7 @@ import {
   getTodayKey,
   toDateKey,
 } from "../../utils/habitStats";
+import { getHabitStrength } from "../../utils/insightsDashboard";
 import { getHabitMilestones } from "../../utils/personalRecords";
 import { getHabitWeeklyPattern } from "../../utils/weeklyReview";
 
@@ -106,6 +107,10 @@ export default function IndividualAnalyticsScreen() {
     () => (habit ? getHabitMilestones(habit) : null),
     [habit]
   );
+  const habitStrength = useMemo(
+    () => (habit ? getHabitStrength(habit) : null),
+    [habit]
+  );
 
   return (
     <AnalyticsScaffold maxWidth={v2Layout.formMaxWidth}>
@@ -174,6 +179,10 @@ export default function IndividualAnalyticsScreen() {
                 styles={styles}
               />
             )}
+
+            {habitStrength ? (
+              <HabitConsistencyCard strength={habitStrength} styles={styles} />
+            ) : null}
 
             <View style={styles.metricList}>
               <MetricRow
@@ -283,6 +292,44 @@ function BuildingStat({ label, styles, value }) {
     <View style={styles.buildingStat}>
       <AppText style={styles.buildingStatValue}>{value}</AppText>
       <AppText style={styles.buildingStatLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function HabitConsistencyCard({ strength, styles }) {
+  return (
+    <View
+      accessibilityLabel={`Habit consistency. Last 30 days ${strength.completionRate} percent. Last 7 days ${strength.weeklyRate} percent. Trend ${getHabitTrendLabel(strength.trend)}.`}
+      accessible
+      style={styles.consistencyCard}
+    >
+      <View style={styles.consistencyHeader}>
+        <View style={styles.consistencyMain}>
+          <AppText style={styles.consistencyLabel}>Consistency</AppText>
+          <AppText style={styles.consistencyValue}>
+            {strength.completionRate}%
+          </AppText>
+        </View>
+        <AppText style={styles.consistencyPill}>
+          {getHabitTrendLabel(strength.trend)}
+        </AppText>
+      </View>
+      <View style={styles.consistencyRows}>
+        <HabitWeekRow
+          label="Last 7 days"
+          styles={styles}
+          value={`${strength.weeklyRate}%`}
+        />
+        <HabitWeekRow
+          label="Ranking data"
+          styles={styles}
+          value={
+            strength.hasSufficientData
+              ? `${strength.possibleCount} scheduled days`
+              : "Still building"
+          }
+        />
+      </View>
     </View>
   );
 }
@@ -486,6 +533,22 @@ function getHabitFocusGuidance(guidance, weeklyPattern) {
   return weeklyPattern.nextScheduled.label;
 }
 
+function getHabitTrendLabel(trend) {
+  if (trend?.direction === "improving") {
+    return "Improving";
+  }
+
+  if (trend?.direction === "declining") {
+    return "Declining";
+  }
+
+  if (trend?.direction === "insufficient") {
+    return "Building";
+  }
+
+  return "Stable";
+}
+
 function getLastThirtyDays(habit) {
   const completedSet = new Set(habit.completedDates || []);
   const today = startOfDay(new Date());
@@ -599,6 +662,53 @@ function createStyles(colors, { isSmallScreen }) {
       borderWidth: 1,
       marginBottom: v2Spacing.xl,
       paddingHorizontal: v2Spacing.lg,
+    },
+    consistencyCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      marginBottom: v2Spacing.xl,
+      padding: v2Spacing.lg,
+    },
+    consistencyHeader: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      justifyContent: "space-between",
+    },
+    consistencyMain: {
+      flex: 1,
+      minWidth: 0,
+    },
+    consistencyLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    consistencyValue: {
+      color: colors.text,
+      fontSize: isSmallScreen ? 28 : 32,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: isSmallScreen ? 34 : 38,
+      marginTop: 2,
+    },
+    consistencyPill: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      color: colors.text,
+      flexShrink: 0,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      overflow: "hidden",
+      paddingHorizontal: v2Spacing.md,
+      paddingVertical: 7,
+    },
+    consistencyRows: {
+      gap: v2Spacing.sm,
+      marginTop: v2Spacing.md,
     },
     buildingCard: {
       backgroundColor: colors.card,

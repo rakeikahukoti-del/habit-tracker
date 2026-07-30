@@ -10,14 +10,21 @@ const PERFECT_DAY_XP = 25;
 const HABIT_MILESTONES = [10, 25, 50, 100, 250, 365];
 
 export function getPersonalRecords(habits, gamification = null, now = new Date()) {
+  return getAnalyticsAggregates(habits, gamification, now).personalRecords;
+}
+
+export function getLifetimeStats(habits, gamification = null, now = new Date()) {
+  return getLifetimeStatsFromContext(buildAnalyticsContext(habits, now), gamification);
+}
+
+export function getAnalyticsAggregates(habits, gamification = null, now = new Date()) {
   const context = buildAnalyticsContext(habits, now);
   const lifetime = getLifetimeStatsFromContext(context, gamification);
   const dailyRecords = getDailyRecords(context);
   const weeklyRecords = getWeeklyRecords(context);
   const monthlyRecords = getMonthlyRecords(context);
   const habitRecords = getHabitRecords(context);
-
-  return [
+  const personalRecords = [
     dailyRecords.longestOverallStreak,
     dailyRecords.mostHabitsCompletedInOneDay,
     dailyRecords.mostConsecutivePerfectDays,
@@ -36,10 +43,16 @@ export function getPersonalRecords(habits, gamification = null, now = new Date()
       achievedAt: lifetime.lastCompletionDate,
     },
   ].filter((record) => record && record.rawValue > 0);
-}
 
-export function getLifetimeStats(habits, gamification = null, now = new Date()) {
-  return getLifetimeStatsFromContext(buildAnalyticsContext(habits, now), gamification);
+  return {
+    daySummaries: context.daySummaries,
+    habitProfiles: context.habitProfiles,
+    lifetime,
+    monthlySummaries: context.monthlySummaries,
+    personalRecords,
+    todayKey: context.todayKey,
+    weeklySummaries: context.weeklySummaries,
+  };
 }
 
 export function getHabitMilestones(habit, now = new Date()) {

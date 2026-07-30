@@ -299,6 +299,17 @@ const personalRecords = loadModule("utils/personalRecords.js", (moduleName) => {
 
   return require(moduleName);
 });
+const insightsDashboard = loadModule("utils/insightsDashboard.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  if (moduleName === "./personalRecords") {
+    return personalRecords;
+  }
+
+  return require(moduleName);
+});
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitTemplates = loadModule("utils/habitTemplates.js", (moduleName) => {
   if (moduleName === "../constants/habitOptions") {
@@ -2368,6 +2379,198 @@ test("habit milestones are informational and based on actual completions", () =>
   assertJsonEqual(milestones.completedMilestones, [10, 25]);
   assert.strictEqual(milestones.nextMilestone, 50);
   assert.strictEqual(milestones.progressToNext, 52);
+});
+
+test("insights consistency is schedule-aware and local-date safe", () => {
+  const habits = [
+    {
+      id: "weekday",
+      name: "Weekday",
+      completedDates: ["2026-07-13", "2026-07-14"],
+      createdAt: "2026-07-13",
+      frequency: "Weekdays",
+    },
+    {
+      id: "custom",
+      name: "Custom",
+      completedDates: ["2026-07-13"],
+      createdAt: "2026-07-13",
+      customDays: ["Mon"],
+      frequency: "Custom",
+    },
+  ];
+  const score = insightsDashboard.getConsistencyScore(habits, {
+    endDate: new Date(2026, 6, 19),
+    startDate: new Date(2026, 6, 13),
+  });
+
+  assert.strictEqual(score.completedCount, 3);
+  assert.strictEqual(score.possibleCount, 6);
+  assert.strictEqual(score.rate, 50);
+});
+
+test("insights trends ignore small changes and require enough history", () => {
+  const improvingHabit = {
+    id: "improving",
+    name: "Improving",
+    completedDates: [
+      "2026-06-30",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+    ],
+    createdAt: "2026-06-30",
+    frequency: "Daily",
+  };
+  const stableHabit = {
+    id: "stable",
+    name: "Stable",
+    completedDates: [
+      "2026-06-30",
+      "2026-07-01",
+      "2026-07-06",
+      "2026-07-07",
+    ],
+    createdAt: "2026-06-30",
+    frequency: "Daily",
+  };
+  const sparseHabit = {
+    id: "sparse",
+    name: "Sparse",
+    completedDates: ["2026-07-12"],
+    createdAt: "2026-07-12",
+    frequency: "Daily",
+  };
+
+  assert.strictEqual(
+    insightsDashboard.getTrendComparison([improvingHabit], {
+      currentDays: 7,
+      now: new Date(2026, 6, 12),
+      previousDays: 7,
+    }).direction,
+    "improving"
+  );
+  assert.strictEqual(
+    insightsDashboard.getTrendComparison([stableHabit], {
+      currentDays: 7,
+      now: new Date(2026, 6, 12),
+      previousDays: 7,
+    }).direction,
+    "stable"
+  );
+  assert.strictEqual(
+    insightsDashboard.getTrendComparison([sparseHabit], {
+      currentDays: 7,
+      now: new Date(2026, 6, 12),
+      previousDays: 7,
+    }).available,
+    false
+  );
+});
+
+test("insights habit rankings are deterministic and explainable", () => {
+  const habits = [
+    {
+      id: "b",
+      name: "Beta",
+      completedDates: ["2026-07-06", "2026-07-07", "2026-07-08"],
+      createdAt: "2026-07-06",
+      frequency: "Daily",
+    },
+    {
+      id: "a",
+      name: "Alpha",
+      completedDates: [
+        "2026-07-06",
+        "2026-07-07",
+        "2026-07-08",
+        "2026-07-09",
+        "2026-07-10",
+      ],
+      createdAt: "2026-07-06",
+      frequency: "Daily",
+    },
+  ];
+  const rankings = insightsDashboard.getHabitRankings(
+    habits,
+    new Date(2026, 6, 10)
+  );
+
+  assert.strictEqual(rankings.strongest[0].name, "Alpha");
+  assert.strictEqual(rankings.needsAttention[0].name, "Beta");
+  assert.strictEqual(rankings.all[0].hasSufficientData, true);
+});
+
+test("insights weekly and monthly comparisons respect period boundaries", () => {
+  const habits = [
+    {
+      id: "habit",
+      name: "Habit",
+      completedDates: [
+        "2026-06-01",
+        "2026-06-02",
+        "2026-06-03",
+        "2026-07-01",
+        "2026-07-02",
+        "2026-07-03",
+        "2026-07-06",
+        "2026-07-07",
+      ],
+      createdAt: "2026-06-01",
+      frequency: "Daily",
+    },
+  ];
+  const weekly = insightsDashboard.getWeeklyComparison(
+    habits,
+    new Date(2026, 6, 8)
+  );
+  const monthly = insightsDashboard.getMonthlyComparison(
+    habits,
+    new Date(2026, 6, 8)
+  );
+
+  assert.strictEqual(weekly.current.possibleCount, 3);
+  assert.strictEqual(weekly.previous.possibleCount, 3);
+  assert.strictEqual(monthly.current.possibleCount, 8);
+  assert.strictEqual(monthly.previous.possibleCount, 8);
+});
+
+test("insights dashboard handles empty, imported, deleted, and leap-year data", () => {
+  const emptyDashboard = insightsDashboard.getInsightsDashboard(
+    [],
+    null,
+    new Date(2026, 6, 10)
+  );
+  const dashboard = insightsDashboard.getInsightsDashboard(
+    [
+      {
+        id: "leap",
+        name: "Leap",
+        completedDates: [
+          "2024-02-28",
+          "2024-02-29",
+          "bad",
+          "2024-02-29",
+          "2099-01-01",
+        ],
+        createdAt: "2024-02-28",
+        frequency: "Daily",
+      },
+      null,
+    ],
+    { xp: 20 },
+    new Date(2024, 1, 29)
+  );
+
+  assertJsonEqual(emptyDashboard.dashboardSections, ["overview", "empty-state"]);
+  assert.strictEqual(dashboard.consistency.overall.completedCount, 2);
+  assert.strictEqual(dashboard.consistency.overall.possibleCount, 2);
+  assert.strictEqual(dashboard.readiness.state, "building");
+  assert.ok(dashboard.insightCards.length > 0);
 });
 
 test("daily plan normalization resets stale, duplicate, missing, and unscheduled habits", () => {
