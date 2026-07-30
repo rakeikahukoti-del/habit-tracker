@@ -27,6 +27,11 @@ import {
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import {
+  exportAppData,
+  importAppData,
+  validateBackup,
+} from "../storage/appBackup";
+import {
   resetAppPreferences,
   resetOnboarding,
 } from "../storage/appPreferences";
@@ -35,8 +40,6 @@ import {
   getGamificationLevelInfo,
 } from "../storage/gamificationStorage";
 import {
-  exportHabitsBackup,
-  importHabitsBackup,
   resetAllHabits,
   seedDemoHabits,
   seedMasterDemoHabits,
@@ -53,6 +56,10 @@ export default function SettingsScreen() {
   const [modalMode, setModalMode] = useState(null);
   const [message, setMessage] = useState("");
   const actionLoadingRef = useRef(false);
+  const importValidation = useMemo(
+    () => (importText.trim() ? validateBackup(importText) : null),
+    [importText]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -212,12 +219,13 @@ export default function SettingsScreen() {
 
     try {
       setMessage("");
-      const json = await exportHabitsBackup();
+      const json = await exportAppData();
 
       setBackupText(json);
       setModalMode("export");
+      setMessage("Export ready. Store this backup somewhere safe.");
     } catch {
-      setMessage("Could not export habit data. Please try again.");
+      setMessage("Could not export app data. Please try again.");
     } finally {
       actionLoadingRef.current = false;
       setActionLoading(false);
@@ -227,10 +235,10 @@ export default function SettingsScreen() {
   function confirmImportData() {
     Alert.alert(
       "Import backup?",
-      "This replaces your current habits with the JSON backup.",
+      "This replaces your current Momentum data with the JSON backup.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Import", onPress: handleImportData },
+        { text: "Replace data", style: "destructive", onPress: handleImportData },
       ]
     );
   }
@@ -245,14 +253,16 @@ export default function SettingsScreen() {
 
     try {
       setMessage("");
-      const importedHabits = await importHabitsBackup(importText);
+      const result = await importAppData(importText);
 
       setModalMode(null);
       setImportText("");
       await refreshLevel();
-      setMessage(`Imported ${importedHabits.length} habits.`);
-    } catch {
-      setMessage("Could not import that JSON backup. Check the text and try again.");
+      setMessage(
+        `Imported ${result.habits.length} habit${result.habits.length === 1 ? "" : "s"}.`
+      );
+    } catch (error) {
+      setMessage(error?.message || "Could not import that JSON backup.");
     } finally {
       actionLoadingRef.current = false;
       setActionLoading(false);
@@ -345,13 +355,13 @@ export default function SettingsScreen() {
           disabled={actionLoading}
           icon="analytics"
           onPress={handleExportData}
-          title="Export JSON"
+          title="Export backup"
         />
         <SettingsRow
           disabled={actionLoading}
           icon="plus"
           onPress={() => setModalMode("import")}
-          title="Import JSON"
+          title="Import backup"
         />
       </SettingsSection>
 
@@ -426,9 +436,13 @@ export default function SettingsScreen() {
             </AppText>
             <AppText style={styles.modalHelper}>
               {modalMode === "export"
-                ? "Store this backup somewhere safe."
-                : "Paste a Momentum JSON backup to replace current habits."}
+                ? getExportHelper(backupText)
+                : "Paste a Momentum JSON backup to preview before replacing current data."}
             </AppText>
+
+            {modalMode === "import" ? (
+              <BackupPreview validation={importValidation} styles={styles} />
+            ) : null}
 
             <TextInput
               accessibilityHint={
@@ -465,18 +479,18 @@ export default function SettingsScreen() {
                 <Pressable
                   accessibilityLabel="Import JSON backup"
                   accessibilityRole="button"
-                  disabled={actionLoading || !importText.trim()}
+                  disabled={actionLoading || !importValidation?.ok}
                   onPress={confirmImportData}
                   style={({ pressed }) => [
                     styles.modalPrimaryButton,
-                    (actionLoading || !importText.trim()) && styles.disabledButton,
+                    (actionLoading || !importValidation?.ok) && styles.disabledButton,
                     pressed &&
                       !actionLoading &&
-                      importText.trim() &&
+                      importValidation?.ok &&
                       styles.buttonPressed,
                   ]}
                 >
-                  <AppText style={styles.modalPrimaryText}>Import</AppText>
+                  <AppText style={styles.modalPrimaryText}>Replace data</AppText>
                 </Pressable>
               ) : null}
             </View>
@@ -491,6 +505,67 @@ function formatThemeLabel(themeKey) {
   return String(themeKey || "dark")
     .charAt(0)
     .toUpperCase() + String(themeKey || "dark").slice(1);
+}
+
+function BackupPreview({ validation, styles }) {
+  if (!validation) {
+    return (
+      <View
+        accessibilityLabel="Import preview. Paste a backup to preview its contents."
+        accessible
+        style={styles.previewCard}
+      >
+        <AppText style={styles.previewTitle}>Import preview</AppText>
+        <AppText style={styles.previewText}>
+          Paste a backup to see what will be replaced.
+        </AppText>
+      </View>
+    );
+  }
+
+  const { metadata } = validation;
+
+  return (
+    <View
+      accessibilityLabel={`Import preview. ${validation.ok ? "Backup is valid." : "Backup has errors."} ${metadata.habitCount} habits. Exported ${metadata.exportedAt}.`}
+      accessible
+      style={styles.previewCard}
+    >
+      <AppText style={styles.previewTitle}>
+        {validation.ok ? "Backup ready" : "Backup needs attention"}
+      </AppText>
+      <AppText style={styles.previewText}>
+        {metadata.habitCount} habit{metadata.habitCount === 1 ? "" : "s"} -
+        Exported {metadata.exportedAt}
+      </AppText>
+      <AppText style={styles.previewText}>
+        Preferences {metadata.hasPreferences ? "included" : "missing"} -
+        Activity {metadata.hasActivityHistory ? "included" : "empty"}
+      </AppText>
+      {validation.errors.length > 0 ? (
+        <AppText style={styles.previewError}>{validation.errors[0]}</AppText>
+      ) : null}
+      {validation.warnings.length > 0 ? (
+        <AppText style={styles.previewWarning}>{validation.warnings[0]}</AppText>
+      ) : null}
+    </View>
+  );
+}
+
+function getExportHelper(backupText) {
+  if (!backupText) {
+    return "Store this backup somewhere safe.";
+  }
+
+  return `Store this backup somewhere safe. Size: ${formatByteSize(backupText.length)}.`;
+}
+
+function formatByteSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "0 KB";
+  }
+
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
 function createStyles(colors) {
@@ -534,6 +609,36 @@ function createStyles(colors) {
       minHeight: 220,
       padding: v2Spacing.md,
       textAlignVertical: "top",
+    },
+    previewCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      gap: v2Spacing.xs,
+      padding: v2Spacing.md,
+    },
+    previewTitle: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.label.lineHeight,
+    },
+    previewText: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      lineHeight: v2Typography.caption.lineHeight,
+    },
+    previewError: {
+      color: colors.danger,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.caption.lineHeight,
+    },
+    previewWarning: {
+      color: colors.warning || colors.primary,
+      fontSize: v2Typography.caption.fontSize,
+      lineHeight: v2Typography.caption.lineHeight,
     },
     modalActions: {
       flexDirection: "row",

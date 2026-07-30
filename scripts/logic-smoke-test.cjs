@@ -55,6 +55,22 @@ const asyncStorageMock = {
 
     return asyncStorageStore[key] ?? null;
   },
+  multiGet: async (keys) => {
+    if (asyncStorageFailures.get) {
+      throw new Error("get failed");
+    }
+
+    return keys.map((key) => [key, asyncStorageStore[key] ?? null]);
+  },
+  multiSet: async (entries) => {
+    if (asyncStorageFailures.set) {
+      throw new Error("set failed");
+    }
+
+    entries.forEach(([key, value]) => {
+      asyncStorageStore[key] = value;
+    });
+  },
   removeItem: async (key) => {
     delete asyncStorageStore[key];
   },
@@ -422,6 +438,49 @@ const dailyPlanStorage = loadModule("storage/dailyPlanStorage.js", (moduleName) 
 
   if (moduleName === "../utils/dailyPlanning") {
     return dailyPlanning;
+  }
+
+  if (moduleName === "./storageUtils") {
+    return storageUtils;
+  }
+
+  return require(moduleName);
+});
+const appBackup = loadModule("storage/appBackup.js", (moduleName) => {
+  if (moduleName === "@react-native-async-storage/async-storage") {
+    return { __esModule: true, default: asyncStorageMock };
+  }
+
+  if (moduleName === "../package.json") {
+    return { version: "1.0.0" };
+  }
+
+  if (moduleName === "../utils/dailyPlanning") {
+    return dailyPlanning;
+  }
+
+  if (moduleName === "../utils/gamification") {
+    return gamificationLogic;
+  }
+
+  if (moduleName === "../utils/themePreferences") {
+    return themePreferences;
+  }
+
+  if (moduleName === "./appPreferences") {
+    return appPreferencesStorage;
+  }
+
+  if (moduleName === "./dailyPlanStorage") {
+    return dailyPlanStorage;
+  }
+
+  if (moduleName === "./gamificationStorage") {
+    return gamificationStorage;
+  }
+
+  if (moduleName === "./habitsStorage") {
+    return habitsStorage;
   }
 
   if (moduleName === "./storageUtils") {
@@ -2990,6 +3049,216 @@ test("imported habits are normalized without corrupting existing storage", async
   assertJsonEqual(imported[0].customDays, ["Mon"]);
   assertJsonEqual(imported[0].completedDates, ["2026-02-01"]);
   assertJsonEqual(imported[1].customDays, ["Tue"]);
+});
+
+test("app backup export includes versioned local data metadata", async () => {
+  resetStorage();
+  await habitsStorage.importHabitsBackup(
+    JSON.stringify({
+      habits: [
+        {
+          id: "backup-habit",
+          name: "Backup Habit",
+          completedDates: ["2026-02-01"],
+          createdAt: "2026-02-01T00:00:00.000Z",
+          frequency: "Daily",
+        },
+      ],
+    })
+  );
+  await appPreferencesStorage.saveAppPreferences({
+    ...appPreferencesStorage.defaultAppPreferences,
+    enableDailyReminders: false,
+    showProgressCard: false,
+  });
+  await dailyPlanStorage.saveDailyPlan(
+    { date: habitStats.getTodayKey(), habitIds: ["backup-habit"] },
+    await habitsStorage.getHabits()
+  );
+
+  const exportedText = await appBackup.exportAppData();
+  const exported = JSON.parse(exportedText);
+
+  assert.strictEqual(exported.app, "Momentum");
+  assert.strictEqual(exported.version, 1);
+  assert.strictEqual(exported.appVersion, "1.0.0");
+  assert.strictEqual(exported.data.habits.length, 1);
+  assert.strictEqual(exported.data.preferences.showProgressCard, false);
+  assert.strictEqual(exported.data.dailyPlan.habitIds[0], "backup-habit");
+
+  const validation = appBackup.validateBackup(exportedText);
+
+  assert.strictEqual(validation.ok, true);
+  assert.strictEqual(validation.metadata.habitCount, 1);
+  assert.strictEqual(validation.metadata.hasActivityHistory, true);
+});
+
+test("app backup import replaces data safely and rebuilds derived progress", async () => {
+  resetStorage();
+  await habitsStorage.importHabitsBackup(
+    JSON.stringify({
+      habits: [
+        {
+          id: "existing",
+          name: "Existing",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          completedDates: [],
+        },
+      ],
+    })
+  );
+
+  const backupText = JSON.stringify({
+    app: "Momentum",
+    appVersion: "1.0.0",
+    exportedAt: "2026-03-01T00:00:00.000Z",
+    version: 1,
+    data: {
+      appearance: { themePreference: "light" },
+      dailyPlan: {
+        date: habitStats.getTodayKey(),
+        habitIds: ["imported"],
+        version: 1,
+      },
+      flags: {
+        firstSwipeHintDismissed: true,
+        firstTrendUnlockShown: true,
+        onboardingComplete: true,
+        returnGuidanceDismissedDate: "2026-02-02",
+      },
+      gamification: { earnedBadges: ["unknown"], xp: 999 },
+      habits: [
+        {
+          id: "imported",
+          name: "Imported",
+          completedDates: [habitStats.getTodayKey()],
+          createdAt: "2026-01-01T00:00:00.000Z",
+          frequency: "Daily",
+        },
+      ],
+      preferences: {
+        ...appPreferencesStorage.defaultAppPreferences,
+        enableDailyReminders: false,
+      },
+    },
+  });
+
+  const result = await appBackup.importAppData(backupText);
+  const habits = await habitsStorage.getHabits();
+  const preferences = await appPreferencesStorage.getAppPreferences();
+  const dailyPlan = await dailyPlanStorage.getDailyPlan(habits);
+  const gamification = await gamificationStorage.getGamification();
+
+  assert.strictEqual(result.habits.length, 1);
+  assert.strictEqual(habits[0].id, "imported");
+  assert.strictEqual(preferences.enableDailyReminders, false);
+  assertJsonEqual(dailyPlan.habitIds, ["imported"]);
+  assert.strictEqual(gamification.xp, 35);
+  assert.strictEqual(asyncStorageStore["momentum:onboarding-complete"], "true");
+  assert.strictEqual(asyncStorageStore["momentum:theme-preference"], "light");
+});
+
+test("app backup validation rejects corrupted, empty, and future backups safely", () => {
+  assert.strictEqual(appBackup.validateBackup("{bad json").ok, false);
+  assert.match(
+    appBackup.validateBackup("{bad json").errors[0],
+    /could not be parsed/
+  );
+  assert.strictEqual(appBackup.validateBackup("").ok, false);
+  assert.strictEqual(
+    appBackup.validateBackup(
+      JSON.stringify({
+        app: "Momentum",
+        data: { habits: [] },
+        version: 99,
+      })
+    ).ok,
+    false
+  );
+});
+
+test("app backup validation repairs duplicate ids, invalid reminders, and invalid daily plan", () => {
+  const validation = appBackup.validateBackup(
+    JSON.stringify({
+      app: "Momentum",
+      exportedAt: "2026-02-01T00:00:00.000Z",
+      version: 1,
+      data: {
+        appearance: { themePreference: "master" },
+        dailyPlan: { date: "bad", habitIds: ["duplicate"], version: 1 },
+        habits: [
+          {
+            id: "duplicate",
+            name: "",
+            completedDates: ["2026-02-01", "bad"],
+            customDays: ["Mon", "Bad"],
+            frequency: "Custom",
+            reminderStatus: "mystery",
+            reminderTime: "99:00",
+          },
+          {
+            id: "duplicate",
+            name: "Second",
+            frequency: "Daily",
+          },
+        ],
+        preferences: {
+          enableDailyReminders: true,
+          showProgressCard: "yes",
+        },
+      },
+    })
+  );
+
+  assert.strictEqual(validation.ok, true);
+  assert.strictEqual(validation.data.habits.length, 2);
+  assert.notStrictEqual(validation.data.habits[0].id, validation.data.habits[1].id);
+  assert.strictEqual(validation.data.habits[0].reminderTime, "");
+  assert.strictEqual(validation.data.habits[0].reminderStatus, "none");
+  assertJsonEqual(validation.data.habits[0].customDays, ["Mon"]);
+  assert.strictEqual(validation.data.appearance.themePreference, "dark");
+  assert.strictEqual(validation.data.dailyPlan, null);
+  assert.strictEqual(validation.data.preferences.showProgressCard, true);
+  assert.ok(validation.warnings.some((warning) => /Duplicate habit IDs/.test(warning)));
+});
+
+test("app backup migration pipeline upgrades older backups", () => {
+  const validation = appBackup.validateBackup(
+    JSON.stringify({
+      app: "Momentum",
+      exportedAt: "2026-01-01T00:00:00.000Z",
+      habits: [
+        {
+          id: "old",
+          name: "Old Backup",
+        },
+      ],
+      version: 0,
+    })
+  );
+
+  assert.strictEqual(validation.ok, true);
+  assert.strictEqual(validation.version, 1);
+  assert.strictEqual(validation.data.habits[0].id, "old");
+  assert.ok(validation.warnings.some((warning) => /Migrated backup/.test(warning)));
+});
+
+test("app backup legacy habit exports remain importable", async () => {
+  resetStorage();
+
+  const result = await appBackup.importAppData(
+    JSON.stringify([
+      {
+        id: "legacy",
+        name: "Legacy",
+        completedDates: ["2026-01-01"],
+      },
+    ])
+  );
+
+  assert.strictEqual(result.habits.length, 1);
+  assert.strictEqual(result.metadata.habitCount, 1);
+  assert.strictEqual((await habitsStorage.getHabits())[0].id, "legacy");
 });
 
 test("malformed stored habits are backed up and safe defaults are returned", async () => {
