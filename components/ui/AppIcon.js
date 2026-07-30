@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { v2Colors } from "../../src/design";
+import { v2Colors, v2Radius } from "../../src/design";
 
 export default function AppIcon({
   color = v2Colors.textPrimary,
