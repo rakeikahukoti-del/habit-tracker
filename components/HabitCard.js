@@ -32,9 +32,9 @@ import { router } from "expo-router";
 
 const SWIPE_COMPLETE_COLOR = "#4F755B";
 const SWIPE_UNDO_COLOR = "#85494D";
-const SWIPE_START_DISTANCE = 7;
-const SWIPE_DIRECTION_RATIO = 0.72;
-const SWIPE_THRESHOLD = 28;
+const SWIPE_START_DISTANCE = 6;
+const SWIPE_DIRECTION_RATIO = 0.58;
+const SWIPE_THRESHOLD = 30;
 const SWIPE_LIMIT = 112;
 
 function HabitCard({
@@ -548,9 +548,9 @@ function createStyles(colors, isCompact) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       maxWidth: "100%",
-      minHeight: isCompact ? 92 : 98,
-      paddingHorizontal: isCompact ? v2Spacing.md : v2Spacing.base,
-      paddingVertical: isCompact ? v2Spacing.md : v2Spacing.base,
+      minHeight: isCompact ? 88 : 94,
+      paddingHorizontal: isCompact ? v2Spacing.md : v2Spacing.lg,
+      paddingVertical: isCompact ? 12 : 14,
       ...v2Shadows.low,
       shadowColor: colors.shadow,
       shadowOpacity: 0.08,
@@ -579,7 +579,7 @@ function createStyles(colors, isCompact) {
       flexShrink: 1,
       gap: v2Spacing.md,
       justifyContent: "space-between",
-      minHeight: 54,
+      minHeight: 52,
       minWidth: 0,
     },
     cardMainPressed: {
@@ -627,7 +627,7 @@ function createStyles(colors, isCompact) {
       gap: isCompact ? v2Spacing.sm : 10,
     },
     weekRow: {
-      marginTop: v2Spacing.sm,
+      marginTop: 10,
       maxWidth: "100%",
       paddingTop: 2,
       width: "100%",
@@ -637,8 +637,8 @@ function createStyles(colors, isCompact) {
       borderColor: colors.border,
       borderRadius: v2Radius.pill,
       borderWidth: 1.5,
-      height: 15,
-      width: 15,
+      height: 14,
+      width: 14,
     },
     streakBadge: {
       alignItems: "center",
@@ -646,8 +646,8 @@ function createStyles(colors, isCompact) {
       flexShrink: 0,
       gap: v2Spacing.xs,
       justifyContent: "center",
-      maxWidth: isCompact ? 58 : 66,
-      minHeight: 30,
+      maxWidth: isCompact ? 54 : 62,
+      minHeight: 28,
     },
     streakText: {
       flexShrink: 1,

@@ -124,10 +124,11 @@ export default function HomeScreen() {
   const focusStreak = focusHabit
     ? getCurrentStreak(focusHabit.completedDates, focusHabit)
     : 0;
-  const habitListTitle = priorityHabits.length > 0 ? "Remaining Habits" : "Habits";
+  const habitListTitle =
+    priorityHabits.length > 0 ? "More for Today" : "Today's Habits";
   const habitListMessage =
     priorityHabits.length > 0
-      ? "Your focus habits stay at the top for today."
+      ? "Focus habits stay pinned above."
       : habitsSectionMessage;
 
   const handleOpenFocusMode = useCallback(() => {
@@ -245,7 +246,7 @@ export default function HomeScreen() {
               ]}
             >
               <View style={styles.progressHeaderText}>
-                <AppText style={styles.progressLabel}>Daily progression</AppText>
+                <AppText style={styles.progressLabel}>Today</AppText>
                 <AppText style={styles.progressValue}>{completionLabel}</AppText>
                 {!progressExpanded ? (
                   <AppText style={styles.progressCompactHint} numberOfLines={2}>
@@ -326,7 +327,7 @@ export default function HomeScreen() {
 
         {progressExpanded && preferences.showProgressCard ? (
           <View style={styles.focusNote}>
-            <AppText style={styles.focusNoteLabel}>Next action</AppText>
+            <AppText style={styles.focusNoteLabel}>Next</AppText>
             <AppText style={styles.focusNoteText}>{motivation}</AppText>
             <AppText style={styles.weeklyContextText}>{weeklyContext}</AppText>
           </View>
@@ -560,7 +561,7 @@ export default function HomeScreen() {
               ))}
               {priorityHabits.length < 3 && availablePriorityHabits.length > 0 ? (
                 <View style={styles.priorityAddRow}>
-                  <AppText style={styles.priorityAddLabel}>Add another</AppText>
+                  <AppText style={styles.priorityAddLabel}>Add to focus</AppText>
                   <View style={styles.priorityPicker}>
                     {availablePriorityHabits.slice(0, 4).map((habit) => (
                       <Pressable
@@ -612,7 +613,7 @@ export default function HomeScreen() {
             </View>
           ) : habits.length > 0 ? (
             <AppText style={styles.noFocusText}>
-              No scheduled habits are available for today.
+              Nothing is scheduled for today.
             </AppText>
           ) : null}
         </View>
@@ -667,7 +668,7 @@ export default function HomeScreen() {
                   Your focus list is set
                 </AppText>
                 <AppText style={styles.remainingEmptyText}>
-                  The rest of today is clear from this list.
+                  Everything else is clear for today.
                 </AppText>
               </View>
             )
@@ -894,7 +895,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 14,
+    paddingBottom: 12,
     paddingTop: isSmallScreen ? 6 : 10,
   },
   todayTitle: {
@@ -914,9 +915,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 10,
-    marginBottom: 8,
-    paddingVertical: 14,
+    gap: 8,
+    marginBottom: 6,
+    paddingVertical: 12,
   },
   progressHeader: {
     alignItems: "flex-end",
@@ -1014,7 +1015,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     borderColor: colors.border,
     borderRadius: v2Radius.large,
     borderWidth: 1,
-    marginBottom: 8,
+    marginBottom: 6,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -1284,9 +1285,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   focusSection: {
     borderBottomColor: colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: v2Spacing.sm,
+    gap: 10,
     paddingBottom: 12,
-    paddingTop: 10,
+    paddingTop: 8,
   },
   focusSectionHeader: {
     alignItems: "center",
@@ -1424,11 +1425,11 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     lineHeight: 18,
   },
   listHeader: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 12,
     justifyContent: "space-between",
-    paddingBottom: 10,
+    paddingBottom: 8,
     paddingTop: 10,
     width: "100%",
   },
@@ -1453,7 +1454,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontSize: v2Typography.label.fontSize,
     fontWeight: v2FontWeight.medium,
     lineHeight: 18,
-    marginTop: 5,
+    marginTop: 4,
   },
   doneBadgeText: {
     color: colors.muted,
@@ -1469,6 +1470,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     flexDirection: "row",
     gap: v2Spacing.xs,
     justifyContent: "center",
+    marginTop: 1,
     minHeight: 44,
     minWidth: 76,
     paddingHorizontal: 14,
@@ -1495,7 +1497,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   listContent: {
     paddingBottom: 32,
-    paddingTop: 8,
+    paddingTop: 6,
     width: "100%",
   },
   list: {
@@ -1531,7 +1533,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     textAlign: "center",
   },
   separator: {
-    height: 12,
+    height: 10,
   },
   levelModalBackdrop: {
     alignItems: "center",
