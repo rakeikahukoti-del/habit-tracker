@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -20,6 +20,14 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { getGamification } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
+import {
+  getActivityDayAccessibilityLabel,
+  getAvailableActivityYears,
+  getHeatmapIntensity,
+  getMonthActivitySummary,
+  getMonthLabel,
+  getYearActivityDays,
+} from "../utils/activityHistory";
 import { getProgressOverview } from "../utils/habitStats";
 import {
   getLifetimeStats,
@@ -48,6 +56,13 @@ export default function StatsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weeklyDetailsExpanded, setWeeklyDetailsExpanded] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(() =>
+    new Date().getFullYear()
+  );
+  const [selectedMonth, setSelectedMonth] = useState(() =>
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+  const [selectedDayKey, setSelectedDayKey] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -99,6 +114,43 @@ export default function StatsScreen() {
     () => getPersonalRecords(habits, gamification).slice(0, 4),
     [gamification, habits]
   );
+  const availableYears = useMemo(
+    () => getAvailableActivityYears(habits),
+    [habits]
+  );
+  const yearActivityDays = useMemo(
+    () => getYearActivityDays(habits, selectedYear),
+    [habits, selectedYear]
+  );
+  const selectedDay = useMemo(
+    () =>
+      yearActivityDays.find((day) => day.dateKey === selectedDayKey) ||
+      null,
+    [selectedDayKey, yearActivityDays]
+  );
+  const monthSummary = useMemo(
+    () => getMonthActivitySummary(habits, selectedMonth),
+    [habits, selectedMonth]
+  );
+
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [availableYears, selectedYear]);
+
+  useEffect(() => {
+    setSelectedMonth((currentMonth) => {
+      const today = new Date();
+      const monthIndex =
+        selectedYear === today.getFullYear()
+          ? Math.min(currentMonth.getMonth(), today.getMonth())
+          : currentMonth.getMonth();
+
+      return new Date(selectedYear, monthIndex, 1);
+    });
+    setSelectedDayKey("");
+  }, [selectedYear]);
 
   return (
     <AnalyticsScreen bottomNav>
@@ -159,6 +211,30 @@ export default function StatsScreen() {
             <WeeklyVisual days={progress.weeklySummary} styles={styles} />
           </Section>
 
+          <Section title="Monthly summary" styles={styles}>
+            <MonthlyActivityCard
+              colors={colors}
+              monthSummary={monthSummary}
+              selectedMonth={selectedMonth}
+              setSelectedMonth={setSelectedMonth}
+              styles={styles}
+            />
+          </Section>
+
+          <Section title="Year activity" styles={styles}>
+            <YearActivityCard
+              availableYears={availableYears}
+              colors={colors}
+              selectedDay={selectedDay}
+              selectedDayKey={selectedDayKey}
+              selectedYear={selectedYear}
+              setSelectedDayKey={setSelectedDayKey}
+              setSelectedYear={setSelectedYear}
+              styles={styles}
+              yearDays={yearActivityDays}
+            />
+          </Section>
+
           <Section title="Long-term progress" styles={styles}>
             <View style={styles.metricList}>
               <MetricRow
@@ -208,25 +284,27 @@ export default function StatsScreen() {
             )}
           </Section>
 
-          <Section
-            action={
-              <Pressable
-                accessibilityLabel="Open analytics"
-                accessibilityRole="button"
-                onPress={() => router.push("/analytics")}
-                style={({ pressed }) => [
-                  styles.textAction,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <AppText style={styles.textActionLabel}>Analytics</AppText>
-              </Pressable>
-            }
-            title="Recent history"
-            styles={styles}
-          >
-            <HistoryGrid days={progress.historyDays} styles={styles} />
-          </Section>
+          <View style={styles.analyticsLinkWrap}>
+            <Pressable
+              accessibilityLabel="Open analytics"
+              accessibilityRole="button"
+              onPress={() => router.push("/analytics")}
+              style={({ pressed }) => [
+                styles.analyticsLink,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppText style={styles.analyticsLinkText}>
+                View deeper analytics
+              </AppText>
+              <AppIcon
+                color={colors.primary}
+                name="arrow-right"
+                size={17}
+                strokeWidth={2}
+              />
+            </Pressable>
+          </View>
         </>
       ) : null}
     </AnalyticsScreen>
@@ -461,6 +539,286 @@ function WeeklyHabitBreakdownRow({ habit, styles }) {
   );
 }
 
+function MonthlyActivityCard({
+  colors,
+  monthSummary,
+  selectedMonth,
+  setSelectedMonth,
+  styles,
+}) {
+  const todayMonth = startOfMonth(new Date());
+  const canGoNext = selectedMonth < todayMonth;
+
+  function goToPreviousMonth() {
+    setSelectedMonth(
+      (currentMonth) =>
+        new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+    );
+  }
+
+  function goToNextMonth() {
+    setSelectedMonth((currentMonth) => {
+      const nextMonth = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth() + 1,
+        1
+      );
+
+      return nextMonth > todayMonth ? currentMonth : nextMonth;
+    });
+  }
+
+  return (
+    <View style={styles.monthCard}>
+      <View style={styles.monthHeader}>
+        <Pressable
+          accessibilityLabel="Previous month"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={goToPreviousMonth}
+          style={({ pressed }) => [
+            styles.monthNavButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <AppIcon
+            color={colors.text}
+            name="chevron-left"
+            size={18}
+            strokeWidth={2}
+          />
+        </Pressable>
+        <View style={styles.monthHeaderText}>
+          <AppText numberOfLines={1} style={styles.monthTitle}>
+            {monthSummary.label}
+          </AppText>
+          <AppText style={styles.monthSubtitle}>
+            {monthSummary.possibleCount === 0
+              ? "No scheduled activity"
+              : `${monthSummary.completionRate}% completion rate`}
+          </AppText>
+        </View>
+        <Pressable
+          accessibilityLabel="Next month"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canGoNext }}
+          disabled={!canGoNext}
+          hitSlop={8}
+          onPress={goToNextMonth}
+          style={({ pressed }) => [
+            styles.monthNavButton,
+            !canGoNext && styles.disabledButton,
+            pressed && canGoNext && styles.pressed,
+          ]}
+        >
+          <AppIcon
+            color={canGoNext ? colors.text : colors.softText}
+            name="chevron-right"
+            size={18}
+            strokeWidth={2}
+          />
+        </Pressable>
+      </View>
+
+      <View style={styles.monthMetricGrid}>
+        <CompactMetric
+          label="Completed"
+          styles={styles}
+          value={`${monthSummary.completedCount}/${monthSummary.possibleCount}`}
+        />
+        <CompactMetric
+          label="Perfect days"
+          styles={styles}
+          value={monthSummary.perfectDays}
+        />
+        <CompactMetric
+          label="Active days"
+          styles={styles}
+          value={monthSummary.activeDays}
+        />
+        <CompactMetric
+          label="Best run"
+          styles={styles}
+          value={monthSummary.bestStreak}
+        />
+      </View>
+
+      {monthSummary.strongestHabit || monthSummary.mostImprovedHabit ? (
+        <View style={styles.monthInsightList}>
+          {monthSummary.strongestHabit ? (
+            <AppText style={styles.monthInsightText}>
+              Strongest: {monthSummary.strongestHabit.name} at{" "}
+              {monthSummary.strongestHabit.completionRate}%
+            </AppText>
+          ) : null}
+          {monthSummary.mostImprovedHabit ? (
+            <AppText style={styles.monthInsightText}>
+              Most improved: {monthSummary.mostImprovedHabit.name} +{monthSummary.mostImprovedHabit.improvement}%
+            </AppText>
+          ) : null}
+        </View>
+      ) : (
+        <AppText style={styles.monthEmptyText}>
+          Complete scheduled habits to build this month's summary.
+        </AppText>
+      )}
+    </View>
+  );
+}
+
+function YearActivityCard({
+  availableYears,
+  colors,
+  selectedDay,
+  selectedDayKey,
+  selectedYear,
+  setSelectedDayKey,
+  setSelectedYear,
+  styles,
+  yearDays,
+}) {
+  const groupedMonths = useMemo(() => groupDaysByMonth(yearDays), [yearDays]);
+
+  return (
+    <View style={styles.activityCard}>
+      {availableYears.length > 1 ? (
+        <View accessibilityRole="tablist" style={styles.yearTabs}>
+          {availableYears.map((year) => {
+            const selected = year === selectedYear;
+
+            return (
+              <Pressable
+                accessibilityLabel={`${year} activity year`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                key={year}
+                onPress={() => setSelectedYear(year)}
+                style={({ pressed }) => [
+                  styles.yearTab,
+                  selected && styles.yearTabSelected,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <AppText
+                  style={[
+                    styles.yearTabText,
+                    selected && styles.yearTabTextSelected,
+                  ]}
+                >
+                  {year}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
+      <View style={styles.heatmapLegend}>
+        <LegendItem label="No activity" styles={styles} variant="none" />
+        <LegendItem label="Partial" styles={styles} variant="partial" />
+        <LegendItem label="Complete" styles={styles} variant="complete" />
+        <LegendItem label="Future" styles={styles} variant="future" />
+      </View>
+
+      {yearDays.length === 0 ? (
+        <AppText style={styles.emptyInlineText}>
+          Complete habits to build your activity history.
+        </AppText>
+      ) : (
+        <View style={styles.yearGrid}>
+          {groupedMonths.map((month) => (
+            <View key={month.monthIndex} style={styles.monthHeatmap}>
+              <AppText style={styles.monthHeatmapTitle}>
+                {getMonthLabel(month.monthIndex)}
+              </AppText>
+              <View style={styles.monthHeatmapGrid}>
+                {month.leadingBlanks.map((blank) => (
+                  <View key={blank} style={styles.heatmapDaySlot} />
+                ))}
+                {month.days.map((day) => {
+                  const selected = day.dateKey === selectedDayKey;
+                  const intensity = getHeatmapIntensity(day);
+
+                  return (
+                    <View key={day.dateKey} style={styles.heatmapDaySlot}>
+                      <Pressable
+                        accessibilityLabel={getActivityDayAccessibilityLabel(day)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        hitSlop={4}
+                        onPress={() =>
+                          setSelectedDayKey((current) =>
+                            current === day.dateKey ? "" : day.dateKey
+                          )
+                        }
+                        style={({ pressed }) => [
+                          styles.heatmapCell,
+                          styles[`heatmapCell_${intensity}`],
+                          selected && styles.heatmapCellSelected,
+                          pressed && styles.pressed,
+                        ]}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {selectedDay ? (
+        <SelectedDayCard selectedDay={selectedDay} styles={styles} />
+      ) : (
+        <AppText style={styles.activityHint}>
+          Tap any day to inspect scheduled and completed habits.
+        </AppText>
+      )}
+    </View>
+  );
+}
+
+function CompactMetric({ label, styles, value }) {
+  return (
+    <View style={styles.compactMetric}>
+      <AppText style={styles.compactMetricValue}>{value}</AppText>
+      <AppText style={styles.compactMetricLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function LegendItem({ label, styles, variant }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendSwatch, styles[`heatmapCell_${variant}`]]} />
+      <AppText style={styles.legendLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+function SelectedDayCard({ selectedDay, styles }) {
+  return (
+    <View
+      accessibilityLabel={getActivityDayAccessibilityLabel(selectedDay)}
+      accessible
+      style={styles.selectedDayCard}
+    >
+      <AppText style={styles.selectedDayTitle}>
+        {formatSelectedDate(selectedDay.dateKey)}
+      </AppText>
+      <AppText style={styles.selectedDaySummary}>
+        {getSelectedDaySummary(selectedDay)}
+      </AppText>
+      {selectedDay.habitNames.length > 0 ? (
+        <AppText numberOfLines={3} style={styles.selectedDayHabits}>
+          {selectedDay.habitNames.slice(0, 4).join(", ")}
+          {selectedDay.habitNames.length > 4 ? "..." : ""}
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
+
 function ReviewStat({ label, styles, value }) {
   return (
     <View style={styles.reviewStat}>
@@ -523,25 +881,6 @@ function RecordCard({ record, styles }) {
   );
 }
 
-function HistoryGrid({ days, styles }) {
-  return (
-    <View style={styles.historyGrid}>
-      {days.map((day) => (
-        <View
-          accessibilityLabel={`${day.dateKey}: ${day.percentage}% complete`}
-          accessible
-          key={day.dateKey}
-          style={[
-            styles.historyCell,
-            day.percentage > 0 && styles.historyCellPartial,
-            day.percentage === 100 && styles.historyCellComplete,
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
 function EmptyProgress({ colors, styles }) {
   return (
     <View style={styles.emptyCard}>
@@ -576,6 +915,66 @@ function clampPercentage(value) {
   }
 
   return Math.min(100, Math.max(0, value));
+}
+
+function groupDaysByMonth(days) {
+  return Array.from({ length: 12 }, (_, monthIndex) => {
+    const monthDays = days.filter((day) => {
+      const [, month] = day.dateKey.split("-").map(Number);
+
+      return month === monthIndex + 1;
+    });
+    const firstDay = monthDays[0]
+      ? dateKeyToLocalDate(monthDays[0].dateKey).getDay()
+      : 0;
+
+    return {
+      days: monthDays,
+      leadingBlanks: Array.from(
+        { length: firstDay },
+        (_, index) => `blank-${monthIndex}-${index}`
+      ),
+      monthIndex,
+    };
+  });
+}
+
+function getSelectedDaySummary(day) {
+  if (day.state === "future") {
+    return "Future date.";
+  }
+
+  if (day.state === "beforeTracking") {
+    return "Before activity tracking started.";
+  }
+
+  if (day.state === "unscheduled") {
+    return "No habits scheduled.";
+  }
+
+  if (day.isPerfectDay) {
+    return `Perfect day: ${day.completedCount} of ${day.scheduledCount} complete.`;
+  }
+
+  return `${day.completedCount} of ${day.scheduledCount} scheduled habits complete (${day.completionRate}%).`;
+}
+
+function formatSelectedDate(dateKey) {
+  return dateKeyToLocalDate(dateKey).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function dateKeyToLocalDate(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+
+  return new Date(year, month - 1, day);
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 function createStyles(colors, { isSmallScreen }) {
@@ -928,6 +1327,261 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: 10,
       fontWeight: v2FontWeight.medium,
     },
+    monthCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      padding: v2Spacing.lg,
+    },
+    monthHeader: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: v2Spacing.sm,
+      marginBottom: v2Spacing.lg,
+    },
+    monthNavButton: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 42,
+      minWidth: 42,
+    },
+    disabledButton: {
+      opacity: 0.36,
+    },
+    monthHeaderText: {
+      alignItems: "center",
+      flex: 1,
+      minWidth: 0,
+    },
+    monthTitle: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.body.lineHeight,
+      textAlign: "center",
+    },
+    monthSubtitle: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      marginTop: 2,
+      textAlign: "center",
+    },
+    monthMetricGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+    },
+    compactMetric: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexBasis: "47%",
+      flexGrow: 1,
+      minHeight: 70,
+      minWidth: 120,
+      padding: v2Spacing.md,
+    },
+    compactMetricValue: {
+      color: colors.text,
+      fontSize: v2Typography.sectionTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.sectionTitle.lineHeight,
+    },
+    compactMetricLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginTop: 3,
+      textTransform: "uppercase",
+    },
+    monthInsightList: {
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      gap: v2Spacing.xs,
+      marginTop: v2Spacing.lg,
+      paddingTop: v2Spacing.md,
+    },
+    monthInsightText: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
+    },
+    monthEmptyText: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
+      marginTop: v2Spacing.lg,
+    },
+    activityCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.large,
+      borderWidth: 1,
+      padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
+    },
+    yearTabs: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 4,
+      marginBottom: v2Spacing.lg,
+      padding: 4,
+    },
+    yearTab: {
+      alignItems: "center",
+      borderRadius: v2Radius.small,
+      flexGrow: 1,
+      justifyContent: "center",
+      minHeight: 38,
+      minWidth: 72,
+      paddingHorizontal: v2Spacing.sm,
+    },
+    yearTabSelected: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    yearTabText: {
+      color: colors.muted,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    yearTabTextSelected: {
+      color: colors.text,
+    },
+    heatmapLegend: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+      marginBottom: v2Spacing.lg,
+    },
+    legendItem: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: 6,
+      minHeight: 24,
+    },
+    legendSwatch: {
+      borderRadius: 5,
+      height: 14,
+      width: 14,
+    },
+    legendLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+    },
+    yearGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.md,
+    },
+    monthHeatmap: {
+      flexBasis: isSmallScreen ? "100%" : "47%",
+      flexGrow: 1,
+      minWidth: isSmallScreen ? "100%" : 150,
+    },
+    monthHeatmapTitle: {
+      color: colors.text,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      marginBottom: v2Spacing.xs,
+      textTransform: "uppercase",
+    },
+    monthHeatmapGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+    },
+    heatmapDaySlot: {
+      padding: 2,
+      width: `${100 / 7}%`,
+    },
+    heatmapCell: {
+      aspectRatio: 1,
+      borderRadius: 5,
+      borderWidth: 1,
+      minHeight: isSmallScreen ? 18 : 20,
+      width: "100%",
+    },
+    heatmapCell_none: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      opacity: 0.58,
+    },
+    heatmapCell_empty: {
+      backgroundColor: colors.inputBackground,
+      borderColor: colors.border,
+    },
+    heatmapCell_partial: {
+      backgroundColor: colors.successSoft,
+      borderColor: colors.success,
+    },
+    heatmapCell_mostly: {
+      backgroundColor: colors.successSoft,
+      borderColor: colors.success,
+      borderWidth: 2,
+    },
+    heatmapCell_complete: {
+      backgroundColor: colors.success,
+      borderColor: colors.success,
+    },
+    heatmapCell_future: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      opacity: 0.28,
+    },
+    heatmapCellSelected: {
+      borderColor: colors.text,
+      borderWidth: 2,
+      transform: [{ scale: 1.08 }],
+    },
+    activityHint: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.caption.lineHeight,
+      marginTop: v2Spacing.lg,
+    },
+    selectedDayCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      marginTop: v2Spacing.lg,
+      padding: v2Spacing.md,
+    },
+    selectedDayTitle: {
+      color: colors.text,
+      fontSize: v2Typography.body.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.body.lineHeight,
+    },
+    selectedDaySummary: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.label.lineHeight,
+      marginTop: 4,
+    },
+    selectedDayHabits: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.medium,
+      lineHeight: v2Typography.caption.lineHeight,
+      marginTop: v2Spacing.xs,
+    },
     metricList: {
       backgroundColor: colors.card,
       borderColor: colors.border,
@@ -1016,40 +1670,24 @@ function createStyles(colors, { isSmallScreen }) {
       lineHeight: v2Typography.body.lineHeight,
       padding: v2Spacing.lg,
     },
-    textAction: {
-      minHeight: 36,
-      justifyContent: "center",
-      paddingLeft: v2Spacing.md,
+    analyticsLinkWrap: {
+      alignItems: "flex-start",
+      marginBottom: v2Spacing.xl,
     },
-    textActionLabel: {
+    analyticsLink: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+      minHeight: 42,
+      paddingHorizontal: v2Spacing.md,
+    },
+    analyticsLinkText: {
       color: colors.primary,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
-    },
-    historyGrid: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: v2Radius.large,
-      borderWidth: 1,
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 7,
-      padding: v2Spacing.lg,
-    },
-    historyCell: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: v2Radius.small,
-      borderWidth: 1,
-      height: isSmallScreen ? 22 : 25,
-      width: isSmallScreen ? 22 : 25,
-    },
-    historyCellPartial: {
-      borderColor: colors.text,
-    },
-    historyCellComplete: {
-      backgroundColor: colors.text,
-      borderColor: colors.text,
     },
     emptyCard: {
       backgroundColor: colors.card,

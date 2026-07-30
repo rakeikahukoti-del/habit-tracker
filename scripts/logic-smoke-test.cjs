@@ -226,6 +226,13 @@ const calendarMonth = loadModule("utils/calendarMonth.js", (moduleName) => {
 
   return require(moduleName);
 });
+const activityHistory = loadModule("utils/activityHistory.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const designColors = loadModule("src/design/colors.js");
 const legacyThemeAdapter = loadModule("src/design/legacyThemeAdapter.js", (moduleName) => {
   if (moduleName === "./colors") {
@@ -416,6 +423,156 @@ test("calendar month helper handles leap years, blanks, today, and future days",
       new Date(2024, 1, 20)
     ),
     false
+  );
+});
+
+test("activity history years include current and valid historic data only", () => {
+  const years = activityHistory.getAvailableActivityYears(
+    [
+      {
+        completedDates: ["2024-02-29", "not-a-date", "2027-01-01"],
+        createdAt: "2025-01-10T12:00:00.000Z",
+      },
+    ],
+    new Date(2026, 6, 15)
+  );
+
+  assertJsonEqual(years, [2026, 2025, 2024]);
+});
+
+test("activity heatmap handles leap years, future days, and schedule states", () => {
+  const habits = [
+    {
+      completedDates: ["2024-02-29", "2024-02-29", "bad"],
+      createdAt: "2024-02-28",
+      frequency: "Daily",
+      id: "daily",
+      name: "Daily",
+    },
+    {
+      completedDates: [],
+      createdAt: "2024-02-28",
+      customDays: ["Fri"],
+      frequency: "Custom",
+      id: "friday",
+      name: "Friday",
+    },
+  ];
+  const days = activityHistory.getYearActivityDays(
+    habits,
+    2024,
+    new Date(2024, 1, 29)
+  );
+
+  assert.strictEqual(days.length, 366);
+  assert.strictEqual(
+    days.find((day) => day.dateKey === "2024-02-27").state,
+    "beforeTracking"
+  );
+  assert.strictEqual(
+    days.find((day) => day.dateKey === "2024-02-29").state,
+    "scheduledComplete"
+  );
+  assert.strictEqual(
+    days.find((day) => day.dateKey === "2024-03-01").state,
+    "future"
+  );
+});
+
+test("activity history uses scheduled opportunities for partial and perfect days", () => {
+  const habits = [
+    {
+      completedDates: ["2026-07-13"],
+      createdAt: "2026-07-01",
+      frequency: "Weekdays",
+      id: "workout",
+      name: "Workout",
+    },
+    {
+      completedDates: [],
+      createdAt: "2026-07-01",
+      customDays: ["Mon"],
+      frequency: "Custom",
+      id: "read",
+      name: "Read",
+    },
+  ];
+  const monday = activityHistory.getDayActivitySummary(
+    habits,
+    "2026-07-13",
+    new Date(2026, 6, 15)
+  );
+  const sunday = activityHistory.getDayActivitySummary(
+    habits,
+    "2026-07-12",
+    new Date(2026, 6, 15)
+  );
+
+  assert.strictEqual(monday.scheduledCount, 2);
+  assert.strictEqual(monday.completedCount, 1);
+  assert.strictEqual(monday.completionRate, 50);
+  assert.strictEqual(monday.state, "scheduledPartial");
+  assert.strictEqual(activityHistory.getHeatmapIntensity(monday), "partial");
+  assert.strictEqual(sunday.state, "unscheduled");
+});
+
+test("activity month summary excludes future dates and reports valid insights", () => {
+  const habits = [
+    {
+      completedDates: ["2026-06-01", "2026-07-01", "2026-07-02"],
+      createdAt: "2026-06-01",
+      frequency: "Daily",
+      id: "daily",
+      name: "Daily",
+    },
+    {
+      completedDates: ["2026-07-01"],
+      createdAt: "2026-06-01",
+      customDays: ["Wed"],
+      frequency: "Custom",
+      id: "custom",
+      name: "Custom",
+    },
+  ];
+  const summary = activityHistory.getMonthActivitySummary(
+    habits,
+    new Date(2026, 6, 1),
+    new Date(2026, 6, 2)
+  );
+
+  assert.strictEqual(summary.completedCount, 3);
+  assert.strictEqual(summary.possibleCount, 3);
+  assert.strictEqual(summary.completionRate, 100);
+  assert.strictEqual(summary.perfectDays, 2);
+  assert.strictEqual(summary.activeDays, 2);
+  assert.strictEqual(summary.strongestHabit.name, "Daily");
+  assert.strictEqual(summary.mostImprovedHabit.name, "Custom");
+});
+
+test("activity accessibility labels describe day state without relying on color", () => {
+  const label = activityHistory.getActivityDayAccessibilityLabel({
+    completedCount: 3,
+    completionRate: 100,
+    dateKey: "2026-07-14",
+    isPerfectDay: true,
+    scheduledCount: 3,
+    state: "scheduledComplete",
+  });
+
+  assert.match(label, /2026/);
+  assert.match(label, /perfect day/);
+  assert.match(label, /3 of 3 scheduled habits completed/);
+  assert.strictEqual(
+    activityHistory.getHabitDayState(
+      {
+        completedDates: ["2026-07-14"],
+        createdAt: "2026-07-01",
+        frequency: "Daily",
+      },
+      "2026-07-14",
+      new Date(2026, 6, 15)
+    ).state,
+    "complete"
   );
 });
 
