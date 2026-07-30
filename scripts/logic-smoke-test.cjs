@@ -192,6 +192,13 @@ const weeklyReview = loadModule("utils/weeklyReview.js", (moduleName) => {
 
   return require(moduleName);
 });
+const dailyPlanning = loadModule("utils/dailyPlanning.js", (moduleName) => {
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) => {
   if (moduleName === "./gamification") {
     return gamificationLogic;
@@ -207,6 +214,10 @@ const homeHabitActions = loadModule("utils/homeHabitActions.js", (moduleName) =>
 
   if (moduleName === "./rankDisplay") {
     return rankDisplay;
+  }
+
+  if (moduleName === "./dailyPlanning") {
+    return dailyPlanning;
   }
 
   return require(moduleName);
@@ -370,6 +381,25 @@ const habitsStorage = loadModule("storage/habitsStorage.js", (moduleName) => {
 
   if (moduleName === "../utils/habitStats") {
     return habitStats;
+  }
+
+  return require(moduleName);
+});
+const dailyPlanStorage = loadModule("storage/dailyPlanStorage.js", (moduleName) => {
+  if (moduleName === "@react-native-async-storage/async-storage") {
+    return { __esModule: true, default: asyncStorageMock };
+  }
+
+  if (moduleName === "../utils/habitStats") {
+    return habitStats;
+  }
+
+  if (moduleName === "../utils/dailyPlanning") {
+    return dailyPlanning;
+  }
+
+  if (moduleName === "./storageUtils") {
+    return storageUtils;
   }
 
   return require(moduleName);
@@ -2338,6 +2368,212 @@ test("habit milestones are informational and based on actual completions", () =>
   assertJsonEqual(milestones.completedMilestones, [10, 25]);
   assert.strictEqual(milestones.nextMilestone, 50);
   assert.strictEqual(milestones.progressToNext, 52);
+});
+
+test("daily plan normalization resets stale, duplicate, missing, and unscheduled habits", () => {
+  const todayKey = "2026-07-13";
+  const habits = [
+    {
+      id: "daily",
+      name: "Daily",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      frequency: "Daily",
+      order: 2,
+    },
+    {
+      id: "weekday",
+      name: "Weekday",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      frequency: "Weekdays",
+      order: 1,
+    },
+    {
+      id: "unscheduled",
+      name: "Weekend",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      customDays: ["Sun"],
+      frequency: "Custom",
+      order: 3,
+    },
+  ];
+
+  assertJsonEqual(
+    dailyPlanning.normalizeDailyPlan(
+      {
+        date: "2026-07-12",
+        habitIds: ["daily"],
+        version: 1,
+      },
+      habits,
+      todayKey
+    ),
+    { date: todayKey, habitIds: [], version: 1 },
+    "plans from another day should reset"
+  );
+
+  assertJsonEqual(
+    dailyPlanning.normalizeDailyPlan(
+      {
+        date: todayKey,
+        habitIds: [
+          "missing",
+          "daily",
+          "daily",
+          "unscheduled",
+          "weekday",
+          "extra",
+        ],
+      },
+      habits,
+      todayKey
+    ),
+    { date: todayKey, habitIds: ["daily", "weekday"], version: 1 }
+  );
+});
+
+test("daily plan enforces limit and supports add, remove, and reorder", () => {
+  const todayKey = "2026-07-13";
+  const habits = ["a", "b", "c", "d"].map((id, index) => ({
+    id,
+    name: id,
+    completedDates: [],
+    createdAt: "2026-07-01",
+    frequency: "Daily",
+    order: index,
+  }));
+  const plan = { date: todayKey, habitIds: ["a", "b", "c"], version: 1 };
+
+  assertJsonEqual(
+    dailyPlanning.addPriorityId(plan, habits, "d", todayKey).habitIds,
+    ["a", "b", "c"],
+    "daily plan should stay capped at three habits"
+  );
+  assertJsonEqual(
+    dailyPlanning.removePriorityId(plan, habits, "b", todayKey).habitIds,
+    ["a", "c"]
+  );
+  assertJsonEqual(
+    dailyPlanning.reorderPriorityIds(plan, habits, "c", "up", todayKey).habitIds,
+    ["a", "c", "b"]
+  );
+  assertJsonEqual(
+    dailyPlanning.reorderPriorityIds(plan, habits, "a", "up", todayKey).habitIds,
+    ["a", "b", "c"]
+  );
+});
+
+test("daily plan progress, remaining list, and focus next habit stay deterministic", () => {
+  const todayKey = "2026-07-13";
+  const habits = [
+    {
+      id: "first",
+      name: "First",
+      completedDates: [todayKey],
+      createdAt: "2026-07-01",
+      frequency: "Daily",
+      order: 1,
+    },
+    {
+      id: "second",
+      name: "Second",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      frequency: "Daily",
+      order: 2,
+    },
+    {
+      id: "third",
+      name: "Third",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      frequency: "Daily",
+      order: 3,
+    },
+  ];
+  const plan = {
+    date: todayKey,
+    habitIds: ["first", "second"],
+    version: 1,
+  };
+
+  assertJsonEqual(dailyPlanning.getDailyPlanProgress(plan, habits, todayKey), {
+    allComplete: false,
+    completedCount: 1,
+    remainingCount: 1,
+    totalCount: 2,
+  });
+  assertJsonEqual(
+    dailyPlanning
+      .getRemainingTodayHabits({
+        habits,
+        moveCompletedToBottom: false,
+        plan,
+        todayKey,
+      })
+      .map((habit) => habit.id),
+    ["third"]
+  );
+  assert.strictEqual(
+    dailyPlanning.getNextPriorityHabit({ habits, plan, todayKey }).id,
+    "second"
+  );
+  assert.strictEqual(
+    dailyPlanning.getNextPriorityHabit({
+      habits,
+      plan,
+      skippedIds: ["second"],
+      todayKey,
+    }).id,
+    "second",
+    "when every incomplete priority is skipped, focus mode can cycle back"
+  );
+});
+
+test("daily plan storage recovers from invalid data and saves normalized plans", async () => {
+  resetStorage();
+  const todayKey = "2026-07-13";
+  const habits = [
+    {
+      id: "daily",
+      name: "Daily",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      frequency: "Daily",
+    },
+    {
+      id: "other",
+      name: "Other",
+      completedDates: [],
+      createdAt: "2026-07-01",
+      frequency: "Daily",
+    },
+  ];
+
+  asyncStorageStore["momentum:daily-plan"] = "{bad";
+  assertJsonEqual(await dailyPlanStorage.getDailyPlan(habits, todayKey), {
+    date: todayKey,
+    habitIds: [],
+    version: 1,
+  });
+
+  const savedPlan = await dailyPlanStorage.saveDailyPlan(
+    {
+      date: todayKey,
+      habitIds: ["daily", "missing", "daily", "other"],
+    },
+    habits,
+    todayKey
+  );
+
+  assertJsonEqual(savedPlan, {
+    date: todayKey,
+    habitIds: ["daily", "other"],
+    version: 1,
+  });
+  assertJsonEqual(JSON.parse(asyncStorageStore["momentum:daily-plan"]), savedPlan);
 });
 
 test("imported habits are normalized without corrupting existing storage", async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -31,6 +31,8 @@ import {
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useHomeController } from "../hooks/useHomeController";
+import { getNextPriorityHabit } from "../utils/dailyPlanning";
+import { getCurrentStreak } from "../utils/habitStats";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -46,10 +48,15 @@ export default function HomeScreen() {
     [colors, isSmallScreen, isTablet]
   );
   const {
+    addPriorityForToday,
+    availablePriorityHabits,
     badgeUnlock,
     celebration,
     completionReward,
     confettiKey,
+    dailyPlan,
+    dailyPlanMessage,
+    dailyPlanProgress,
     error,
     habits,
     handleRefresh,
@@ -57,22 +64,31 @@ export default function HomeScreen() {
     homeSummary,
     levelUp,
     loading,
+    movePriorityForToday,
+    nextPriorityHabit,
     perfectDay,
     preferences,
+    priorityHabits,
     progressExpanded,
     refreshing,
     dismissSwipeHint,
     dismissReturnMessage,
     returnExperience,
+    remainingHabits,
+    removePriorityForToday,
     setBadgeUnlock,
     setCelebration,
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
+    setDailyPlanMessage,
     swipeHintVisible,
     toggleProgressExpanded,
     visibleHabits,
   } = useHomeController();
+  const [focusModeVisible, setFocusModeVisible] = useState(false);
+  const [skippedFocusIds, setSkippedFocusIds] = useState([]);
+  const [focusBusy, setFocusBusy] = useState(false);
 
   const handleReorderPress = useCallback(() => {
     router.push("/reorder-habits");
@@ -94,6 +110,83 @@ export default function HomeScreen() {
     todayXp,
     weeklyContext,
   } = homeSummary;
+  const homeListHabits = priorityHabits.length > 0 ? remainingHabits : visibleHabits;
+  const focusHabit = useMemo(
+    () =>
+      getNextPriorityHabit({
+        habits,
+        plan: dailyPlan,
+        skippedIds: skippedFocusIds,
+      }) || nextPriorityHabit,
+    [dailyPlan, habits, nextPriorityHabit, skippedFocusIds]
+  );
+  const focusComplete = dailyPlanProgress.allComplete;
+  const focusStreak = focusHabit
+    ? getCurrentStreak(focusHabit.completedDates, focusHabit)
+    : 0;
+  const habitListTitle = priorityHabits.length > 0 ? "Remaining Habits" : "Habits";
+  const habitListMessage =
+    priorityHabits.length > 0
+      ? "Your focus habits stay at the top for today."
+      : habitsSectionMessage;
+
+  const handleOpenFocusMode = useCallback(() => {
+    setSkippedFocusIds([]);
+    setFocusModeVisible(true);
+  }, []);
+
+  const handleCloseFocusMode = useCallback(() => {
+    setFocusModeVisible(false);
+    setFocusBusy(false);
+  }, []);
+
+  const handleFocusComplete = useCallback(async () => {
+    if (!focusHabit || focusBusy) {
+      return;
+    }
+
+    setFocusBusy(true);
+    await handleToggleComplete(focusHabit, { source: "focus" });
+    setSkippedFocusIds((ids) => ids.filter((id) => id !== focusHabit.id));
+    setFocusBusy(false);
+  }, [focusBusy, focusHabit, handleToggleComplete]);
+
+  const handleFocusSkip = useCallback(() => {
+    if (!focusHabit) {
+      return;
+    }
+
+    setSkippedFocusIds((ids) =>
+      ids.includes(focusHabit.id) ? ids : [...ids, focusHabit.id]
+    );
+  }, [focusHabit]);
+
+  const handleAddPriority = useCallback(
+    async (habit) => {
+      await addPriorityForToday(habit);
+    },
+    [addPriorityForToday]
+  );
+
+  const handleRemovePriority = useCallback(
+    async (habit) => {
+      await removePriorityForToday(habit);
+    },
+    [removePriorityForToday]
+  );
+
+  useEffect(() => {
+    if (!dailyPlanMessage) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setDailyPlanMessage("");
+    }, 2200);
+
+    return () => clearTimeout(timeoutId);
+  }, [dailyPlanMessage, setDailyPlanMessage]);
+
   const renderHabitItem = useCallback(
     ({ item }) => (
       <View style={styles.listItem}>
@@ -367,15 +460,172 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
+        <View style={styles.focusSection}>
+          <View style={styles.focusSectionHeader}>
+            <View style={styles.focusSectionText}>
+              <AppText style={styles.focusSectionTitle}>Today's Focus</AppText>
+              <AppText style={styles.focusSectionSubtitle}>
+                {priorityHabits.length > 0
+                  ? `${dailyPlanProgress.completedCount}/${dailyPlanProgress.totalCount} priorities complete`
+                  : "Choose up to three habits to prioritize today."}
+              </AppText>
+            </View>
+            {priorityHabits.length > 0 ? (
+              <Pressable
+                accessibilityLabel="Start focus mode"
+                accessibilityRole="button"
+                onPress={handleOpenFocusMode}
+                style={({ pressed }) => [
+                  styles.focusStartButton,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                <AppIcon color={colors.inverseText} name="flame" size={15} />
+                <AppText style={styles.focusStartText}>Focus</AppText>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {dailyPlanMessage ? (
+            <AppText style={styles.dailyPlanMessage}>{dailyPlanMessage}</AppText>
+          ) : null}
+
+          {priorityHabits.length > 0 ? (
+            <View style={styles.priorityList}>
+              {priorityHabits.map((habit, index) => (
+                <View key={habit.id} style={styles.priorityItem}>
+                  <HabitCard
+                    habit={habit}
+                    enableLongPressReorder={preferences.enableLongPressReorder}
+                    enableSwipeToComplete={preferences.enableSwipeToComplete}
+                    onReorderPress={handleReorderPress}
+                    onToggleComplete={handleToggleComplete}
+                  />
+                  <View style={styles.priorityControls}>
+                    <Pressable
+                      accessibilityLabel={`Move ${habit.name} up in today's focus`}
+                      accessibilityRole="button"
+                      disabled={index === 0}
+                      hitSlop={8}
+                      onPress={() => movePriorityForToday(habit, "up")}
+                      style={({ pressed }) => [
+                        styles.priorityControlButton,
+                        index === 0 && styles.priorityControlDisabled,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <AppIcon
+                        color={index === 0 ? colors.softText : colors.text}
+                        name="chevron-up"
+                        size={16}
+                      />
+                    </Pressable>
+                    <Pressable
+                      accessibilityLabel={`Move ${habit.name} down in today's focus`}
+                      accessibilityRole="button"
+                      disabled={index === priorityHabits.length - 1}
+                      hitSlop={8}
+                      onPress={() => movePriorityForToday(habit, "down")}
+                      style={({ pressed }) => [
+                        styles.priorityControlButton,
+                        index === priorityHabits.length - 1 &&
+                          styles.priorityControlDisabled,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <AppIcon
+                        color={
+                          index === priorityHabits.length - 1
+                            ? colors.softText
+                            : colors.text
+                        }
+                        name="chevron-down"
+                        size={16}
+                      />
+                    </Pressable>
+                    <Pressable
+                      accessibilityLabel={`Remove ${habit.name} from today's focus`}
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => handleRemovePriority(habit)}
+                      style={({ pressed }) => [
+                        styles.priorityRemoveButton,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <AppText style={styles.priorityRemoveText}>Remove</AppText>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+              {priorityHabits.length < 3 && availablePriorityHabits.length > 0 ? (
+                <View style={styles.priorityAddRow}>
+                  <AppText style={styles.priorityAddLabel}>Add another</AppText>
+                  <View style={styles.priorityPicker}>
+                    {availablePriorityHabits.slice(0, 4).map((habit) => (
+                      <Pressable
+                        accessibilityLabel={`Add ${habit.name} to today's focus`}
+                        accessibilityRole="button"
+                        key={habit.id}
+                        onPress={() => handleAddPriority(habit)}
+                        style={({ pressed }) => [
+                          styles.priorityChip,
+                          pressed && styles.buttonPressed,
+                        ]}
+                      >
+                        <AppText style={styles.priorityChipEmoji}>
+                          {habit.emoji || "•"}
+                        </AppText>
+                        <AppText
+                          numberOfLines={1}
+                          style={styles.priorityChipText}
+                        >
+                          {habit.name}
+                        </AppText>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          ) : availablePriorityHabits.length > 0 ? (
+            <View style={styles.priorityPicker}>
+              {availablePriorityHabits.slice(0, 5).map((habit) => (
+                <Pressable
+                  accessibilityLabel={`Add ${habit.name} to today's focus`}
+                  accessibilityRole="button"
+                  key={habit.id}
+                  onPress={() => handleAddPriority(habit)}
+                  style={({ pressed }) => [
+                    styles.priorityChip,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <AppText style={styles.priorityChipEmoji}>
+                    {habit.emoji || "•"}
+                  </AppText>
+                  <AppText numberOfLines={1} style={styles.priorityChipText}>
+                    {habit.name}
+                  </AppText>
+                </Pressable>
+              ))}
+            </View>
+          ) : habits.length > 0 ? (
+            <AppText style={styles.noFocusText}>
+              No scheduled habits are available for today.
+            </AppText>
+          ) : null}
+        </View>
+
         <View style={styles.listHeader}>
           <View style={styles.listHeaderText}>
             <View style={styles.listTitleRow}>
-              <AppText style={styles.listTitle}>Habits</AppText>
+              <AppText style={styles.listTitle}>{habitListTitle}</AppText>
               <AppText style={styles.doneBadgeText}>
                 {todayCountLabel}
               </AppText>
             </View>
-            <AppText style={styles.listSubtitle}>{habitsSectionMessage}</AppText>
+            <AppText style={styles.listSubtitle}>{habitListMessage}</AppText>
           </View>
           <Pressable
             accessibilityLabel="Add a new habit"
@@ -394,11 +644,11 @@ export default function HomeScreen() {
 
         <FlatList
           style={styles.list}
-          data={visibleHabits}
+          data={homeListHabits}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.listContent,
-            habits.length === 0 && styles.emptyListContent,
+            homeListHabits.length === 0 && styles.emptyListContent,
           ]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -409,8 +659,17 @@ export default function HomeScreen() {
                 <ActivityIndicator color={colors.primary} />
                 <AppText style={styles.loadingText}>Loading habits...</AppText>
               </View>
-            ) : (
+            ) : habits.length === 0 ? (
               <EmptyState />
+            ) : (
+              <View style={styles.remainingEmptyState}>
+                <AppText style={styles.remainingEmptyTitle}>
+                  Your focus list is set
+                </AppText>
+                <AppText style={styles.remainingEmptyText}>
+                  The rest of today is clear from this list.
+                </AppText>
+              </View>
             )
           }
           renderItem={renderHabitItem}
@@ -421,6 +680,104 @@ export default function HomeScreen() {
           windowSize={7}
         />
       </View>
+
+      <Modal
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseFocusMode}
+        visible={focusModeVisible}
+      >
+        <View style={styles.levelModalBackdrop}>
+          <View style={styles.focusModalCard}>
+            <ScrollView
+              contentContainerStyle={styles.focusModalContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.focusModalIcon}>
+                <AppIcon
+                  color={colors.primary}
+                  name={focusComplete ? "check" : "flame"}
+                  size={24}
+                  strokeWidth={2.2}
+                />
+              </View>
+              <AppText style={styles.levelModalEyebrow}>Focus Mode</AppText>
+              <AppText style={styles.focusModalTitle}>
+                {focusComplete
+                  ? "Today's focus is complete"
+                  : focusHabit?.name || "No focus habit"}
+              </AppText>
+              <AppText style={styles.focusModalBody}>
+                {focusComplete
+                  ? "All priority habits are complete for today."
+                  : focusHabit
+                    ? `${dailyPlanProgress.completedCount}/${dailyPlanProgress.totalCount} complete • ${focusStreak} streak`
+                    : "All incomplete priorities were skipped for this session."}
+              </AppText>
+              {focusHabit && !focusComplete ? (
+                <View style={styles.focusHabitPreview}>
+                  <AppText style={styles.focusHabitEmoji}>
+                    {focusHabit.emoji || "•"}
+                  </AppText>
+                  <View style={styles.focusHabitText}>
+                    <AppText numberOfLines={2} style={styles.focusHabitName}>
+                      {focusHabit.name}
+                    </AppText>
+                    <AppText numberOfLines={1} style={styles.focusHabitCategory}>
+                      {focusHabit.category || "General"}
+                    </AppText>
+                  </View>
+                </View>
+              ) : null}
+              <View style={styles.focusModalActions}>
+                {focusHabit && !focusComplete ? (
+                  <>
+                    <Pressable
+                      accessibilityLabel={`Complete ${focusHabit.name}`}
+                      accessibilityRole="button"
+                      disabled={focusBusy}
+                      onPress={handleFocusComplete}
+                      style={({ pressed }) => [
+                        styles.focusPrimaryButton,
+                        focusBusy && styles.priorityControlDisabled,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <AppText style={styles.focusPrimaryButtonText}>
+                        Complete
+                      </AppText>
+                    </Pressable>
+                    <Pressable
+                      accessibilityLabel={`Skip ${focusHabit.name} for this focus session`}
+                      accessibilityRole="button"
+                      onPress={handleFocusSkip}
+                      style={({ pressed }) => [
+                        styles.focusSecondaryButton,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <AppText style={styles.focusSecondaryButtonText}>
+                        Skip
+                      </AppText>
+                    </Pressable>
+                  </>
+                ) : null}
+                <Pressable
+                  accessibilityLabel="Exit focus mode"
+                  accessibilityRole="button"
+                  onPress={handleCloseFocusMode}
+                  style={({ pressed }) => [
+                    styles.focusExitButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <AppText style={styles.focusExitButtonText}>Exit</AppText>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         transparent
@@ -924,6 +1281,148 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     fontSize: v2Typography.caption.fontSize,
     fontWeight: v2FontWeight.bold,
   },
+  focusSection: {
+    borderBottomColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: v2Spacing.sm,
+    paddingBottom: 12,
+    paddingTop: 10,
+  },
+  focusSectionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: v2Spacing.md,
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  focusSectionText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  focusSectionTitle: {
+    color: colors.text,
+    fontSize: v2Typography.sectionTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: v2Typography.sectionTitle.lineHeight,
+  },
+  focusSectionSubtitle: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  focusStartButton: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: v2Radius.pill,
+    flexDirection: "row",
+    gap: v2Spacing.xs,
+    justifyContent: "center",
+    minHeight: 42,
+    minWidth: 92,
+    paddingHorizontal: 14,
+  },
+  focusStartText: {
+    color: colors.inverseText,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  dailyPlanMessage: {
+    color: colors.primary,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: v2Typography.caption.lineHeight,
+  },
+  priorityList: {
+    gap: 12,
+    width: "100%",
+  },
+  priorityAddRow: {
+    gap: v2Spacing.xs,
+    paddingTop: 2,
+    width: "100%",
+  },
+  priorityAddLabel: {
+    color: colors.muted,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: v2Typography.caption.lineHeight,
+  },
+  priorityItem: {
+    gap: v2Spacing.xs,
+    width: "100%",
+  },
+  priorityControls: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: v2Spacing.sm,
+    justifyContent: "flex-end",
+    paddingHorizontal: 2,
+  },
+  priorityControlButton: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  priorityControlDisabled: {
+    opacity: 0.42,
+  },
+  priorityRemoveButton: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: 12,
+  },
+  priorityRemoveText: {
+    color: colors.muted,
+    fontSize: v2Typography.caption.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  priorityPicker: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: v2Spacing.sm,
+    width: "100%",
+  },
+  priorityChip: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: v2Spacing.xs,
+    maxWidth: "100%",
+    minHeight: 40,
+    paddingHorizontal: 12,
+  },
+  priorityChipEmoji: {
+    color: colors.text,
+    fontSize: 15,
+  },
+  priorityChipText: {
+    color: colors.text,
+    flexShrink: 1,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
+    maxWidth: isSmallScreen ? 170 : 230,
+  },
+  noFocusText: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: 18,
+  },
   listHeader: {
     alignItems: "center",
     flexDirection: "row",
@@ -1009,6 +1508,28 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   emptyListContent: {
     flexGrow: 1,
   },
+  remainingEmptyState: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    marginTop: 8,
+    padding: 18,
+  },
+  remainingEmptyTitle: {
+    color: colors.text,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  remainingEmptyText: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: 18,
+    marginTop: 4,
+    textAlign: "center",
+  },
   separator: {
     height: 12,
   },
@@ -1032,6 +1553,120 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     shadowColor: colors.shadow,
     shadowOpacity: 0.18,
     width: "100%",
+  },
+  focusModalCard: {
+    alignItems: "stretch",
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    maxHeight: "82%",
+    maxWidth: 360,
+    padding: 22,
+    ...v2Shadows.floating,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.18,
+    width: "100%",
+  },
+  focusModalContent: {
+    alignItems: "stretch",
+  },
+  focusModalIcon: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.border,
+    borderRadius: v2Radius.pill,
+    borderWidth: 1,
+    height: 56,
+    justifyContent: "center",
+    marginBottom: v2Spacing.md,
+    width: 56,
+  },
+  focusModalTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: 30,
+  },
+  focusModalBody: {
+    color: colors.muted,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.medium,
+    lineHeight: v2Typography.body.lineHeight,
+    marginTop: 8,
+  },
+  focusHabitPreview: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: v2Spacing.md,
+    marginTop: 16,
+    padding: 14,
+  },
+  focusHabitEmoji: {
+    color: colors.text,
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  focusHabitText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  focusHabitName: {
+    color: colors.text,
+    fontSize: v2Typography.cardTitle.fontSize,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: v2Typography.cardTitle.lineHeight,
+  },
+  focusHabitCategory: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.medium,
+    marginTop: 3,
+  },
+  focusModalActions: {
+    gap: v2Spacing.sm,
+    marginTop: 18,
+  },
+  focusPrimaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: v2Radius.large,
+    justifyContent: "center",
+    minHeight: 50,
+  },
+  focusPrimaryButtonText: {
+    color: colors.inverseText,
+    fontSize: v2Typography.body.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  focusSecondaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: v2Radius.large,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 46,
+  },
+  focusSecondaryButtonText: {
+    color: colors.text,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
+  },
+  focusExitButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 42,
+  },
+  focusExitButtonText: {
+    color: colors.muted,
+    fontSize: v2Typography.label.fontSize,
+    fontWeight: v2FontWeight.bold,
   },
   levelModalScrollContent: {
     alignItems: "stretch",

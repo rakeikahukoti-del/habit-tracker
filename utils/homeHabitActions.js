@@ -9,26 +9,12 @@ import {
   isHabitScheduledOnDate,
   wasCompletedToday,
 } from "./habitStats";
+import { sortHabitsForHome } from "./dailyPlanning";
 import { getVisibleRank } from "./rankDisplay";
 import { getWeeklyReview } from "./weeklyReview";
 
 export function getVisibleHomeHabits(habits, moveCompletedToBottom = false) {
-  const orderedHabits = getOrderedHabits(habits);
-
-  if (!moveCompletedToBottom) {
-    return orderedHabits;
-  }
-
-  return orderedHabits.sort((firstHabit, secondHabit) => {
-    const firstCompleted = wasCompletedToday(firstHabit);
-    const secondCompleted = wasCompletedToday(secondHabit);
-
-    if (firstCompleted === secondCompleted) {
-      return compareHabitOrder(firstHabit, secondHabit);
-    }
-
-    return firstCompleted ? 1 : -1;
-  });
+  return sortHabitsForHome(habits, moveCompletedToBottom);
 }
 
 export function getHomeSummary(habits, gamification) {
@@ -258,25 +244,6 @@ function getTodayCountLabel({
   }
 
   return `${completedTodayCount}/${scheduledTodayCount} today`;
-}
-
-function getOrderedHabits(habits) {
-  return getSafeHabits(habits).sort(compareHabitOrder);
-}
-
-function compareHabitOrder(firstHabit, secondHabit) {
-  const firstOrder = Number.isFinite(firstHabit.order)
-    ? firstHabit.order
-    : Number.MAX_SAFE_INTEGER;
-  const secondOrder = Number.isFinite(secondHabit.order)
-    ? secondHabit.order
-    : Number.MAX_SAFE_INTEGER;
-
-  if (firstOrder !== secondOrder) {
-    return firstOrder - secondOrder;
-  }
-
-  return String(firstHabit.id || "").localeCompare(String(secondHabit.id || ""));
 }
 
 function getTodayXp(habits) {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import { AppState, LayoutAnimation } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { getDailyPlan, saveDailyPlan } from "../storage/dailyPlanStorage";
 import {
   defaultAppPreferences,
   dismissFirstSwipeHint,
@@ -32,6 +33,15 @@ import {
   getVisibleHomeHabits,
   shouldShowConfetti,
 } from "../utils/homeHabitActions";
+import {
+  addPriorityId,
+  getAvailablePriorityHabits,
+  getDailyPlanProgress,
+  getNextPriorityHabit,
+  getTodayPriorityHabits,
+  removePriorityId,
+  reorderPriorityIds,
+} from "../utils/dailyPlanning";
 import { getVisibleRank } from "../utils/rankDisplay";
 import {
   getCurrentStreak,
@@ -54,6 +64,12 @@ export function useHomeController() {
   const [levelUp, setLevelUp] = useState(null);
   const [perfectDay, setPerfectDay] = useState(null);
   const [moveCompletedToBottom, setMoveCompletedToBottom] = useState(false);
+  const [dailyPlan, setDailyPlan] = useState({
+    date: getTodayKey(),
+    habitIds: [],
+    version: 1,
+  });
+  const [dailyPlanMessage, setDailyPlanMessage] = useState("");
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
   const [swipeHintVisible, setSwipeHintVisible] = useState(false);
@@ -94,12 +110,14 @@ export function useHomeController() {
         consumeGamificationMessages(),
         getGamification(),
       ]);
+      const storedDailyPlan = await getDailyPlan(storedHabits);
 
       if (!isActive()) {
         return;
       }
 
       setHabits(storedHabits);
+      setDailyPlan(storedDailyPlan);
       setMoveCompletedToBottom(storedPreferences.moveCompletedToBottom);
       setPreferences(storedPreferences);
       setGamification(storedGamification);
@@ -147,6 +165,18 @@ export function useHomeController() {
       }
     }
   }, []);
+
+  const persistDailyPlan = useCallback(async (nextPlan, nextHabits = habits) => {
+    try {
+      const savedPlan = await saveDailyPlan(nextPlan, nextHabits);
+
+      setDailyPlan(savedPlan);
+      return savedPlan;
+    } catch {
+      setError("Could not update today's focus. Please try again.");
+      return dailyPlan;
+    }
+  }, [dailyPlan, habits]);
 
   useFocusEffect(
     useCallback(() => {
@@ -342,6 +372,31 @@ export function useHomeController() {
     }
   }, [dismissReturnMessage, dismissSwipeHint, preferences]);
 
+  const addPriorityForToday = useCallback(async (habit) => {
+    const nextPlan = addPriorityId(dailyPlan, habits, habit.id);
+
+    if (nextPlan.habitIds.length === dailyPlan.habitIds.length) {
+      setDailyPlanMessage("Today can include up to three focus habits.");
+      return;
+    }
+
+    await persistDailyPlan(nextPlan);
+    setDailyPlanMessage(`${habit.name} added to today's focus.`);
+  }, [dailyPlan, habits, persistDailyPlan]);
+
+  const removePriorityForToday = useCallback(async (habit) => {
+    const nextPlan = removePriorityId(dailyPlan, habits, habit.id);
+
+    await persistDailyPlan(nextPlan);
+    setDailyPlanMessage(`${habit.name} removed from today's focus.`);
+  }, [dailyPlan, habits, persistDailyPlan]);
+
+  const movePriorityForToday = useCallback(async (habit, direction) => {
+    const nextPlan = reorderPriorityIds(dailyPlan, habits, habit.id, direction);
+
+    await persistDailyPlan(nextPlan);
+  }, [dailyPlan, habits, persistDailyPlan]);
+
   const toggleProgressExpanded = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setProgressExpanded((value) => !value);
@@ -355,12 +410,41 @@ export function useHomeController() {
     () => getVisibleHomeHabits(habits, moveCompletedToBottom),
     [habits, moveCompletedToBottom]
   );
+  const priorityHabits = useMemo(
+    () => getTodayPriorityHabits(dailyPlan, habits),
+    [dailyPlan, habits]
+  );
+  const remainingHabits = useMemo(
+    () => {
+      const priorityIds = new Set(priorityHabits.map((habit) => habit.id));
+
+      return visibleHabits.filter((habit) => !priorityIds.has(habit.id));
+    },
+    [priorityHabits, visibleHabits]
+  );
+  const availablePriorityHabits = useMemo(
+    () => getAvailablePriorityHabits({ habits, plan: dailyPlan }),
+    [dailyPlan, habits]
+  );
+  const dailyPlanProgress = useMemo(
+    () => getDailyPlanProgress(dailyPlan, habits),
+    [dailyPlan, habits]
+  );
+  const nextPriorityHabit = useMemo(
+    () => getNextPriorityHabit({ habits, plan: dailyPlan }),
+    [dailyPlan, habits]
+  );
 
   return {
+    addPriorityForToday,
+    availablePriorityHabits,
     badgeUnlock,
     celebration,
     completionReward,
     confettiKey,
+    dailyPlan,
+    dailyPlanMessage,
+    dailyPlanProgress,
     error,
     habits,
     handleRefresh,
@@ -368,18 +452,24 @@ export function useHomeController() {
     homeSummary,
     levelUp,
     loading,
+    movePriorityForToday,
+    nextPriorityHabit,
     perfectDay,
     preferences,
+    priorityHabits,
     progressExpanded,
     refreshing,
     dismissSwipeHint,
     dismissReturnMessage,
     returnExperience,
+    remainingHabits,
+    removePriorityForToday,
     setBadgeUnlock,
     setCelebration,
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
+    setDailyPlanMessage,
     swipeHintVisible,
     toggleProgressExpanded,
     visibleHabits,
