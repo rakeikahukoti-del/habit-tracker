@@ -70,6 +70,7 @@ const asyncStorageMock = {
 const notificationState = {
   cancelled: [],
   permissions: { granted: true, canAskAgain: true },
+  permissionRequests: 0,
   scheduled: [],
   shouldScheduleThrow: false,
 };
@@ -82,9 +83,22 @@ const expoNotificationsMock = {
   },
   cancelScheduledNotificationAsync: async (notificationId) => {
     notificationState.cancelled.push(notificationId);
+    notificationState.scheduled = notificationState.scheduled.filter(
+      (item) => item.id !== notificationId
+    );
   },
+  getAllScheduledNotificationsAsync: async () =>
+    notificationState.scheduled.map((item) => ({
+      identifier: item.id,
+      content: item.request.content,
+      trigger: item.request.trigger,
+    })),
   getPermissionsAsync: async () => notificationState.permissions,
-  requestPermissionsAsync: async () => notificationState.permissions,
+  requestPermissionsAsync: async () => {
+    notificationState.permissionRequests += 1;
+
+    return notificationState.permissions;
+  },
   scheduleNotificationAsync: async (request) => {
     if (notificationState.shouldScheduleThrow) {
       throw new Error("schedule failed");
@@ -111,6 +125,7 @@ function resetStorage() {
 function resetNotifications() {
   notificationState.cancelled = [];
   notificationState.permissions = { granted: true, canAskAgain: true };
+  notificationState.permissionRequests = 0;
   notificationState.scheduled = [];
   notificationState.shouldScheduleThrow = false;
 }
@@ -747,6 +762,39 @@ test("notification time parsing and weekday normalization are strict", () => {
   );
 });
 
+test("notification reminder previews are deterministic and readable", () => {
+  assert.strictEqual(
+    habitNotifications.getReminderPreview({
+      frequency: "Daily",
+      reminderTime: "21:00",
+    }),
+    "Every day at 9:00 PM"
+  );
+  assert.strictEqual(
+    habitNotifications.getReminderPreview({
+      frequency: "Weekdays",
+      reminderTime: "07:05",
+    }),
+    "Every weekday at 7:05 AM"
+  );
+  assert.strictEqual(
+    habitNotifications.getReminderPreview({
+      customDays: ["Mon", "Thu"],
+      frequency: "Custom",
+      reminderTime: "18:30",
+    }),
+    "Every Monday and Thursday at 6:30 PM"
+  );
+  assert.strictEqual(
+    habitNotifications.getReminderPreview({
+      customDays: [],
+      frequency: "Custom",
+      reminderTime: "18:30",
+    }),
+    "No scheduled reminder days"
+  );
+});
+
 test("notification scheduling builds the expected trigger types", async () => {
   resetNotifications();
 
@@ -761,6 +809,14 @@ test("notification scheduling builds the expected trigger types", async () => {
   assert.strictEqual(dailyResult.reminderStatus, "scheduled");
   assert.strictEqual(notificationState.scheduled.length, 1);
   assert.strictEqual(notificationState.scheduled[0].request.trigger.type, "daily");
+  assertJsonEqual(notificationState.scheduled[0].request.content, {
+    title: "Momentum",
+    body: "Time for your Daily habit.",
+    data: {
+      habitId: "habit-daily",
+      reminderKey: "habit-daily:daily-0:8:15",
+    },
+  });
 
   resetNotifications();
 
@@ -780,6 +836,22 @@ test("notification scheduling builds the expected trigger types", async () => {
 
   resetNotifications();
 
+  const weekendResult = await habitNotifications.scheduleHabitReminder({
+    id: "habit-weekends",
+    name: "Weekends",
+    frequency: "Weekends",
+    reminderTime: "10:15",
+  });
+
+  assert.strictEqual(weekendResult.reminderStatus, "scheduled");
+  assert.strictEqual(notificationState.scheduled.length, 2);
+  assertJsonEqual(
+    notificationState.scheduled.map((item) => item.request.trigger.weekday),
+    [7, 1]
+  );
+
+  resetNotifications();
+
   const customResult = await habitNotifications.scheduleHabitReminder({
     id: "habit-custom",
     name: "Custom",
@@ -792,6 +864,97 @@ test("notification scheduling builds the expected trigger types", async () => {
   assertJsonEqual(
     notificationState.scheduled.map((item) => item.request.trigger.weekday),
     [1, 3]
+  );
+});
+
+test("notification reconciliation repairs stale status, disabled reminders, and orphans", async () => {
+  resetNotifications();
+
+  notificationState.scheduled = [
+    { id: "orphan", request: { content: {}, trigger: {} } },
+    { id: "kept", request: { content: {}, trigger: {} } },
+    { id: "kept", request: { content: {}, trigger: {} } },
+  ];
+
+  const disabledResult = await habitNotifications.reconcileNotifications(
+    [
+      {
+        id: "habit-disabled",
+        name: "Disabled",
+        notificationIds: ["kept"],
+        reminderStatus: "scheduled",
+        reminderTime: "08:00",
+      },
+    ],
+    { enabled: false }
+  );
+
+  assert.strictEqual(disabledResult.changed, true);
+  assertJsonEqual(disabledResult.habits[0].notificationIds, []);
+  assert.strictEqual(disabledResult.habits[0].reminderStatus, "disabled");
+  assertJsonEqual(notificationState.cancelled, ["orphan", "kept"]);
+
+  resetNotifications();
+
+  const repairedResult = await habitNotifications.reconcileNotifications(
+    [
+      {
+        id: "habit-repair",
+        name: "Repair",
+        frequency: "Weekdays",
+        notificationIds: ["old-id"],
+        reminderStatus: "scheduled",
+        reminderTime: "08:00",
+      },
+    ],
+    { enabled: true }
+  );
+
+  assert.strictEqual(repairedResult.changed, true);
+  assert.strictEqual(repairedResult.habits[0].notificationIds.length, 5);
+  assert.strictEqual(repairedResult.habits[0].reminderStatus, "scheduled");
+  assert.strictEqual(notificationState.permissionRequests, 0);
+  assertJsonEqual(notificationState.cancelled, ["old-id"]);
+});
+
+test("notification validation catches time and frequency changes without rescheduling healthy reminders", () => {
+  const healthyHabit = {
+    id: "healthy",
+    frequency: "Custom",
+    customDays: ["Tue", "Thu"],
+    notificationIds: ["one", "two"],
+    reminderStatus: "scheduled",
+    reminderTime: "06:00",
+  };
+
+  assertJsonEqual(habitNotifications.validateReminderState(healthyHabit), {
+    expectedCount: 2,
+    needsRepair: false,
+    status: "scheduled",
+  });
+
+  assertJsonEqual(
+    habitNotifications.validateReminderState({
+      ...healthyHabit,
+      customDays: ["Tue"],
+    }),
+    {
+      expectedCount: 1,
+      needsRepair: true,
+      status: "scheduled",
+    }
+  );
+
+  assertJsonEqual(
+    habitNotifications.validateReminderState({
+      ...healthyHabit,
+      reminderTime: "",
+    }),
+    {
+      expectedCount: 0,
+      needsRepair: true,
+      status: "none",
+    }
   );
 });
 

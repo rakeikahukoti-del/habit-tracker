@@ -22,6 +22,7 @@ import {
   weekDayOptions,
 } from "../constants/habitOptions";
 import { useTheme } from "../context/ThemeContext";
+import { getReminderPreview } from "../notifications/habitNotifications";
 import { AppText } from "./ui";
 
 export default function HabitFormFields({
@@ -50,6 +51,15 @@ export default function HabitFormFields({
     [colors, isSmallScreen]
   );
   const reminderInputRef = useRef(null);
+  const reminderPreview = useMemo(
+    () =>
+      getReminderPreview({
+        customDays,
+        frequency,
+        reminderTime,
+      }),
+    [customDays, frequency, reminderTime]
+  );
 
   function toggleCustomDay(day) {
     if (customDays.includes(day)) {
@@ -215,6 +225,12 @@ export default function HabitFormFields({
         style={styles.input}
         value={reminderTime}
       />
+      <AppText
+        accessibilityLabel={`Reminder preview. ${reminderPreview}`}
+        style={styles.reminderPreview}
+      >
+        {reminderPreview}
+      </AppText>
     </View>
   );
 }
@@ -363,6 +379,11 @@ function createStyles(colors, isSmallScreen) {
     },
     dayTextSelected: {
       color: colors.text,
+    },
+    reminderPreview: {
+      color: colors.muted,
+      ...v2Typography.caption,
+      marginTop: -v2Spacing.xs,
     },
   });
 }

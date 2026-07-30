@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { Linking } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import {
   SettingsMessage,
@@ -7,17 +8,26 @@ import {
   SettingsSection,
   SettingsToggleRow,
 } from "../components/settings";
-import { getNotificationPermissionState } from "../notifications/habitNotifications";
+import {
+  getNotificationPermissionMessage,
+  getNotificationPermissionState,
+  getReminderPreview,
+} from "../notifications/habitNotifications";
 import {
   defaultAppPreferences,
   getAppPreferences,
   setAppPreference,
 } from "../storage/appPreferences";
-import { applyDailyReminderPreference } from "../storage/habitsStorage";
+import {
+  applyDailyReminderPreference,
+  getHabits,
+  reconcileHabitNotifications,
+} from "../storage/habitsStorage";
 
 export default function NotificationPreferencesScreen() {
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [permissionState, setPermissionState] = useState("not-requested");
+  const [reminderSummary, setReminderSummary] = useState(getEmptyReminderSummary());
   const [message, setMessage] = useState("");
   const preferenceUpdatingRef = useRef(false);
 
@@ -26,14 +36,23 @@ export default function NotificationPreferencesScreen() {
       let isActive = true;
 
       async function loadPreferences() {
-        const [savedPreferences, savedPermissionState] = await Promise.all([
-          getAppPreferences(),
-          getNotificationPermissionState(),
-        ]);
+        try {
+          await reconcileHabitNotifications();
+        } catch {
+          // Reminders are optional; preferences should still load if repair fails.
+        }
+
+        const [savedPreferences, savedPermissionState, habits] =
+          await Promise.all([
+            getAppPreferences(),
+            getNotificationPermissionState(),
+            getHabits(),
+          ]);
 
         if (isActive) {
           setPreferences(savedPreferences);
           setPermissionState(savedPermissionState);
+          setReminderSummary(getReminderSummary(habits));
         }
       }
 
@@ -63,7 +82,10 @@ export default function NotificationPreferencesScreen() {
         "enableDailyReminders",
         value
       );
+      const habits = await getHabits();
+
       setPreferences(savedPreferences);
+      setReminderSummary(getReminderSummary(habits));
       setPermissionState(await getNotificationPermissionState());
     } catch {
       setMessage("Could not update reminders. Please try again.");
@@ -83,11 +105,19 @@ export default function NotificationPreferencesScreen() {
 
       <SettingsSection title="Permission">
         <SettingsRow
-          description={getPermissionDescription(permissionState)}
+          description={getNotificationPermissionMessage(permissionState)}
           showChevron={false}
           title="Notification access"
           value={getPermissionLabel(permissionState)}
         />
+        {permissionState === "blocked" ? (
+          <SettingsRow
+            accessibilityLabel="Open device notification settings"
+            description="Update notification access in your device settings."
+            onPress={() => Linking.openSettings()}
+            title="Open Settings"
+          />
+        ) : null}
       </SettingsSection>
 
       <SettingsSection
@@ -99,6 +129,12 @@ export default function NotificationPreferencesScreen() {
           onValueChange={handleDailyReminderChange}
           title="Daily reminders"
           value={preferences.enableDailyReminders}
+        />
+        <SettingsRow
+          description={reminderSummary.description}
+          showChevron={false}
+          title="Active reminders"
+          value={reminderSummary.value}
         />
       </SettingsSection>
     </SettingsScreen>
@@ -121,18 +157,36 @@ function getPermissionLabel(state) {
   return "Not asked";
 }
 
-function getPermissionDescription(state) {
-  if (state === "granted") {
-    return "Habit reminders can be scheduled on this device.";
+function getReminderSummary(habits) {
+  const safeHabits = Array.isArray(habits) ? habits : [];
+  const scheduledHabits = safeHabits.filter(
+    (habit) => habit.reminderStatus === "scheduled"
+  );
+  const notificationCount = scheduledHabits.reduce(
+    (sum, habit) =>
+      sum +
+      (Array.isArray(habit.notificationIds) ? habit.notificationIds.length : 0),
+    0
+  );
+  const nextPreview = scheduledHabits[0]
+    ? getReminderPreview(scheduledHabits[0])
+    : "";
+
+  if (scheduledHabits.length === 0) {
+    return getEmptyReminderSummary();
   }
 
-  if (state === "blocked") {
-    return "Enable notifications in device settings to receive reminders.";
-  }
+  return {
+    description: nextPreview
+      ? `${nextPreview}. ${scheduledHabits.length} habit reminder${scheduledHabits.length === 1 ? "" : "s"} enabled.`
+      : `${scheduledHabits.length} habit reminder${scheduledHabits.length === 1 ? "" : "s"} enabled.`,
+    value: String(notificationCount),
+  };
+}
 
-  if (state === "unavailable") {
-    return "Notifications are unavailable in this environment.";
-  }
-
-  return "Permission is requested only when a reminder is scheduled.";
+function getEmptyReminderSummary() {
+  return {
+    description: "Add a reminder time to any habit to schedule reminders.",
+    value: "0",
+  };
 }

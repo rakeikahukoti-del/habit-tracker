@@ -18,7 +18,9 @@ import {
   cancelHabitReminders,
   hasReminderScheduleChanged,
   parseReminderTime,
+  reconcileNotifications,
   scheduleHabitReminder,
+  syncHabitReminder,
 } from "../notifications/habitNotifications";
 import { getTodayKey, toDateKey, wasCompletedToday } from "../utils/habitStats";
 
@@ -67,6 +69,20 @@ export async function saveHabits(habits) {
     logStorageError("Could not save habits.", error);
     throw error;
   }
+}
+
+export async function reconcileHabitNotifications() {
+  const habits = await getHabits();
+  const preferences = await getAppPreferences();
+  const result = await reconcileNotifications(habits, {
+    enabled: preferences.enableDailyReminders,
+  });
+
+  if (result.changed) {
+    await saveHabits(result.habits);
+  }
+
+  return result;
 }
 
 export async function addHabit({
@@ -153,8 +169,9 @@ export async function updateHabit(updatedHabit) {
     previousHabit &&
     hasReminderScheduleChanged(previousHabit, normalizedHabit)
   ) {
-    await cancelHabitReminders(previousHabit);
-    const reminderResult = await scheduleReminderIfEnabled(normalizedHabit);
+    const reminderResult = await scheduleReminderIfEnabled(normalizedHabit, {
+      previousHabit,
+    });
     normalizedHabit = {
       ...normalizedHabit,
       ...reminderResult,
@@ -367,8 +384,7 @@ export async function applyDailyReminderPreference(enabled) {
   const nextHabits = [];
 
   for (const habit of habits) {
-    await cancelHabitReminders(habit);
-    const reminderResult = await scheduleHabitReminder(habit);
+    const reminderResult = await syncHabitReminder(habit, { enabled: true });
 
     nextHabits.push({
       ...habit,
@@ -405,7 +421,7 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
       ? safeHabit.notificationIds
       : [],
     order: Number.isFinite(safeHabit.order) ? safeHabit.order : fallbackOrder,
-    reminderStatus: safeHabit.reminderStatus || "none",
+    reminderStatus: getSafeReminderStatus(safeHabit.reminderStatus),
     completedDates: getSafeDateKeys(safeHabit.completedDates),
   };
 }
@@ -566,17 +582,44 @@ async function cancelRemindersForHabits(habits) {
   }
 }
 
-async function scheduleReminderIfEnabled(habit) {
+async function scheduleReminderIfEnabled(habit, { previousHabit = null } = {}) {
   const preferences = await getAppPreferences();
 
   if (!preferences.enableDailyReminders) {
+    if (previousHabit) {
+      await cancelHabitReminders(previousHabit);
+    }
+
     return {
       notificationIds: [],
       reminderStatus: habit.reminderTime ? "disabled" : "none",
     };
   }
 
+  if (previousHabit) {
+    return syncHabitReminder(
+      {
+        ...habit,
+        notificationIds: previousHabit.notificationIds,
+      },
+      { enabled: true }
+    );
+  }
+
   return scheduleHabitReminder(habit);
+}
+
+function getSafeReminderStatus(reminderStatus) {
+  return [
+    "disabled",
+    "failed",
+    "inactive",
+    "none",
+    "permission-denied",
+    "scheduled",
+  ].includes(reminderStatus)
+    ? reminderStatus
+    : "none";
 }
 
 function createDemoHabits() {

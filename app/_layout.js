@@ -1,11 +1,13 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppErrorBoundary from "../components/AppErrorBoundary";
 import { MomentumLogo } from "../components/brand";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import { v2Colors, v2FontWeight, v2Spacing } from "../src/design";
+import { reconcileHabitNotifications } from "../storage/habitsStorage";
 
 export default function RootLayout() {
   return (
@@ -22,6 +24,26 @@ export default function RootLayout() {
 function ThemedStack() {
   const { colors, themeLoaded } = useTheme();
   const statusBarStyle = isLightColor(colors.background) ? "dark" : "light";
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function runReminderHealthCheck() {
+      try {
+        await reconcileHabitNotifications();
+      } catch {
+        // Reminders are optional; startup should never be blocked by notification repair.
+      }
+    }
+
+    if (themeLoaded && isActive) {
+      runReminderHealthCheck();
+    }
+
+    return () => {
+      isActive = false;
+    };
+  }, [themeLoaded]);
 
   if (!themeLoaded) {
     return <LaunchShell />;
