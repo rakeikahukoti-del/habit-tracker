@@ -107,6 +107,12 @@ export default function HabitDetailsScreen() {
     }
   }, [id]);
 
+  function clearError() {
+    if (error) {
+      setError("");
+    }
+  }
+
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -412,20 +418,38 @@ export default function HabitDetailsScreen() {
           <View style={styles.form}>
             <HabitFormFields
               name={name}
-              setName={setName}
               emoji={emoji}
-              setEmoji={setEmoji}
               category={category}
-              setCategory={setCategory}
               color={color}
-              setColor={setColor}
               frequency={frequency}
-              setFrequency={setFrequency}
               customDays={customDays}
-              setCustomDays={setCustomDays}
               reminderTime={reminderTime}
-              setReminderTime={setReminderTime}
-              onNameChange={() => setError("")}
+              setName={setName}
+              setReminderTime={(value) => {
+                clearError();
+                setReminderTime(value);
+              }}
+              onNameChange={clearError}
+              setCategory={(value) => {
+                clearError();
+                setCategory(value);
+              }}
+              setColor={(value) => {
+                clearError();
+                setColor(value);
+              }}
+              setEmoji={(value) => {
+                clearError();
+                setEmoji(value);
+              }}
+              setFrequency={(value) => {
+                clearError();
+                setFrequency(value);
+              }}
+              setCustomDays={(value) => {
+                clearError();
+                setCustomDays(value);
+              }}
             />
           </View>
     </HabitFormScreen>

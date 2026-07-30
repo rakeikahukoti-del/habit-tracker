@@ -1680,6 +1680,17 @@ test("habit order normalization repairs missing, duplicate, and explicit order v
     explicit.map((habit) => habit.order),
     [0, 1, 2, 3]
   );
+
+  assert.strictEqual(
+    habitsStorage.normalizeHabit({ name: "   " }).name,
+    "Untitled habit",
+    "blank imported or corrupted habit names should get a readable fallback"
+  );
+  assert.strictEqual(
+    habitsStorage.normalizeHabit({ name: "  Read  " }).name,
+    "Read",
+    "habit names should be trimmed during normalization"
+  );
 });
 
 test("habit reorder persistence saves normalized order values", async () => {

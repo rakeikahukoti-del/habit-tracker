@@ -43,8 +43,12 @@ export default function HabitFormScreen({
         >
           {topBar ? <View style={styles.topBar}>{topBar}</View> : null}
           {header}
+          {error ? (
+            <AppText accessibilityRole="alert" style={styles.error}>
+              {error}
+            </AppText>
+          ) : null}
           {children}
-          {error ? <AppText style={styles.error}>{error}</AppText> : null}
         </ScrollView>
 
         {footer ? <View style={styles.footer}>{footer}</View> : null}

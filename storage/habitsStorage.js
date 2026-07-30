@@ -349,7 +349,7 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
   return {
     ...safeHabit,
     id: safeHabit.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name: typeof safeHabit.name === "string" ? safeHabit.name : "",
+    name: getSafeHabitName(safeHabit.name),
     createdAt: getSafeCreatedAt(safeHabit.createdAt),
     emoji: safeHabit.emoji || DEFAULT_HABIT_EMOJI,
     category: safeHabit.category || DEFAULT_HABIT_CATEGORY,
@@ -370,6 +370,16 @@ export function normalizeHabit(habit, fallbackOrder = 0) {
     reminderStatus: safeHabit.reminderStatus || "none",
     completedDates: getSafeDateKeys(safeHabit.completedDates),
   };
+}
+
+function getSafeHabitName(name) {
+  if (typeof name !== "string") {
+    return "Untitled habit";
+  }
+
+  const trimmedName = name.trim();
+
+  return trimmedName || "Untitled habit";
 }
 
 export function normalizeHabitOrder(habits, orderedHabitIds = null) {

@@ -51,6 +51,12 @@ export default function AddHabitScreen() {
     customDays.length > 0 ||
     reminderTime.trim();
 
+  function clearError() {
+    if (error) {
+      setError("");
+    }
+  }
+
   function handleCancel() {
     if (!hasUnsavedInput) {
       router.replace("/");
@@ -168,15 +174,33 @@ export default function AddHabitScreen() {
         emoji={emoji}
         frequency={frequency}
         name={name}
-        onNameChange={() => setError("")}
+        onNameChange={clearError}
         reminderTime={reminderTime}
-        setCategory={setCategory}
-        setColor={setColor}
-        setCustomDays={setCustomDays}
-        setEmoji={setEmoji}
-        setFrequency={setFrequency}
+        setCategory={(value) => {
+          clearError();
+          setCategory(value);
+        }}
+        setColor={(value) => {
+          clearError();
+          setColor(value);
+        }}
+        setCustomDays={(value) => {
+          clearError();
+          setCustomDays(value);
+        }}
+        setEmoji={(value) => {
+          clearError();
+          setEmoji(value);
+        }}
+        setFrequency={(value) => {
+          clearError();
+          setFrequency(value);
+        }}
         setName={setName}
-        setReminderTime={setReminderTime}
+        setReminderTime={(value) => {
+          clearError();
+          setReminderTime(value);
+        }}
       />
     </HabitFormScreen>
   );
