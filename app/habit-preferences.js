@@ -1,5 +1,4 @@
-import { useCallback, useRef, useState } from "react";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import {
   SettingsMessage,
   SettingsRow,
@@ -7,55 +6,11 @@ import {
   SettingsSection,
   SettingsToggleRow,
 } from "../components/settings";
-import {
-  defaultAppPreferences,
-  getAppPreferences,
-  setAppPreference,
-} from "../storage/appPreferences";
+import { useAppPreferenceSettings } from "../hooks/useAppPreferenceSettings";
 
 export default function HabitPreferencesScreen() {
-  const [preferences, setPreferences] = useState(defaultAppPreferences);
-  const [message, setMessage] = useState("");
-  const preferenceUpdatingRef = useRef(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      async function loadPreferences() {
-        const savedPreferences = await getAppPreferences();
-
-        if (isActive) {
-          setPreferences(savedPreferences);
-        }
-      }
-
-      loadPreferences();
-
-      return () => {
-        isActive = false;
-      };
-    }, [])
-  );
-
-  async function handlePreferenceChange(key, value) {
-    if (preferenceUpdatingRef.current) {
-      return;
-    }
-
-    preferenceUpdatingRef.current = true;
-
-    try {
-      setMessage("");
-      setPreferences((current) => ({ ...current, [key]: value }));
-      setPreferences(await setAppPreference(key, value));
-    } catch {
-      setMessage("Could not save that preference. Please try again.");
-      setPreferences(await getAppPreferences());
-    } finally {
-      preferenceUpdatingRef.current = false;
-    }
-  }
+  const { message, preferences, setPreferenceValue } =
+    useAppPreferenceSettings();
 
   return (
     <SettingsScreen
@@ -74,7 +29,7 @@ export default function HabitPreferencesScreen() {
         <SettingsToggleRow
           description="Keeps unfinished habits at the top of Today."
           onValueChange={(value) =>
-            handlePreferenceChange("moveCompletedToBottom", value)
+            setPreferenceValue("moveCompletedToBottom", value)
           }
           title="Move completed habits to bottom"
           value={preferences.moveCompletedToBottom}
@@ -85,7 +40,7 @@ export default function HabitPreferencesScreen() {
         <SettingsToggleRow
           description="Swipe right to complete and left to undo."
           onValueChange={(value) =>
-            handlePreferenceChange("enableSwipeToComplete", value)
+            setPreferenceValue("enableSwipeToComplete", value)
           }
           title="Swipe actions"
           value={preferences.enableSwipeToComplete}
@@ -93,7 +48,7 @@ export default function HabitPreferencesScreen() {
         <SettingsToggleRow
           description="Allows drag reordering where supported."
           onValueChange={(value) =>
-            handlePreferenceChange("enableLongPressReorder", value)
+            setPreferenceValue("enableLongPressReorder", value)
           }
           title="Long-press reorder"
           value={preferences.enableLongPressReorder}

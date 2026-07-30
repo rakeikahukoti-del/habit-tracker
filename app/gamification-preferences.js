@@ -1,60 +1,15 @@
-import { useCallback, useRef, useState } from "react";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import {
   SettingsMessage,
   SettingsScreen,
   SettingsSection,
   SettingsToggleRow,
 } from "../components/settings";
-import {
-  defaultAppPreferences,
-  getAppPreferences,
-  setAppPreference,
-} from "../storage/appPreferences";
+import { useAppPreferenceSettings } from "../hooks/useAppPreferenceSettings";
 
 export default function GamificationPreferencesScreen() {
-  const [preferences, setPreferences] = useState(defaultAppPreferences);
-  const [message, setMessage] = useState("");
-  const preferenceUpdatingRef = useRef(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      async function loadPreferences() {
-        const savedPreferences = await getAppPreferences();
-
-        if (isActive) {
-          setPreferences(savedPreferences);
-        }
-      }
-
-      loadPreferences();
-
-      return () => {
-        isActive = false;
-      };
-    }, [])
-  );
-
-  async function handlePreferenceChange(key, value) {
-    if (preferenceUpdatingRef.current) {
-      return;
-    }
-
-    preferenceUpdatingRef.current = true;
-
-    try {
-      setMessage("");
-      setPreferences((current) => ({ ...current, [key]: value }));
-      setPreferences(await setAppPreference(key, value));
-    } catch {
-      setMessage("Could not save that preference. Please try again.");
-      setPreferences(await getAppPreferences());
-    } finally {
-      preferenceUpdatingRef.current = false;
-    }
-  }
+  const { message, preferences, setPreferenceValue } =
+    useAppPreferenceSettings();
 
   return (
     <SettingsScreen
@@ -68,7 +23,7 @@ export default function GamificationPreferencesScreen() {
         <SettingsToggleRow
           description="Shows your daily progress summary on Home."
           onValueChange={(value) =>
-            handlePreferenceChange("showProgressCard", value)
+            setPreferenceValue("showProgressCard", value)
           }
           title="Progress card"
           value={preferences.showProgressCard}
@@ -76,7 +31,7 @@ export default function GamificationPreferencesScreen() {
         <SettingsToggleRow
           description="Shows XP, level, and rank details on Home."
           onValueChange={(value) =>
-            handlePreferenceChange("showXpRankOnHome", value)
+            setPreferenceValue("showXpRankOnHome", value)
           }
           title="Show rank on Home"
           value={preferences.showXpRankOnHome}
@@ -87,7 +42,7 @@ export default function GamificationPreferencesScreen() {
         <SettingsToggleRow
           description="Future badge unlocks can show a short popup."
           onValueChange={(value) =>
-            handlePreferenceChange("showBadgePopups", value)
+            setPreferenceValue("showBadgePopups", value)
           }
           title="Badge popups"
           value={preferences.showBadgePopups}
@@ -95,7 +50,7 @@ export default function GamificationPreferencesScreen() {
         <SettingsToggleRow
           description="Future level changes can show a short popup."
           onValueChange={(value) =>
-            handlePreferenceChange("showLevelUpPopup", value)
+            setPreferenceValue("showLevelUpPopup", value)
           }
           title="Level-up popup"
           value={preferences.showLevelUpPopup}
@@ -103,7 +58,7 @@ export default function GamificationPreferencesScreen() {
         <SettingsToggleRow
           description="Uses subtle haptics for reward moments."
           onValueChange={(value) =>
-            handlePreferenceChange("enableRewardHaptics", value)
+            setPreferenceValue("enableRewardHaptics", value)
           }
           title="Reward haptics"
           value={preferences.enableRewardHaptics}
