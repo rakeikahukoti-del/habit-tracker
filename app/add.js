@@ -313,6 +313,7 @@ export default function AddHabitScreen() {
         <Pressable
           accessibilityLabel="Save habit"
           accessibilityRole="button"
+          accessibilityState={{ busy: saving, disabled: saving }}
           disabled={saving}
           onPress={() => handleSave()}
           style={({ pressed }) => [
@@ -482,7 +483,11 @@ function TemplateRoutinePicker({
       visible
     >
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
+        <View
+          accessibilityViewIsModal
+          importantForAccessibility="yes"
+          style={styles.modalCard}
+        >
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderText}>
               <AppText style={styles.modalTitle}>
@@ -728,6 +733,7 @@ function RoutinePickerContent({
         accessibilityLabel="Create selected routine habits"
         accessibilityRole="button"
         accessibilityState={{
+          busy: routineSaving,
           disabled: routineSaving || selectedRoutineDrafts.length === 0,
         }}
         disabled={routineSaving || selectedRoutineDrafts.length === 0}

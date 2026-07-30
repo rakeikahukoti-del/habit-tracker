@@ -682,7 +682,11 @@ function BadgeDetailModal({
       visible={visible}
     >
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
+        <View
+          accessibilityViewIsModal
+          importantForAccessibility="yes"
+          style={styles.modalCard}
+        >
           <ScrollView
             contentContainerStyle={styles.modalScrollContent}
             showsVerticalScrollIndicator={false}
@@ -745,7 +749,11 @@ function AchievementDetailModal({ achievement, colors, onClose, styles, visible 
       visible={visible}
     >
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
+        <View
+          accessibilityViewIsModal
+          importantForAccessibility="yes"
+          style={styles.modalCard}
+        >
           <ScrollView
             contentContainerStyle={styles.modalScrollContent}
             showsVerticalScrollIndicator={false}

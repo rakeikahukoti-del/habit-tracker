@@ -430,7 +430,11 @@ export default function SettingsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalBackdrop}
         >
-          <View style={styles.modalCard}>
+          <View
+            accessibilityViewIsModal
+            importantForAccessibility="yes"
+            style={styles.modalCard}
+          >
             <AppText style={styles.modalTitle}>
               {modalMode === "export" ? "Export JSON" : "Import JSON"}
             </AppText>
@@ -479,6 +483,10 @@ export default function SettingsScreen() {
                 <Pressable
                   accessibilityLabel="Import JSON backup"
                   accessibilityRole="button"
+                  accessibilityState={{
+                    busy: actionLoading,
+                    disabled: actionLoading || !importValidation?.ok,
+                  }}
                   disabled={actionLoading || !importValidation?.ok}
                   onPress={confirmImportData}
                   style={({ pressed }) => [

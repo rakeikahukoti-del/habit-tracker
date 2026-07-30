@@ -689,7 +689,11 @@ export default function HomeScreen() {
         visible={focusModeVisible}
       >
         <View style={styles.levelModalBackdrop}>
-          <View style={styles.focusModalCard}>
+          <View
+            accessibilityViewIsModal
+            importantForAccessibility="yes"
+            style={styles.focusModalCard}
+          >
             <ScrollView
               contentContainerStyle={styles.focusModalContent}
               showsVerticalScrollIndicator={false}
@@ -787,7 +791,11 @@ export default function HomeScreen() {
         visible={Boolean(levelUp) && !completionReward && !perfectDay}
       >
         <View style={styles.levelModalBackdrop}>
-          <View style={styles.levelModalCard}>
+          <View
+            accessibilityViewIsModal
+            importantForAccessibility="yes"
+            style={styles.levelModalCard}
+          >
             <ScrollView
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
@@ -830,7 +838,11 @@ export default function HomeScreen() {
         visible={Boolean(perfectDay) && !completionReward}
       >
         <View style={styles.levelModalBackdrop}>
-          <View style={styles.levelModalCard}>
+          <View
+            accessibilityViewIsModal
+            importantForAccessibility="yes"
+            style={styles.levelModalCard}
+          >
             <ScrollView
               contentContainerStyle={styles.levelModalScrollContent}
               showsVerticalScrollIndicator={false}
