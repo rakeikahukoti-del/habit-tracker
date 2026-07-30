@@ -106,6 +106,44 @@ export async function addHabit({
   return newHabit;
 }
 
+export async function addHabitsFromDrafts(habitDrafts) {
+  if (!Array.isArray(habitDrafts) || habitDrafts.length === 0) {
+    return [];
+  }
+
+  const habits = await getHabits();
+  const now = new Date().toISOString();
+  const baseOrder = getNextTopOrder(habits) - (habitDrafts.length - 1);
+  const newHabits = [];
+
+  for (const draft of habitDrafts) {
+    const normalizedDraft = normalizeHabit({
+      ...draft,
+      completedDates: [],
+      createdAt: now,
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      notificationIds: [],
+      order: baseOrder + newHabits.length,
+      reminderStatus: "none",
+    });
+    const reminderResult = await scheduleReminderIfEnabled(normalizedDraft);
+
+    newHabits.push({
+      ...normalizedDraft,
+      ...reminderResult,
+    });
+  }
+
+  try {
+    await saveHabits([...newHabits, ...habits]);
+  } catch (error) {
+    await cancelRemindersForHabits(newHabits);
+    throw error;
+  }
+
+  return newHabits;
+}
+
 export async function updateHabit(updatedHabit) {
   const habits = await getHabits();
   const previousHabit = habits.find((habit) => habit.id === updatedHabit.id);

@@ -289,6 +289,13 @@ const personalRecords = loadModule("utils/personalRecords.js", (moduleName) => {
   return require(moduleName);
 });
 const habitOptions = loadModule("constants/habitOptions.js");
+const habitTemplates = loadModule("utils/habitTemplates.js", (moduleName) => {
+  if (moduleName === "../constants/habitOptions") {
+    return habitOptions;
+  }
+
+  return require(moduleName);
+});
 const habitNotifications = loadModule("notifications/habitNotifications.js", (moduleName) => {
   if (moduleName === "react-native") {
     return { Platform: { OS: "ios" } };
@@ -1847,6 +1854,108 @@ test("habit order normalization repairs missing, duplicate, and explicit order v
     habitsStorage.normalizeHabit({ name: "  Read  " }).name,
     "Read",
     "habit names should be trimmed during normalization"
+  );
+});
+
+test("built-in habit templates and routines use stable unique identifiers", () => {
+  const templateIds = habitTemplates.builtInHabitTemplates.map(
+    (template) => template.id
+  );
+  const routineIds = habitTemplates.builtInRoutines.map((routine) => routine.id);
+
+  assert.strictEqual(templateIds.length, new Set(templateIds).size);
+  assert.strictEqual(routineIds.length, new Set(routineIds).size);
+  assert.ok(templateIds.includes("morning-drink-water"));
+  assert.ok(routineIds.includes("routine-morning-reset"));
+  assert.ok(
+    habitTemplates.builtInHabitTemplates.every(
+      (template) =>
+        !("completedDates" in template) &&
+        !("createdAt" in template) &&
+        !("xp" in template)
+    )
+  );
+});
+
+test("habit templates convert to safe editable habit drafts", () => {
+  const template = habitTemplates.getTemplateById("personal-call-family");
+  const draft = habitTemplates.createHabitDraftFromTemplate(template);
+
+  assert.strictEqual(draft.name, "Call family");
+  assert.strictEqual(draft.frequency, "Custom");
+  assertJsonEqual(draft.customDays, ["Sun"]);
+  assert.notStrictEqual(draft.customDays, template.customDays);
+  assert.strictEqual(draft.reminderTime, "");
+  assert.strictEqual("completedDates" in draft, false);
+
+  draft.customDays.push("Mon");
+  assertJsonEqual(template.customDays, ["Sun"]);
+});
+
+test("template duplicate detection normalizes names and schedules without blocking", () => {
+  const duplicate = habitTemplates.findDuplicateHabitDraft(
+    {
+      customDays: ["Fri", "Mon"],
+      frequency: "Custom",
+      name: "  READ   NOTES ",
+    },
+    [
+      {
+        customDays: ["Mon", "Fri"],
+        frequency: "Custom",
+        name: "read notes",
+      },
+      {
+        customDays: [],
+        frequency: "Daily",
+        name: "Read notes",
+      },
+    ]
+  );
+
+  assert.strictEqual(duplicate.name, "read notes");
+  assert.strictEqual(
+    habitTemplates.normalizeDuplicateName("  Read   Notes "),
+    "read notes"
+  );
+  assert.strictEqual(
+    habitTemplates.findDuplicateHabitDraft(
+      { customDays: [], frequency: "Weekdays", name: "Read notes" },
+      [{ customDays: [], frequency: "Daily", name: "Read notes" }]
+    ),
+    null
+  );
+});
+
+test("routine drafts preserve selected templates and create independent habits", async () => {
+  resetStorage();
+  const drafts = habitTemplates.createRoutineHabitsFromSelection({
+    selectedTemplateIds: [
+      "morning-drink-water",
+      "morning-drink-water",
+      "morning-make-bed",
+    ],
+  });
+
+  assert.strictEqual(drafts.length, 2);
+  assertJsonEqual(
+    drafts.map((draft) => draft.name),
+    ["Drink water", "Make the bed"]
+  );
+
+  const createdHabits = await habitsStorage.addHabitsFromDrafts(drafts);
+  const storedHabits = await habitsStorage.getHabits();
+
+  assert.strictEqual(createdHabits.length, 2);
+  assert.strictEqual(new Set(createdHabits.map((habit) => habit.id)).size, 2);
+  assertJsonEqual(
+    storedHabits.map((habit) => habit.name),
+    ["Drink water", "Make the bed"]
+  );
+  assert.ok(storedHabits.every((habit) => habit.completedDates.length === 0));
+  assertJsonEqual(
+    storedHabits.map((habit) => habit.order),
+    [0, 1]
   );
 });
 
