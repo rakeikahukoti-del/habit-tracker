@@ -24,6 +24,7 @@ import {
   v2Shadows,
   v2Spacing,
   v2Typography,
+  v2Motion,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -31,6 +32,7 @@ import {
   saveHabitOrder,
 } from "../storage/habitsStorage";
 import { withAlpha } from "../utils/colorUtils";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const ROW_DRAG_HEIGHT = 82;
 const AUTO_SCROLL_EDGE_DISTANCE = 116;
@@ -43,6 +45,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function ReorderHabitsScreen() {
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const { height, width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const styles = useMemo(
@@ -167,7 +170,7 @@ export default function ReorderHabitsScreen() {
       setError("");
       const nextOrderIds = habitsRef.current.map((habit) => habit.id);
 
-      await animateToRest(activeDragY);
+      await animateToRest(activeDragY, reduceMotion);
 
       if (!areStringArraysEqual(originalOrderIdsRef.current, nextOrderIds)) {
         const reorderedHabits = await saveHabitOrder(nextOrderIds);
@@ -490,12 +493,18 @@ function areStringArraysEqual(firstArray, secondArray) {
   return firstArray.every((item, index) => item === secondArray[index]);
 }
 
-function animateToRest(animatedValue) {
+function animateToRest(animatedValue, reduceMotion) {
   return new Promise((resolve) => {
+    if (reduceMotion) {
+      animatedValue.setValue(0);
+      resolve();
+      return;
+    }
+
     Animated.spring(animatedValue, {
-      damping: 18,
-      mass: 0.7,
-      stiffness: 180,
+      damping: v2Motion.spring.damping,
+      mass: v2Motion.spring.mass,
+      stiffness: v2Motion.spring.stiffness,
       toValue: 0,
       useNativeDriver: true,
     }).start(resolve);

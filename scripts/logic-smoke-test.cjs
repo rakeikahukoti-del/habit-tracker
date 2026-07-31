@@ -261,6 +261,7 @@ const analyticsReadiness = loadModule("utils/analyticsReadiness.js", (moduleName
   return require(moduleName);
 });
 const themePreferences = loadModule("utils/themePreferences.js");
+const interactionFeedback = loadModule("utils/interactionFeedback.js");
 const calendarMonth = loadModule("utils/calendarMonth.js", (moduleName) => {
   if (moduleName === "./habitStats") {
     return habitStats;
@@ -3769,6 +3770,33 @@ test("malformed stored habits are backed up and safe defaults are returned", asy
   await assert.rejects(
     () => habitsStorage.saveHabits({ not: "an array" }),
     /saveHabits expected an array/
+  );
+});
+
+test("completion haptics do not duplicate swipe gesture feedback", () => {
+  assert.strictEqual(
+    interactionFeedback.shouldRunInitialCompletionHaptic("tap", {
+      enableRewardHaptics: true,
+    }),
+    true
+  );
+  assert.strictEqual(
+    interactionFeedback.shouldRunInitialCompletionHaptic("swipe", {
+      enableRewardHaptics: true,
+    }),
+    false
+  );
+  assert.strictEqual(
+    interactionFeedback.shouldRunInitialCompletionHaptic("swipe-undo", {
+      enableRewardHaptics: true,
+    }),
+    false
+  );
+  assert.strictEqual(
+    interactionFeedback.shouldRunInitialCompletionHaptic("accessibility", {
+      enableRewardHaptics: false,
+    }),
+    false
   );
 });
 

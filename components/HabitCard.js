@@ -16,6 +16,7 @@ import {
   v2Shadows,
   v2Spacing,
   v2Typography,
+  v2Motion,
 } from "../src/design";
 import {
   getCurrentStreak,
@@ -29,11 +30,12 @@ import {
 } from "../constants/habitOptions";
 import { useTheme } from "../context/ThemeContext";
 import { router } from "expo-router";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const SWIPE_COMPLETE_COLOR = "#4F755B";
 const SWIPE_UNDO_COLOR = "#85494D";
 const SWIPE_START_DISTANCE = 6;
-const SWIPE_DIRECTION_RATIO = 0.58;
+const SWIPE_DIRECTION_RATIO = 1.15;
 const SWIPE_THRESHOLD = 30;
 const SWIPE_LIMIT = 112;
 
@@ -45,6 +47,7 @@ function HabitCard({
   onToggleComplete,
 }) {
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const styles = useMemo(
@@ -180,16 +183,7 @@ function HabitCard({
             !completedToday &&
             gestureState.dx > SWIPE_THRESHOLD
           ) {
-            Animated.sequence([
-              Animated.spring(swipeX, {
-                toValue: SWIPE_LIMIT,
-                useNativeDriver: false,
-              }),
-              Animated.spring(swipeX, {
-                toValue: 0,
-                useNativeDriver: false,
-              }),
-            ]).start(() => {
+            runSwipeSuccessAnimation(swipeX, SWIPE_LIMIT, reduceMotion, () => {
               swipeHapticTriggered.current = false;
               resetTapBlock();
             });
@@ -202,16 +196,7 @@ function HabitCard({
             completedToday &&
             gestureState.dx < -SWIPE_THRESHOLD
           ) {
-            Animated.sequence([
-              Animated.spring(swipeX, {
-                toValue: -SWIPE_LIMIT,
-                useNativeDriver: false,
-              }),
-              Animated.spring(swipeX, {
-                toValue: 0,
-                useNativeDriver: false,
-              }),
-            ]).start(() => {
+            runSwipeSuccessAnimation(swipeX, -SWIPE_LIMIT, reduceMotion, () => {
               swipeHapticTriggered.current = false;
               resetTapBlock();
             });
@@ -220,20 +205,21 @@ function HabitCard({
           }
 
           swipeHapticTriggered.current = false;
-          Animated.spring(swipeX, {
-            toValue: 0,
-            useNativeDriver: false,
-          }).start(resetTapBlock);
+          runSwipeResetAnimation(swipeX, reduceMotion, resetTapBlock);
         },
         onPanResponderTerminate: () => {
           swipeHapticTriggered.current = false;
-          Animated.spring(swipeX, {
-            toValue: 0,
-            useNativeDriver: false,
-          }).start(resetTapBlock);
+          runSwipeResetAnimation(swipeX, reduceMotion, resetTapBlock);
         },
       }),
-    [completedToday, enableSwipeToComplete, habit, onToggleComplete, swipeX]
+    [
+      completedToday,
+      enableSwipeToComplete,
+      habit,
+      onToggleComplete,
+      reduceMotion,
+      swipeX,
+    ]
   );
   const swipeActionBackground = SWIPE_COMPLETE_COLOR;
   const undoActionBackground = SWIPE_UNDO_COLOR;
@@ -483,6 +469,39 @@ function HabitCard({
 }
 
 export default memo(HabitCard);
+
+function getSwipeSpringConfig(toValue) {
+  return {
+    damping: v2Motion.spring.damping,
+    mass: v2Motion.spring.mass,
+    stiffness: v2Motion.spring.stiffness,
+    toValue,
+    useNativeDriver: false,
+  };
+}
+
+function runSwipeSuccessAnimation(animatedValue, toValue, reduceMotion, onComplete) {
+  if (reduceMotion) {
+    animatedValue.setValue(0);
+    onComplete?.();
+    return;
+  }
+
+  Animated.sequence([
+    Animated.spring(animatedValue, getSwipeSpringConfig(toValue)),
+    Animated.spring(animatedValue, getSwipeSpringConfig(0)),
+  ]).start(onComplete);
+}
+
+function runSwipeResetAnimation(animatedValue, reduceMotion, onComplete) {
+  if (reduceMotion) {
+    animatedValue.setValue(0);
+    onComplete?.();
+    return;
+  }
+
+  Animated.spring(animatedValue, getSwipeSpringConfig(0)).start(onComplete);
+}
 
 function createStyles(colors, isCompact) {
   return StyleSheet.create({

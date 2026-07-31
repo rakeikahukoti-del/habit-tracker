@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useTheme } from "../context/ThemeContext";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { v2Motion } from "../src/design";
 
 export default function ConfettiBurst({ trigger }) {
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const animation = useRef(new Animated.Value(0)).current;
   const pieces = useMemo(
     () =>
@@ -16,13 +19,13 @@ export default function ConfettiBurst({ trigger }) {
   );
 
   useEffect(() => {
-    if (!trigger) {
+    if (!trigger || reduceMotion) {
       return;
     }
 
     animation.setValue(0);
     const animationHandle = Animated.timing(animation, {
-      duration: 1200,
+      duration: v2Motion.duration.emphasis * 4,
       toValue: 1,
       useNativeDriver: true,
     });
@@ -30,9 +33,9 @@ export default function ConfettiBurst({ trigger }) {
     animationHandle.start();
 
     return () => animationHandle.stop();
-  }, [animation, trigger]);
+  }, [animation, reduceMotion, trigger]);
 
-  if (!trigger) {
+  if (!trigger || reduceMotion) {
     return null;
   }
 

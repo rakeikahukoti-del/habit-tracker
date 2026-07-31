@@ -48,6 +48,7 @@ import {
 } from "../utils/habitCompletionActions";
 import { getFirstSwipeHintState } from "../utils/firstUseExperience";
 import { getReturnExperienceState } from "../utils/returnExperience";
+import { shouldRunInitialCompletionHaptic } from "../utils/interactionFeedback";
 
 export function useHomeController() {
   const [habits, setHabits] = useState([]);
@@ -281,7 +282,7 @@ export function useHomeController() {
 
     try {
       setError("");
-      if (preferences.enableRewardHaptics) {
+      if (shouldRunInitialCompletionHaptic(options.source, preferences)) {
         triggerLightHaptic();
       }
 

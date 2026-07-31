@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, Pressable } from "react-native";
 import { v2Motion } from "../../src/design";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 export default function PressableScale({
   accessibilityState,
@@ -13,6 +14,7 @@ export default function PressableScale({
   ...props
 }) {
   const scale = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(
     () => () => {
@@ -22,6 +24,11 @@ export default function PressableScale({
   );
 
   function animate(toValue) {
+    if (reduceMotion) {
+      scale.setValue(1);
+      return;
+    }
+
     Animated.spring(scale, {
       damping: v2Motion.spring.damping,
       mass: v2Motion.spring.mass,
@@ -58,6 +65,7 @@ export default function PressableScale({
         <Animated.View
           style={[
             { opacity: disabled ? 0.52 : 1, transform: [{ scale }] },
+            pressed && reduceMotion && !disabled ? { opacity: 0.82 } : null,
             typeof style === "function" ? style({ pressed }) : style,
           ]}
         >
