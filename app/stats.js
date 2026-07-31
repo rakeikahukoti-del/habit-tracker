@@ -286,6 +286,23 @@ export default function StatsScreen() {
 
           <View style={styles.analyticsLinkWrap}>
             <Pressable
+              accessibilityLabel="Open Year in Review"
+              accessibilityRole="button"
+              onPress={() => router.push("/year-review")}
+              style={({ pressed }) => [
+                styles.analyticsLink,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppText style={styles.analyticsLinkText}>Year in Review</AppText>
+              <AppIcon
+                color={colors.primary}
+                name="arrow-right"
+                size={17}
+                strokeWidth={2}
+              />
+            </Pressable>
+            <Pressable
               accessibilityLabel="Open analytics"
               accessibilityRole="button"
               onPress={() => router.push("/analytics")}

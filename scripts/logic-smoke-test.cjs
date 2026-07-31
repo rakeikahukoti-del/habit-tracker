@@ -330,6 +330,21 @@ const personalRecords = loadModule("utils/personalRecords.js", (moduleName) => {
 
   return require(moduleName);
 });
+const yearInReview = loadModule("utils/yearInReview.js", (moduleName) => {
+  if (moduleName === "./activityHistory") {
+    return activityHistory;
+  }
+
+  if (moduleName === "./gamification") {
+    return gamificationLogic;
+  }
+
+  if (moduleName === "./habitStats") {
+    return habitStats;
+  }
+
+  return require(moduleName);
+});
 const insightsDashboard = loadModule("utils/insightsDashboard.js", (moduleName) => {
   if (moduleName === "./habitStats") {
     return habitStats;
@@ -696,6 +711,157 @@ test("activity accessibility labels describe day state without relying on color"
     ).state,
     "complete"
   );
+});
+
+test("year in review handles empty history without fabricated metrics", () => {
+  const review = yearInReview.getYearInReview(
+    [],
+    null,
+    2026,
+    new Date(2026, 6, 31)
+  );
+
+  assert.strictEqual(review.hasData, false);
+  assert.strictEqual(review.totalCompletions, 0);
+  assert.strictEqual(review.activeDays, 0);
+  assert.strictEqual(review.longestStreak, 0);
+  assertJsonEqual(review.reflections, []);
+  assertJsonEqual(review.milestones, []);
+});
+
+test("year in review calculates partial-year stats from stored completions", () => {
+  const habits = [
+    {
+      completedDates: ["2026-01-02", "2026-01-03", "2026-02-01"],
+      createdAt: "2026-01-01",
+      frequency: "Daily",
+      id: "run",
+      name: "Run",
+    },
+    {
+      completedDates: ["2026-01-03", "2026-01-10", "2025-12-31"],
+      createdAt: "2026-01-01",
+      frequency: "Daily",
+      id: "read",
+      name: "Read",
+    },
+  ];
+  const review = yearInReview.getYearInReview(
+    habits,
+    { recentAchievements: [], xp: 450 },
+    2026,
+    new Date(2026, 1, 2)
+  );
+
+  assert.strictEqual(review.hasData, true);
+  assert.strictEqual(review.totalCompletions, 5);
+  assert.strictEqual(review.activeDays, 4);
+  assert.strictEqual(review.longestStreak, 2);
+  assert.strictEqual(review.bestMonth.key, "2026-01");
+  assert.strictEqual(review.mostCompletedHabit.name, "Run");
+  assert.strictEqual(review.currentRank, "Silver");
+  assert.ok(
+    review.reflections.some((reflection) =>
+      /5 habit completions/.test(reflection.text)
+    )
+  );
+});
+
+test("year in review isolates selected years across multiple years", () => {
+  const habits = [
+    {
+      completedDates: ["2025-12-31", "2026-01-01", "2026-01-02"],
+      createdAt: "2025-12-01",
+      frequency: "Daily",
+      id: "daily",
+      name: "Daily",
+    },
+  ];
+  const review2025 = yearInReview.getYearInReview(
+    habits,
+    null,
+    2025,
+    new Date(2026, 0, 3)
+  );
+  const review2026 = yearInReview.getYearInReview(
+    habits,
+    null,
+    2026,
+    new Date(2026, 0, 3)
+  );
+
+  assert.strictEqual(review2025.totalCompletions, 1);
+  assert.strictEqual(review2026.totalCompletions, 2);
+  assert.strictEqual(review2025.monthlyBreakdown.length, 12);
+  assert.strictEqual(review2026.monthlyBreakdown.length, 1);
+});
+
+test("year in review keeps leap-year completions and missing months safe", () => {
+  const review = yearInReview.getYearInReview(
+    [
+      {
+        completedDates: ["2024-02-28", "2024-02-29", "2024-03-01"],
+        createdAt: "2024-02-01",
+        frequency: "Daily",
+        id: "leap",
+        name: "Leap Habit",
+      },
+    ],
+    null,
+    2024,
+    new Date(2024, 2, 2)
+  );
+
+  assert.strictEqual(review.totalCompletions, 3);
+  assert.strictEqual(review.longestStreak, 3);
+  assert.strictEqual(
+    review.monthlyBreakdown.find((month) => month.key === "2024-01").completedCount,
+    0
+  );
+  assert.strictEqual(
+    review.monthlyBreakdown.find((month) => month.key === "2024-02").completedCount,
+    2
+  );
+});
+
+test("year in review adds achievement milestones and orders dated milestones", () => {
+  const review = yearInReview.getYearInReview(
+    [
+      {
+        completedDates: ["2026-01-02", "2026-04-10"],
+        createdAt: "2026-01-01",
+        frequency: "Daily",
+        id: "habit",
+        name: "Habit",
+      },
+    ],
+    {
+      recentAchievements: [
+        {
+          description: "Reached an achievement.",
+          title: "First Badge",
+          type: "badge",
+          unlockedAt: "2026-03-01T10:00:00.000Z",
+        },
+        {
+          description: "Previous year achievement.",
+          title: "Old Badge",
+          type: "badge",
+          unlockedAt: "2025-03-01T10:00:00.000Z",
+        },
+      ],
+      xp: 0,
+    },
+    2026,
+    new Date(2026, 4, 1)
+  );
+  const datedMilestones = review.timeline.map((milestone) => milestone.dateKey);
+
+  assert.strictEqual(review.achievementCount, 1);
+  assert.ok(
+    review.milestones.some((milestone) => milestone.id === "first-achievement")
+  );
+  assertJsonEqual([...datedMilestones].sort(), datedMilestones);
 });
 
 test("habit stats ignore invalid, duplicate, and future completions", () => {
