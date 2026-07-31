@@ -1,24 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import packageJson from "../package.json";
 import { normalizeDailyPlan } from "../utils/dailyPlanning";
-import { normalizeGamificationState } from "../utils/gamification";
+import {
+  calculateGamificationState,
+  normalizeGamificationState,
+} from "../utils/gamification";
 import { normalizeThemePreference } from "../utils/themePreferences";
 import {
   defaultAppPreferences,
   getAppPreferences,
-  saveAppPreferences,
-  setLastShownLevel,
 } from "./appPreferences";
-import { saveDailyPlan } from "./dailyPlanStorage";
 import {
   getGamification,
   getGamificationLevelInfo,
-  rebuildGamificationFromHabits,
 } from "./gamificationStorage";
 import {
   getHabits,
-  importHabitsBackup,
   normalizeHabitOrder,
+  reconcileHabitNotifications,
 } from "./habitsStorage";
 import { isPlainObject, logStorageError } from "./storageUtils";
 
@@ -51,9 +50,15 @@ export const STORAGE_KEY_MANIFEST = [
 ];
 
 const RAW_KEYS = {
+  appPreferences: "momentum:app-preferences",
+  dailyPlan: "momentum:daily-plan",
   firstSwipeHintDismissed: "momentum:first-swipe-hint-dismissed",
   firstTrendUnlockShown: "momentum:first-trend-unlock-shown",
+  gamification: "habit-tracker:gamification",
+  habits: "habit-tracker:habits",
+  habitsBackup: "habit-tracker:habits-backup",
   lastShownLevel: "momentum:last-shown-level",
+  moveCompletedToBottom: "momentum:move-completed-to-bottom",
   onboardingComplete: "momentum:onboarding-complete",
   returnGuidanceDismissedDate: "momentum:return-guidance-dismissed-date",
   themePreference: "momentum:theme-preference",
@@ -68,22 +73,30 @@ export async function exportAppData() {
   ]);
   const dailyPlan = parseStoredJson(rawState.dailyPlan, null);
 
+  const exportedData = {
+    appearance: {
+      themePreference: normalizeThemePreference(rawState.themePreference),
+    },
+    dailyPlan,
+    flags: getBackupFlags(rawState),
+    gamification: normalizeGamificationState(gamification),
+    habits,
+    preferences,
+    recovery: {
+      unreadableHabitsBackup:
+        typeof rawState.habitsBackup === "string" ? rawState.habitsBackup : "",
+    },
+  };
+
   return JSON.stringify(
     {
       app: BACKUP_APP_NAME,
       appVersion: packageJson.version,
       exportedAt: new Date().toISOString(),
+      schemaVersion: BACKUP_VERSION,
       version: BACKUP_VERSION,
-      data: {
-        appearance: {
-          themePreference: normalizeThemePreference(rawState.themePreference),
-        },
-        dailyPlan,
-        flags: getBackupFlags(rawState),
-        gamification: normalizeGamificationState(gamification),
-        habits,
-        preferences,
-      },
+      exportedData,
+      data: exportedData,
     },
     null,
     2
@@ -102,26 +115,29 @@ export async function importAppData(jsonText, { mode = "replace" } = {}) {
   }
 
   const { data } = validation;
+  const commit = prepareImportCommit(data);
 
-  await saveAppPreferences(data.preferences);
-  const importedHabits = await importHabitsBackup(
-    JSON.stringify({ habits: data.habits })
-  );
+  await AsyncStorage.multiSet(commit.entries);
 
-  await saveAppearance(data.appearance);
-  await saveFlags(data.flags);
-  await saveDailyPlan(data.dailyPlan, importedHabits);
+  const warnings = [...validation.warnings];
+  let importedHabits = commit.habits;
 
-  const gamification = await rebuildGamificationFromHabits(importedHabits, {
-    includeMessage: false,
-  });
-  await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+  try {
+    const notificationResult = await reconcileHabitNotifications();
+
+    importedHabits = notificationResult.habits;
+  } catch (error) {
+    logStorageError("Could not reconcile reminders after backup import.", error);
+    warnings.push("Imported data was saved, but reminders may need to be refreshed.");
+  }
+
+  const gamification = commit.gamification;
 
   return {
     gamification,
     habits: importedHabits,
     metadata: validation.metadata,
-    warnings: validation.warnings,
+    warnings,
   };
 }
 
@@ -185,7 +201,10 @@ export function migrateBackup(rawBackup) {
     };
   }
 
-  const version = Number.isFinite(backup.version) ? backup.version : 1;
+  const rawVersion = Number.isFinite(backup.schemaVersion)
+    ? backup.schemaVersion
+    : backup.version;
+  const version = Number.isFinite(rawVersion) ? rawVersion : 1;
 
   if (version > BACKUP_VERSION) {
     return {
@@ -226,7 +245,7 @@ export function migrateBackup(rawBackup) {
 function normalizeBackupData(backup) {
   const warnings = [];
   const errors = [];
-  const rawData = isPlainObject(backup.data) ? backup.data : {};
+  const rawData = getBackupPayload(backup);
   const habitsInput = Array.isArray(rawData.habits)
     ? rawData.habits
     : Array.isArray(backup.habits)
@@ -352,6 +371,7 @@ function normalizeLegacyBackup(rawBackup) {
     return {
       app: BACKUP_APP_NAME,
       exportedAt: "",
+      schemaVersion: 1,
       version: 1,
       data: {
         habits: rawBackup,
@@ -364,6 +384,11 @@ function normalizeLegacyBackup(rawBackup) {
       app: rawBackup.app || BACKUP_APP_NAME,
       appVersion: rawBackup.appVersion || "",
       exportedAt: rawBackup.exportedAt || "",
+      schemaVersion: Number.isFinite(rawBackup.schemaVersion)
+        ? rawBackup.schemaVersion
+        : Number.isFinite(rawBackup.version)
+          ? rawBackup.version
+          : 1,
       version: Number.isFinite(rawBackup.version) ? rawBackup.version : 1,
       data: {
         habits: rawBackup.habits,
@@ -376,10 +401,11 @@ function normalizeLegacyBackup(rawBackup) {
 
 async function readRawBackupState() {
   const pairs = await AsyncStorage.multiGet([
-    "momentum:app-preferences",
-    "momentum:daily-plan",
+    RAW_KEYS.appPreferences,
+    RAW_KEYS.dailyPlan,
     RAW_KEYS.firstSwipeHintDismissed,
     RAW_KEYS.firstTrendUnlockShown,
+    RAW_KEYS.habitsBackup,
     RAW_KEYS.lastShownLevel,
     RAW_KEYS.onboardingComplete,
     RAW_KEYS.returnGuidanceDismissedDate,
@@ -388,10 +414,11 @@ async function readRawBackupState() {
   const values = Object.fromEntries(pairs);
 
   return {
-    appPreferences: values["momentum:app-preferences"],
-    dailyPlan: values["momentum:daily-plan"],
+    appPreferences: values[RAW_KEYS.appPreferences],
+    dailyPlan: values[RAW_KEYS.dailyPlan],
     firstSwipeHintDismissed: values[RAW_KEYS.firstSwipeHintDismissed],
     firstTrendUnlockShown: values[RAW_KEYS.firstTrendUnlockShown],
+    habitsBackup: values[RAW_KEYS.habitsBackup],
     lastShownLevel: values[RAW_KEYS.lastShownLevel],
     onboardingComplete: values[RAW_KEYS.onboardingComplete],
     returnGuidanceDismissedDate: values[RAW_KEYS.returnGuidanceDismissedDate],
@@ -408,32 +435,6 @@ function getBackupFlags(rawState) {
       ? rawState.returnGuidanceDismissedDate
       : "",
   };
-}
-
-async function saveAppearance(appearance) {
-  await AsyncStorage.setItem(
-    RAW_KEYS.themePreference,
-    normalizeThemePreference(appearance?.themePreference)
-  );
-}
-
-async function saveFlags(flags) {
-  const updates = [
-    [RAW_KEYS.firstSwipeHintDismissed, flags.firstSwipeHintDismissed ? "true" : "false"],
-    [RAW_KEYS.firstTrendUnlockShown, flags.firstTrendUnlockShown ? "true" : "false"],
-    [RAW_KEYS.onboardingComplete, flags.onboardingComplete ? "true" : "false"],
-  ];
-
-  if (flags.returnGuidanceDismissedDate) {
-    updates.push([
-      RAW_KEYS.returnGuidanceDismissedDate,
-      flags.returnGuidanceDismissedDate,
-    ]);
-  } else {
-    await AsyncStorage.removeItem(RAW_KEYS.returnGuidanceDismissedDate);
-  }
-
-  await AsyncStorage.multiSet(updates);
 }
 
 function parseBackupInput(input) {
@@ -474,6 +475,11 @@ function parseStoredJson(rawValue, fallbackValue) {
 function getMetadataFromBackup(backup, data, warnings = []) {
   const safeData = data || {};
   const habits = Array.isArray(safeData.habits) ? safeData.habits : [];
+  const activityHistoryCount = habits.reduce(
+    (count, habit) =>
+      count + (Array.isArray(habit.completedDates) ? habit.completedDates.length : 0),
+    0
+  );
   const exportedAt =
     typeof backup.exportedAt === "string" && backup.exportedAt
       ? backup.exportedAt
@@ -486,6 +492,7 @@ function getMetadataFromBackup(backup, data, warnings = []) {
         ? backup.appVersion
         : "Unknown",
     exportedAt,
+    activityHistoryCount,
     habitCount: habits.length,
     hasActivityHistory: habits.some(
       (habit) =>
@@ -493,7 +500,9 @@ function getMetadataFromBackup(backup, data, warnings = []) {
     ),
     hasDailyPlan: Boolean(safeData.dailyPlan),
     hasPreferences: isPlainObject(safeData.preferences),
-    version: Number.isFinite(backup.version) ? backup.version : 1,
+    routineCount: 0,
+    templateCount: 0,
+    version: getBackupVersion(backup),
     warnings,
   };
 }
@@ -503,10 +512,13 @@ function getEmptyMetadata() {
     app: BACKUP_APP_NAME,
     appVersion: "Unknown",
     exportedAt: "Unknown",
+    activityHistoryCount: 0,
     habitCount: 0,
     hasActivityHistory: false,
     hasDailyPlan: false,
     hasPreferences: false,
+    routineCount: 0,
+    templateCount: 0,
     version: BACKUP_VERSION,
     warnings: [],
   };
@@ -559,6 +571,91 @@ function isValidDateKey(dateKey) {
   );
 }
 
+function getBackupPayload(backup) {
+  if (isPlainObject(backup.exportedData)) {
+    return backup.exportedData;
+  }
+
+  if (isPlainObject(backup.data)) {
+    return backup.data;
+  }
+
+  return {};
+}
+
+function getBackupVersion(backup) {
+  if (Number.isFinite(backup.schemaVersion)) {
+    return backup.schemaVersion;
+  }
+
+  return Number.isFinite(backup.version) ? backup.version : 1;
+}
+
+function prepareImportCommit(data) {
+  const preferences = normalizePreferences(data.preferences, []);
+  const importedHabits = prepareImportedHabits(data.habits);
+  const dailyPlan = normalizeDailyPlan(
+    data.dailyPlan,
+    importedHabits,
+    isValidDateKey(data.dailyPlan?.date) ? data.dailyPlan.date : undefined
+  );
+  const gamification = calculateGamificationState({
+    habits: importedHabits,
+    includeMessage: false,
+    previousState: normalizeGamificationState(data.gamification),
+  }).state;
+  const level = getGamificationLevelInfo(gamification).level;
+
+  return {
+    gamification,
+    habits: importedHabits,
+    entries: [
+      [RAW_KEYS.appPreferences, JSON.stringify(preferences)],
+      [
+        RAW_KEYS.moveCompletedToBottom,
+        preferences.moveCompletedToBottom ? "true" : "false",
+      ],
+      [RAW_KEYS.habits, JSON.stringify(importedHabits)],
+      [RAW_KEYS.gamification, JSON.stringify(gamification)],
+      [RAW_KEYS.dailyPlan, JSON.stringify(dailyPlan)],
+      [
+        RAW_KEYS.themePreference,
+        normalizeThemePreference(data.appearance?.themePreference),
+      ],
+      [
+        RAW_KEYS.firstSwipeHintDismissed,
+        data.flags.firstSwipeHintDismissed ? "true" : "false",
+      ],
+      [
+        RAW_KEYS.firstTrendUnlockShown,
+        data.flags.firstTrendUnlockShown ? "true" : "false",
+      ],
+      [RAW_KEYS.onboardingComplete, data.flags.onboardingComplete ? "true" : "false"],
+      [
+        RAW_KEYS.returnGuidanceDismissedDate,
+        data.flags.returnGuidanceDismissedDate || "",
+      ],
+      [RAW_KEYS.lastShownLevel, String(level)],
+    ],
+  };
+}
+
+function prepareImportedHabits(habits) {
+  return normalizeHabitOrder(habits).map((habit) => ({
+    ...habit,
+    notificationIds: [],
+    reminderStatus: getImportedReminderStatus(habit),
+  }));
+}
+
+function getImportedReminderStatus(habit) {
+  if (!habit.reminderTime) {
+    return "none";
+  }
+
+  return "disabled";
+}
+
 function storageKey(key, purpose, owner, version, dependencies = []) {
   return {
     dependencies,
@@ -572,9 +669,15 @@ function storageKey(key, purpose, owner, version, dependencies = []) {
 const migrations = {
   0: (backup) => ({
     ...backup,
+    schemaVersion: 1,
     version: 1,
-    data: isPlainObject(backup.data)
-      ? backup.data
+    data: isPlainObject(backup.data) || isPlainObject(backup.exportedData)
+      ? getBackupPayload(backup)
+      : {
+          habits: Array.isArray(backup.habits) ? backup.habits : [],
+        },
+    exportedData: isPlainObject(backup.data) || isPlainObject(backup.exportedData)
+      ? getBackupPayload(backup)
       : {
           habits: Array.isArray(backup.habits) ? backup.habits : [],
         },

@@ -550,6 +550,12 @@ function BackupPreview({ validation, styles }) {
         Preferences {metadata.hasPreferences ? "included" : "missing"} -
         Activity {metadata.hasActivityHistory ? "included" : "empty"}
       </AppText>
+      <AppText style={styles.previewText}>
+        {metadata.activityHistoryCount} completion
+        {metadata.activityHistoryCount === 1 ? "" : "s"} - {metadata.routineCount} routine
+        {metadata.routineCount === 1 ? "" : "s"} - {metadata.templateCount} template
+        {metadata.templateCount === 1 ? "" : "s"}
+      </AppText>
       {validation.errors.length > 0 ? (
         <AppText style={styles.previewError}>{validation.errors[0]}</AppText>
       ) : null}

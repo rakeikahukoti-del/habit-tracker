@@ -3081,8 +3081,10 @@ test("app backup export includes versioned local data metadata", async () => {
 
   assert.strictEqual(exported.app, "Momentum");
   assert.strictEqual(exported.version, 1);
+  assert.strictEqual(exported.schemaVersion, 1);
   assert.strictEqual(exported.appVersion, "1.0.0");
   assert.strictEqual(exported.data.habits.length, 1);
+  assert.strictEqual(exported.exportedData.habits.length, 1);
   assert.strictEqual(exported.data.preferences.showProgressCard, false);
   assert.strictEqual(exported.data.dailyPlan.habitIds[0], "backup-habit");
 
@@ -3090,6 +3092,7 @@ test("app backup export includes versioned local data metadata", async () => {
 
   assert.strictEqual(validation.ok, true);
   assert.strictEqual(validation.metadata.habitCount, 1);
+  assert.strictEqual(validation.metadata.activityHistoryCount, 1);
   assert.strictEqual(validation.metadata.hasActivityHistory, true);
 });
 
@@ -3156,6 +3159,47 @@ test("app backup import replaces data safely and rebuilds derived progress", asy
   assert.strictEqual(gamification.xp, 35);
   assert.strictEqual(asyncStorageStore["momentum:onboarding-complete"], "true");
   assert.strictEqual(asyncStorageStore["momentum:theme-preference"], "light");
+});
+
+test("app backup import does not overwrite existing data if commit fails", async () => {
+  resetStorage();
+  await habitsStorage.importHabitsBackup(
+    JSON.stringify({
+      habits: [
+        {
+          id: "existing",
+          name: "Existing",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          completedDates: [],
+        },
+      ],
+    })
+  );
+  const beforeStore = JSON.stringify(asyncStorageStore);
+  const backupText = JSON.stringify({
+    app: "Momentum",
+    appVersion: "1.0.0",
+    exportedAt: "2026-03-01T00:00:00.000Z",
+    schemaVersion: 1,
+    exportedData: {
+      habits: [
+        {
+          id: "imported",
+          name: "Imported",
+          completedDates: [habitStats.getTodayKey()],
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+      preferences: appPreferencesStorage.defaultAppPreferences,
+    },
+  });
+
+  asyncStorageFailures.set = true;
+  await assert.rejects(() => appBackup.importAppData(backupText), /set failed/);
+  asyncStorageFailures.set = false;
+
+  assert.strictEqual(JSON.stringify(asyncStorageStore), beforeStore);
+  assert.strictEqual((await habitsStorage.getHabits())[0].id, "existing");
 });
 
 test("app backup validation rejects corrupted, empty, and future backups safely", () => {
@@ -3241,6 +3285,32 @@ test("app backup migration pipeline upgrades older backups", () => {
   assert.strictEqual(validation.version, 1);
   assert.strictEqual(validation.data.habits[0].id, "old");
   assert.ok(validation.warnings.some((warning) => /Migrated backup/.test(warning)));
+});
+
+test("app backup accepts exportedData schema aliases", () => {
+  const validation = appBackup.validateBackup(
+    JSON.stringify({
+      app: "Momentum",
+      appVersion: "1.0.0",
+      exportedAt: "2026-04-01T00:00:00.000Z",
+      schemaVersion: 1,
+      exportedData: {
+        habits: [
+          {
+            id: "schema-alias",
+            name: "Schema Alias",
+            completedDates: ["2026-04-01"],
+          },
+        ],
+        preferences: appPreferencesStorage.defaultAppPreferences,
+      },
+    })
+  );
+
+  assert.strictEqual(validation.ok, true);
+  assert.strictEqual(validation.version, 1);
+  assert.strictEqual(validation.metadata.habitCount, 1);
+  assert.strictEqual(validation.data.habits[0].id, "schema-alias");
 });
 
 test("app backup legacy habit exports remain importable", async () => {
