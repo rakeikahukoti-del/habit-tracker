@@ -54,9 +54,16 @@ export async function resetOnboarding() {
 export async function getLastShownLevel() {
   try {
     const value = await AsyncStorage.getItem(LAST_SHOWN_LEVEL_KEY);
+
+    if (typeof value !== "string" || !value.trim()) {
+      return 1;
+    }
+
     const parsedValue = Number(value);
 
-    return Number.isFinite(parsedValue) ? parsedValue : 1;
+    return Number.isFinite(parsedValue) && parsedValue >= 1
+      ? Math.floor(parsedValue)
+      : 1;
   } catch (error) {
     logStorageError("Could not read last shown level.", error);
     return 1;
@@ -239,5 +246,16 @@ function sanitizeAppPreferences(preferences) {
 }
 
 function isValidDateKey(value) {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }

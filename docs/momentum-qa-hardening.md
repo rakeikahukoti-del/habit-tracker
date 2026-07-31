@@ -24,8 +24,24 @@ across future polish sessions.
 
 - Import replaces current habits only after JSON parses and includes a valid
   habits array.
+- Full-app backup imports snapshot every destination key before writing. A
+  partially failed write restores the previous values and removes keys that did
+  not previously exist.
+- Completion and undo requests are serialized per habit so rapid taps, widget
+  actions, and gesture callbacks cannot award the same completion twice.
+- Pending reward messages are consumed serially so overlapping Home hydration
+  cannot display the same stored reward queue twice.
 - Destructive actions remain behind confirmation dialogs.
 - Preference and onboarding resets do not remove habit history.
+
+## Recovery Defaults
+
+- A missing, blank, zero, negative, or non-numeric last-shown level recovers to
+  level 1.
+- Stored guidance dates must be real local calendar dates, not only
+  `YYYY-MM-DD`-shaped strings.
+- Notification settings reload persisted preferences, reminder counts, and
+  permission state after a failed update.
 
 ## Accessibility
 

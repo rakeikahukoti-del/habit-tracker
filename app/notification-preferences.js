@@ -110,7 +110,17 @@ export default function NotificationPreferencesScreen() {
       setPermissionState(await getNotificationPermissionState());
     } catch {
       setMessage("Could not update reminders. Please try again.");
-      setPreferences(await getAppPreferences());
+
+      const [savedPreferences, habits, savedPermissionState] =
+        await Promise.all([
+          getAppPreferences(),
+          getHabits(),
+          getNotificationPermissionState(),
+        ]);
+
+      setPreferences(savedPreferences);
+      setReminderSummary(getReminderSettingsSummary(habits));
+      setPermissionState(savedPermissionState);
     } finally {
       preferenceUpdatingRef.current = false;
       setPreferenceUpdating(false);

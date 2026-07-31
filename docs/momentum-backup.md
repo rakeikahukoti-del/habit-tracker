@@ -100,12 +100,15 @@ Momentum uses a Replace import flow.
 3. Validate and normalize each section.
 4. Show an import preview in Settings.
 5. Build the full replacement storage set in memory.
-6. On confirmation, write the replacement set with one AsyncStorage `multiSet`.
+6. On confirmation, snapshot the destination keys and write the replacement
+   set with one AsyncStorage `multiSet`.
 7. Rebuild gamification from imported habit history.
 8. Reconcile local reminders through the existing notification path.
 
 Existing data is not overwritten if parsing, validation, normalization, or the
-main storage commit fails.
+main storage commit fails. If a storage adapter partially applies a failed
+`multiSet`, Momentum restores the previous values and removes newly introduced
+keys before returning the error.
 
 ## User Import Workflow
 

@@ -118,7 +118,7 @@ export async function importAppData(jsonText, { mode = "replace" } = {}) {
   const { data } = validation;
   const commit = prepareImportCommit(data);
 
-  await AsyncStorage.multiSet(commit.entries);
+  await commitStorageEntries(commit.entries);
 
   const warnings = [...validation.warnings];
   let importedHabits = commit.habits;
@@ -713,6 +713,37 @@ function prepareImportCommit(data) {
       [RAW_KEYS.lastShownLevel, String(level)],
     ],
   };
+}
+
+async function commitStorageEntries(entries) {
+  const keys = entries.map(([key]) => key);
+  const previousEntries = await AsyncStorage.multiGet(keys);
+
+  try {
+    await AsyncStorage.multiSet(entries);
+  } catch (error) {
+    try {
+      const entriesToRestore = previousEntries.filter(([, value]) => value != null);
+      const keysToRemove = previousEntries
+        .filter(([, value]) => value == null)
+        .map(([key]) => key);
+
+      if (entriesToRestore.length > 0) {
+        await AsyncStorage.multiSet(entriesToRestore);
+      }
+
+      if (keysToRemove.length > 0) {
+        await AsyncStorage.multiRemove(keysToRemove);
+      }
+    } catch (rollbackError) {
+      logStorageError(
+        "Could not fully restore data after an interrupted backup import.",
+        rollbackError
+      );
+    }
+
+    throw error;
+  }
 }
 
 function prepareImportedHabits(habits) {

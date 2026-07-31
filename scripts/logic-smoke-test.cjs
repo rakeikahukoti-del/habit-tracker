@@ -45,6 +45,7 @@ function assertJsonEqual(actual, expected, message) {
 const asyncStorageStore = {};
 const asyncStorageFailures = {
   get: false,
+  partialMultiSetAfter: null,
   set: false,
 };
 const asyncStorageMock = {
@@ -67,8 +68,27 @@ const asyncStorageMock = {
       throw new Error("set failed");
     }
 
+    if (Number.isInteger(asyncStorageFailures.partialMultiSetAfter)) {
+      const entriesToWrite = entries.slice(
+        0,
+        asyncStorageFailures.partialMultiSetAfter
+      );
+
+      asyncStorageFailures.partialMultiSetAfter = null;
+      entriesToWrite.forEach(([key, value]) => {
+        asyncStorageStore[key] = value;
+      });
+
+      throw new Error("partial set failed");
+    }
+
     entries.forEach(([key, value]) => {
       asyncStorageStore[key] = value;
+    });
+  },
+  multiRemove: async (keys) => {
+    keys.forEach((key) => {
+      delete asyncStorageStore[key];
     });
   },
   removeItem: async (key) => {
@@ -132,6 +152,7 @@ const expoNotificationsMock = {
 
 function resetStorage() {
   asyncStorageFailures.get = false;
+  asyncStorageFailures.partialMultiSetAfter = null;
   asyncStorageFailures.set = false;
   Object.keys(asyncStorageStore).forEach((key) => {
     delete asyncStorageStore[key];
@@ -1800,6 +1821,87 @@ test("widget quick actions use shared completion logic and request refresh", asy
   assert.strictEqual(undoRefresh.reason, "habit-undone");
 });
 
+test("rapid completion and undo requests are serialized per habit", async () => {
+  resetStorage();
+
+  const todayKey = habitStats.getTodayKey();
+
+  await habitsStorage.saveHabits([
+    {
+      completedDates: [],
+      createdAt: todayKey,
+      frequency: "Daily",
+      id: "rapid-action",
+      name: "Rapid Action",
+      order: 0,
+    },
+  ]);
+  await gamificationStorage.rebuildGamificationFromHabits([], {
+    includeMessage: false,
+  });
+
+  const completionResults = await Promise.all([
+    habitCompletionActions.completeHabitTodayWithRewards("rapid-action"),
+    habitCompletionActions.completeHabitTodayWithRewards("rapid-action"),
+  ]);
+  const completedState = await gamificationStorage.getGamification();
+
+  assertJsonEqual(
+    completionResults.map((result) => result.changed),
+    [true, false]
+  );
+  assert.strictEqual(completedState.xp, 35);
+
+  const undoResults = await Promise.all([
+    habitCompletionActions.undoHabitTodayWithRewards("rapid-action"),
+    habitCompletionActions.undoHabitTodayWithRewards("rapid-action"),
+  ]);
+
+  assertJsonEqual(
+    undoResults.map((result) => result.changed),
+    [true, false]
+  );
+  assert.strictEqual(
+    (await habitsStorage.getHabits())[0].completedDates.includes(todayKey),
+    false
+  );
+});
+
+test("stored reward messages can only be consumed once during overlapping loads", async () => {
+  resetStorage();
+
+  const todayKey = habitStats.getTodayKey();
+
+  await habitsStorage.saveHabits([
+    {
+      completedDates: [],
+      createdAt: todayKey,
+      frequency: "Daily",
+      id: "reward-consumption",
+      name: "Reward Consumption",
+      order: 0,
+    },
+  ]);
+  await gamificationStorage.rebuildGamificationFromHabits([], {
+    includeMessage: false,
+  });
+  await habitCompletionActions.completeHabitTodayWithRewards(
+    "reward-consumption"
+  );
+
+  const consumedMessages = await Promise.all([
+    gamificationStorage.consumeGamificationMessages(),
+    gamificationStorage.consumeGamificationMessages(),
+  ]);
+
+  assert.ok(consumedMessages[0].length > 0);
+  assertJsonEqual(consumedMessages[1], []);
+  assertJsonEqual(
+    (await gamificationStorage.getGamification()).pendingMessages,
+    []
+  );
+});
+
 test("analytics readiness separates building data from meaningful trends", () => {
   const building = analyticsReadiness.getAnalyticsReadiness([
     {
@@ -2129,6 +2231,31 @@ test("onboarding and first swipe hint persistence are safe", async () => {
   assert.strictEqual(await appPreferencesStorage.hasDismissedFirstSwipeHint(), false);
   assert.strictEqual(await appPreferencesStorage.getReturnGuidanceDismissedDate(), "");
   asyncStorageFailures.get = false;
+});
+
+test("last shown level and guidance dates recover from malformed storage", async () => {
+  resetStorage();
+
+  assert.strictEqual(await appPreferencesStorage.getLastShownLevel(), 1);
+
+  for (const invalidLevel of ["", "0", "-2", "not-a-level"]) {
+    asyncStorageStore["momentum:last-shown-level"] = invalidLevel;
+    assert.strictEqual(await appPreferencesStorage.getLastShownLevel(), 1);
+  }
+
+  asyncStorageStore["momentum:last-shown-level"] = "4.9";
+  assert.strictEqual(await appPreferencesStorage.getLastShownLevel(), 4);
+
+  asyncStorageStore["momentum:return-guidance-dismissed-date"] = "2026-02-29";
+  assert.strictEqual(
+    await appPreferencesStorage.getReturnGuidanceDismissedDate(),
+    ""
+  );
+  asyncStorageStore["momentum:return-guidance-dismissed-date"] = "2028-02-29";
+  assert.strictEqual(
+    await appPreferencesStorage.getReturnGuidanceDismissedDate(),
+    "2028-02-29"
+  );
 });
 
 test("app preferences reset to defaults while preserving legacy compatibility", async () => {
@@ -3370,6 +3497,39 @@ test("insights dashboard handles empty, imported, deleted, and leap-year data", 
   assert.ok(dashboard.insightCards.length > 0);
 });
 
+test("analytics remain deterministic with hundreds of habits and years of history", () => {
+  const completionDates = Array.from({ length: 20 }, (_, index) => {
+    const date = new Date();
+
+    date.setDate(date.getDate() - index * 55);
+
+    return habitStats.toDateKey(date);
+  }).sort();
+  const createdAt = completionDates[0];
+  const habits = Array.from({ length: 100 }, (_, index) => ({
+    completedDates: completionDates,
+    createdAt,
+    frequency: "Daily",
+    id: `stress-habit-${index}`,
+    name: `Stress Habit ${index}`,
+    order: index,
+  }));
+  const analytics = habitStats.getDeepAnalytics(habits, "year", {
+    xp: 50000,
+  });
+  const dashboard = insightsDashboard.getInsightsDashboard(habits, {
+    xp: 50000,
+  });
+
+  assert.strictEqual(analytics.habitPerformance.length, 100);
+  assert.strictEqual(
+    dashboard.totals.totalCompletions,
+    habits.length * completionDates.length
+  );
+  assert.ok(Number.isFinite(analytics.completionRate));
+  assert.ok(Number.isFinite(dashboard.consistency.overall.rate));
+});
+
 test("daily plan normalization resets stale, duplicate, missing, and unscheduled habits", () => {
   const todayKey = "2026-07-13";
   const habits = [
@@ -3775,6 +3935,58 @@ test("app backup import does not overwrite existing data if commit fails", async
 
   assert.strictEqual(JSON.stringify(asyncStorageStore), beforeStore);
   assert.strictEqual((await habitsStorage.getHabits())[0].id, "existing");
+});
+
+test("app backup import rolls back a partially applied storage commit", async () => {
+  resetStorage();
+  await habitsStorage.importHabitsBackup(
+    JSON.stringify({
+      habits: [
+        {
+          id: "existing",
+          name: "Existing",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          completedDates: [],
+        },
+      ],
+    })
+  );
+  await appPreferencesStorage.saveAppPreferences({
+    ...appPreferencesStorage.defaultAppPreferences,
+    showProgressCard: false,
+  });
+
+  const beforeStore = JSON.stringify(asyncStorageStore);
+  const backupText = JSON.stringify({
+    app: "Momentum",
+    appVersion: "1.0.0",
+    exportedAt: "2026-03-01T00:00:00.000Z",
+    schemaVersion: 1,
+    exportedData: {
+      habits: [
+        {
+          id: "replacement",
+          name: "Replacement",
+          completedDates: [habitStats.getTodayKey()],
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+      preferences: appPreferencesStorage.defaultAppPreferences,
+    },
+  });
+
+  asyncStorageFailures.partialMultiSetAfter = 3;
+  await assert.rejects(
+    () => appBackup.importAppData(backupText),
+    /partial set failed/
+  );
+
+  assert.strictEqual(JSON.stringify(asyncStorageStore), beforeStore);
+  assert.strictEqual((await habitsStorage.getHabits())[0].id, "existing");
+  assert.strictEqual(
+    (await appPreferencesStorage.getAppPreferences()).showProgressCard,
+    false
+  );
 });
 
 test("app backup validation rejects corrupted, empty, and future backups safely", () => {

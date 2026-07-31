@@ -11,7 +11,17 @@ import {
 import { requestWidgetRefresh } from "../widgets/widgetRefresh";
 import { wasCompletedToday } from "./habitStats";
 
-export async function completeHabitTodayWithRewards(habitId) {
+const habitActionQueues = new Map();
+
+export function completeHabitTodayWithRewards(habitId) {
+  return enqueueHabitAction(habitId, () => completeHabit(habitId));
+}
+
+export function undoHabitTodayWithRewards(habitId) {
+  return enqueueHabitAction(habitId, () => undoHabit(habitId));
+}
+
+async function completeHabit(habitId) {
   const currentHabits = await getHabits();
   const currentHabit = currentHabits.find((habit) => habit.id === habitId);
 
@@ -61,7 +71,7 @@ export async function completeHabitTodayWithRewards(habitId) {
   };
 }
 
-export async function undoHabitTodayWithRewards(habitId) {
+async function undoHabit(habitId) {
   const currentHabits = await getHabits();
   const currentHabit = currentHabits.find((habit) => habit.id === habitId);
 
@@ -103,4 +113,18 @@ export async function undoHabitTodayWithRewards(habitId) {
     habits: nextHabits,
     reason: "undone",
   };
+}
+
+function enqueueHabitAction(habitId, action) {
+  const queueKey = typeof habitId === "string" ? habitId : "";
+  const previousAction = habitActionQueues.get(queueKey) || Promise.resolve();
+  const nextAction = previousAction.catch(() => {}).then(action);
+
+  habitActionQueues.set(queueKey, nextAction);
+
+  return nextAction.finally(() => {
+    if (habitActionQueues.get(queueKey) === nextAction) {
+      habitActionQueues.delete(queueKey);
+    }
+  });
 }

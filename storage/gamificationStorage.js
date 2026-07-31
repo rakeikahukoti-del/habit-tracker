@@ -17,6 +17,7 @@ import {
 import { isPlainObject, logStorageError } from "./storageUtils";
 
 const GAMIFICATION_KEY = "habit-tracker:gamification";
+let messageConsumptionQueue = Promise.resolve();
 
 export {
   XP_PER_LEVEL,
@@ -78,7 +79,17 @@ export async function rebuildGamificationFromHabits(
   return result.state;
 }
 
-export async function consumeGamificationMessages() {
+export function consumeGamificationMessages() {
+  const consumption = messageConsumptionQueue
+    .catch(() => {})
+    .then(consumeStoredGamificationMessages);
+
+  messageConsumptionQueue = consumption;
+
+  return consumption;
+}
+
+async function consumeStoredGamificationMessages() {
   const gamification = await getGamification();
   const messages = gamification.pendingMessages;
 
