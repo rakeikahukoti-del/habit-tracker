@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -24,7 +25,10 @@ export default function AnalyticsScreen({
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet, maxWidth });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet, maxWidth }),
+    [colors, isSmallScreen, isTablet, maxWidth]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -41,7 +45,7 @@ export default function AnalyticsScreen({
 
 export function AnalyticsHeader({ subtitle, title }) {
   const { colors } = useTheme();
-  const styles = createHeaderStyles(colors);
+  const styles = useMemo(() => createHeaderStyles(colors), [colors]);
 
   return (
     <View style={styles.header}>

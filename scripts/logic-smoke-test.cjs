@@ -357,6 +357,7 @@ const insightsDashboard = loadModule("utils/insightsDashboard.js", (moduleName) 
 
   return require(moduleName);
 });
+const analyticsPresentation = loadModule("utils/analyticsPresentation.js");
 const habitOptions = loadModule("constants/habitOptions.js");
 const habitTemplates = loadModule("utils/habitTemplates.js", (moduleName) => {
   if (moduleName === "../constants/habitOptions") {
@@ -3083,6 +3084,39 @@ test("insights habit rankings are deterministic and explainable", () => {
   assert.strictEqual(rankings.strongest[0].name, "Alpha");
   assert.strictEqual(rankings.needsAttention[0].name, "Beta");
   assert.strictEqual(rankings.all[0].hasSufficientData, true);
+});
+
+test("analytics presentation summaries expose chart and metric context", () => {
+  const summary = analyticsPresentation.getTrendAccessibilitySummary(
+    [
+      { label: "Week 1", percentage: 25 },
+      { label: "Week 2", percentage: 78.4 },
+    ],
+    "Month"
+  );
+
+  assert.ok(summary.includes("25 percent to 78 percent"));
+  assert.ok(summary.includes("Latest: Week 2 at 78 percent"));
+  assert.ok(summary.includes("Recent points: Week 1 25 percent"));
+  assert.strictEqual(
+    analyticsPresentation.getMetricAccessibilityLabel(
+      "Completion",
+      "78%",
+      "Improving"
+    ),
+    "Completion: 78%. Improving"
+  );
+  assert.strictEqual(
+    analyticsPresentation.getHabitPerformanceAccessibilityLabel(
+      {
+        completionRate: 82,
+        currentStreak: 6,
+        habit: { name: "Read" },
+      },
+      "Stable"
+    ),
+    "Open analytics for Read. 82 percent completion. 6 day streak. Stable."
+  );
 });
 
 test("insights weekly and monthly comparisons respect period boundaries", () => {

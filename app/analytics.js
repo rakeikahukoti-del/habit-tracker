@@ -29,6 +29,11 @@ import {
   getAnalyticsReadiness,
   shouldShowFirstTrendUnlock,
 } from "../utils/analyticsReadiness";
+import {
+  getHabitPerformanceAccessibilityLabel,
+  getMetricAccessibilityLabel,
+  getTrendAccessibilitySummary,
+} from "../utils/analyticsPresentation";
 import { getFirstWeekProgressMessage } from "../utils/firstUseExperience";
 import { getDeepAnalytics } from "../utils/habitStats";
 import { getInsightsDashboard } from "../utils/insightsDashboard";
@@ -55,6 +60,7 @@ export default function AnalyticsScreen() {
   const [firstTrendUnlockShown, setFirstTrendUnlockShownState] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadRequest, setReloadRequest] = useState(0);
   const [trendUnlockVisible, setTrendUnlockVisible] = useState(false);
 
   useFocusEffect(
@@ -63,6 +69,7 @@ export default function AnalyticsScreen() {
 
       async function loadAnalytics() {
         try {
+          setLoading(true);
           setError("");
           const [
             storedHabits,
@@ -97,7 +104,7 @@ export default function AnalyticsScreen() {
       return () => {
         isActive = false;
       };
-    }, [])
+    }, [reloadRequest])
   );
 
   const analytics = useMemo(
@@ -144,27 +151,33 @@ export default function AnalyticsScreen() {
 
         <PeriodControl period={period} setPeriod={setPeriod} styles={styles} />
 
-        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
+        {!loading && error ? (
+          <AnalyticsError
+            message={error}
+            onRetry={() => setReloadRequest((value) => value + 1)}
+            styles={styles}
+          />
+        ) : null}
 
-        {loading ? (
+        {loading && !error ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
-            <AppText style={styles.loadingText}>Loading analytics...</AppText>
+            <AppText style={styles.loadingText}>Preparing analytics...</AppText>
           </View>
         ) : null}
 
-        {!loading && analytics.habitCount === 0 ? (
+        {!loading && !error && analytics.habitCount === 0 ? (
           <EmptyAnalytics colors={colors} styles={styles} />
         ) : null}
 
-        {!loading && readiness.isBuilding ? (
+        {!loading && !error && readiness.isBuilding ? (
           <DataBuildingAnalytics
             readiness={readiness}
             styles={styles}
           />
         ) : null}
 
-        {!loading && analytics.habitCount > 0 && readiness.ready ? (
+        {!loading && !error && analytics.habitCount > 0 && readiness.ready ? (
           <>
             {trendUnlockVisible ? (
               <TrendUnlockBanner
@@ -173,6 +186,32 @@ export default function AnalyticsScreen() {
                 styles={styles}
               />
             ) : null}
+
+            <Section title="Key metrics" styles={styles}>
+              <View style={styles.metricGrid}>
+                <MetricBlock
+                  label="Completion"
+                  value={`${analytics.completionRate}%`}
+                  helper={formatTrendDelta(analytics.trendDelta)}
+                  styles={styles}
+                />
+                <MetricBlock
+                  label="Total completed"
+                  value={analytics.completedCount}
+                  styles={styles}
+                />
+                <MetricBlock
+                  label="Average per day"
+                  value={analytics.averagePerDay}
+                  styles={styles}
+                />
+                <MetricBlock
+                  label="XP earned"
+                  value={analytics.totalXpEarned}
+                  styles={styles}
+                />
+              </View>
+            </Section>
 
             <InsightsDashboardSection
               dashboard={insightsDashboard}
@@ -183,7 +222,10 @@ export default function AnalyticsScreen() {
               <TrendChart
                 points={analytics.trendPoints}
                 styles={styles}
-                summary={getTrendSummary(analytics.trendPoints, period)}
+                summary={getTrendAccessibilitySummary(
+                  analytics.trendPoints,
+                  getPeriodLabel(period)
+                )}
               />
             </Section>
 
@@ -192,30 +234,6 @@ export default function AnalyticsScreen() {
                 <MonthlyReviewCard review={monthlyReview} styles={styles} />
               </Section>
             ) : null}
-
-            <View style={styles.metricGrid}>
-              <MetricBlock
-                label="Completion"
-                value={`${analytics.completionRate}%`}
-                helper={formatTrendDelta(analytics.trendDelta)}
-                styles={styles}
-              />
-              <MetricBlock
-                label="Total completed"
-                value={analytics.completedCount}
-                styles={styles}
-              />
-              <MetricBlock
-                label="Average per day"
-                value={analytics.averagePerDay}
-                styles={styles}
-              />
-              <MetricBlock
-                label="XP earned"
-                value={analytics.totalXpEarned}
-                styles={styles}
-              />
-            </View>
 
             <Section title="Habit performance" styles={styles}>
               {analytics.habitPerformance.length === 0 ? (
@@ -293,7 +311,7 @@ function InsightsDashboardSection({ dashboard, styles }) {
   const sections = new Set(dashboard.dashboardSections);
 
   return (
-    <Section title="Insights dashboard" styles={styles}>
+    <Section title="Progress signals" styles={styles}>
       <OverviewInsightsCard dashboard={dashboard} styles={styles} />
 
       {sections.has("insights") ? (
@@ -358,7 +376,7 @@ function OverviewInsightsCard({ dashboard, styles }) {
     >
       <View style={styles.dashboardHeaderRow}>
         <View style={styles.dashboardHeaderText}>
-          <AppText style={styles.dashboardEyebrow}>Overview</AppText>
+          <AppText style={styles.dashboardEyebrow}>Consistency</AppText>
           <AppText style={styles.dashboardTitle}>
             {dashboard.consistency.last30Days.rate}% consistency
           </AppText>
@@ -395,7 +413,11 @@ function OverviewInsightsCard({ dashboard, styles }) {
 
 function SmallDashboardMetric({ label, styles, value }) {
   return (
-    <View style={styles.smallDashboardMetric}>
+    <View
+      accessibilityLabel={`${label}: ${value}`}
+      accessible
+      style={styles.smallDashboardMetric}
+    >
       <AppText style={styles.smallDashboardValue}>{value}</AppText>
       <AppText style={styles.smallDashboardLabel}>{label}</AppText>
     </View>
@@ -421,7 +443,6 @@ function InsightCard({ card, styles }) {
 }
 
 function ComparisonCard({ comparison, label, styles }) {
-  const symbol = getDirectionSymbol(comparison.direction);
   const summary = comparison.available
     ? comparison.summary
     : "Needs more scheduled data";
@@ -435,7 +456,7 @@ function ComparisonCard({ comparison, label, styles }) {
       <View style={styles.comparisonTopRow}>
         <AppText style={styles.comparisonLabel}>{label}</AppText>
         <AppText style={styles.comparisonDirection}>
-          {symbol} {getDirectionLabel(comparison.direction)}
+          {getDirectionLabel(comparison.direction)}
         </AppText>
       </View>
       <AppText style={styles.comparisonValue}>{comparison.rate}%</AppText>
@@ -538,7 +559,11 @@ function TrendChart({ points, styles, summary }) {
 
 function MetricBlock({ helper, label, styles, value }) {
   return (
-    <View style={styles.metricBlock}>
+    <View
+      accessibilityLabel={getMetricAccessibilityLabel(label, value, helper)}
+      accessible
+      style={styles.metricBlock}
+    >
       <AppText
         adjustsFontSizeToFit
         minimumFontScale={0.72}
@@ -620,7 +645,10 @@ function HabitPerformanceRow({ item, styles }) {
 
   return (
     <Pressable
-      accessibilityLabel={`Open analytics for ${item.habit.name}`}
+      accessibilityLabel={getHabitPerformanceAccessibilityLabel(
+        item,
+        trendLabel
+      )}
       accessibilityRole="button"
       onPress={() => router.push(`/analytics/${item.habit.id}`)}
       style={({ pressed }) => [
@@ -662,10 +690,10 @@ function HabitPerformanceRow({ item, styles }) {
 function EmptyAnalytics({ colors, styles }) {
   return (
     <View style={styles.emptyCard}>
-      <AppText style={styles.emptyTitle}>Not enough data yet</AppText>
+      <AppText style={styles.emptyTitle}>No habits to analyse</AppText>
       <AppText style={styles.emptyText}>
-        Complete habits for a few days and Momentum will start showing patterns,
-        streak changes, and stronger habits.
+        Add your first habit, then complete it for a few days to unlock trends
+        and insights.
       </AppText>
       <Pressable
         accessibilityLabel="Create a habit from Analytics"
@@ -678,6 +706,26 @@ function EmptyAnalytics({ colors, styles }) {
       >
         <AppIcon color={colors.inverseText} name="plus" size={16} />
         <AppText style={styles.emptyActionText}>Add habit</AppText>
+      </Pressable>
+    </View>
+  );
+}
+
+function AnalyticsError({ message, onRetry, styles }) {
+  return (
+    <View accessibilityLiveRegion="polite" style={styles.emptyCard}>
+      <AppText style={styles.emptyTitle}>Analytics unavailable</AppText>
+      <AppText style={styles.emptyText}>{message}</AppText>
+      <Pressable
+        accessibilityLabel="Try loading Analytics again"
+        accessibilityRole="button"
+        onPress={onRetry}
+        style={({ pressed }) => [
+          styles.emptyAction,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppText style={styles.emptyActionText}>Try again</AppText>
       </Pressable>
     </View>
   );
@@ -762,7 +810,7 @@ function TrendUnlockBanner({ colors, onDismiss, styles }) {
       <View style={styles.unlockText}>
         <AppText style={styles.unlockTitle}>First trend unlocked</AppText>
         <AppText style={styles.unlockMessage}>
-          You have enough history for Momentum to show useful patterns.
+          Momentum can now show patterns from your habit history.
         </AppText>
       </View>
       <AppText style={styles.unlockDismiss}>Got it</AppText>
@@ -783,7 +831,7 @@ function getBuildingHint(readiness) {
     return `${readiness.remainingActiveDays} more active days.`;
   }
 
-  return "keep completing habits to strengthen the trend.";
+  return "Keep completing habits to strengthen the trend.";
 }
 
 function formatTrendDelta(delta) {
@@ -800,32 +848,6 @@ function formatTrendDelta(delta) {
   }
 
   return `${delta}% vs previous period`;
-}
-
-function getTrendSummary(points, period) {
-  const percentages = points.map((point) => clampPercentage(point.percentage));
-
-  if (percentages.length === 0) {
-    return "No trend data available yet.";
-  }
-
-  return `Completion trend ranges from ${Math.min(
-    ...percentages
-  )}% to ${Math.max(...percentages)}% over ${getPeriodLabel(
-    period
-  ).toLowerCase()}.`;
-}
-
-function getDirectionSymbol(direction) {
-  if (direction === "improving") {
-    return "Up";
-  }
-
-  if (direction === "declining") {
-    return "Down";
-  }
-
-  return "Flat";
 }
 
 function getDirectionLabel(direction) {
@@ -914,16 +936,6 @@ function createStyles(colors, { isSmallScreen }) {
     },
     periodLabelSelected: {
       color: colors.text,
-    },
-    errorBanner: {
-      backgroundColor: colors.dangerSoft,
-      borderRadius: v2Radius.small,
-      color: colors.danger,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.medium,
-      marginBottom: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
     },
     loadingCard: {
       alignItems: "center",
@@ -1270,7 +1282,6 @@ function createStyles(colors, { isSmallScreen }) {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: v2Spacing.md,
-      marginBottom: v2Spacing.xl,
     },
     reviewCard: {
       backgroundColor: colors.card,
