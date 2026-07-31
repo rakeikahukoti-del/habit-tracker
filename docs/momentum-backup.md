@@ -76,6 +76,21 @@ Export includes:
 
 Derived analytics and activity history are not stored separately. They are rebuilt from habit history.
 
+## User Export Workflow
+
+Users open Settings > Data > Export Data.
+
+The app:
+
+1. Creates the backup JSON.
+2. Shows a concise export summary.
+3. Displays export date, app version, schema version, habit count, history count, routine count, and template count.
+4. Keeps the JSON visible so the user can copy it.
+5. Offers the native Share action when available.
+
+The most recent export metadata is shown in Backup Information for the current
+Settings session. No new storage key is used for last export state.
+
 ## Import Flow
 
 Momentum uses a Replace import flow.
@@ -91,6 +106,45 @@ Momentum uses a Replace import flow.
 
 Existing data is not overwritten if parsing, validation, normalization, or the
 main storage commit fails.
+
+## User Import Workflow
+
+Users open Settings > Data > Import Backup and paste backup JSON.
+
+Before import, the app shows:
+
+- export date
+- app version
+- schema version
+- habit count
+- activity history availability and completion count
+- routine count
+- template count
+- validation status
+
+The Replace Data button stays disabled until validation succeeds.
+
+## Confirmation Behavior
+
+Valid backups require explicit confirmation before restore.
+
+The confirmation explains:
+
+- current Momentum data will be replaced
+- the restore cannot be undone
+- the backup has already been validated
+- how many habits will be loaded
+
+Cancel closes the confirmation without changing local data.
+
+## Restore Completion
+
+After a successful restore, Settings reports that the backup was restored, how
+many habits were loaded, and that restart is not required.
+
+If reminder reconciliation fails after the data commit, the import returns a
+warning so the UI can tell the user reminders may need refreshing. Stored app
+data remains valid.
 
 ## Validation Rules
 
@@ -119,6 +173,18 @@ Validation rejects unrecoverable issues:
 Duplicate habit IDs are repaired before import. Imported notification IDs are
 discarded because notification identifiers are device-local; reminders are
 reconciled after the data commit.
+
+## Validation Messages
+
+Validation messages should be plain language:
+
+- Empty backup: paste the full JSON backup and try again.
+- Invalid JSON: check that the full backup was copied.
+- Future version: update Momentum before importing.
+- Missing habit data: choose another backup if available.
+- Recoverable repairs: explain the first repaired item and keep Replace Data enabled.
+
+Every failed validation keeps current data unchanged.
 
 ## Migration Pipeline
 

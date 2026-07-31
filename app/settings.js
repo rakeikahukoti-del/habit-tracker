@@ -5,6 +5,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  Share,
   StyleSheet,
   TextInput,
   View,
@@ -28,8 +29,11 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import {
   exportAppData,
+  BACKUP_VERSION,
+  getBackupPreview,
+  getBackupValidationSummary,
+  getImportConfirmationCopy,
   importAppData,
-  validateBackup,
 } from "../storage/appBackup";
 import {
   resetAppPreferences,
@@ -51,14 +55,19 @@ export default function SettingsScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [actionLoading, setActionLoading] = useState(false);
   const [backupText, setBackupText] = useState("");
+  const [exportMetadata, setExportMetadata] = useState(null);
   const [importText, setImportText] = useState("");
   const [level, setLevel] = useState(1);
   const [modalMode, setModalMode] = useState(null);
   const [message, setMessage] = useState("");
   const actionLoadingRef = useRef(false);
   const importValidation = useMemo(
-    () => (importText.trim() ? validateBackup(importText) : null),
+    () => (importText.trim() ? getBackupPreview(importText) : null),
     [importText]
+  );
+  const importSummary = useMemo(
+    () => getBackupValidationSummary(importValidation),
+    [importValidation]
   );
 
   useFocusEffect(
@@ -220,8 +229,10 @@ export default function SettingsScreen() {
     try {
       setMessage("");
       const json = await exportAppData();
+      const validation = getBackupPreview(json);
 
       setBackupText(json);
+      setExportMetadata(validation.metadata);
       setModalMode("export");
       setMessage("Export ready. Store this backup somewhere safe.");
     } catch {
@@ -233,14 +244,31 @@ export default function SettingsScreen() {
   }
 
   function confirmImportData() {
+    const copy = getImportConfirmationCopy(importValidation);
+
     Alert.alert(
-      "Import backup?",
-      "This replaces your current Momentum data with the JSON backup.",
+      copy.title,
+      copy.message,
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Replace data", style: "destructive", onPress: handleImportData },
+        { text: copy.confirmLabel, style: "destructive", onPress: handleImportData },
       ]
     );
+  }
+
+  async function handleShareBackup() {
+    if (!backupText) {
+      return;
+    }
+
+    try {
+      await Share.share({
+        message: backupText,
+        title: "Momentum backup",
+      });
+    } catch {
+      setMessage("Could not open sharing. The JSON backup is still available here.");
+    }
   }
 
   async function handleImportData() {
@@ -259,7 +287,7 @@ export default function SettingsScreen() {
       setImportText("");
       await refreshLevel();
       setMessage(
-        `Imported ${result.habits.length} habit${result.habits.length === 1 ? "" : "s"}.`
+        getRestoreSuccessMessage(result)
       );
     } catch (error) {
       setMessage(error?.message || "Could not import that JSON backup.");
@@ -330,7 +358,7 @@ export default function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection
-        footer="Demo actions replace current habits. Export first if you want a backup."
+        footer="Backups are local JSON files. Export before demo, import, or reset actions if you want a copy."
         title="Data"
       >
         {SHOW_DEMO_TOOLS ? (
@@ -355,13 +383,21 @@ export default function SettingsScreen() {
           disabled={actionLoading}
           icon="analytics"
           onPress={handleExportData}
-          title="Export backup"
+          title="Export Data"
+          value={actionLoading ? "Working" : undefined}
         />
         <SettingsRow
           disabled={actionLoading}
           icon="plus"
           onPress={() => setModalMode("import")}
-          title="Import backup"
+          title="Import Backup"
+        />
+        <SettingsRow
+          description={`Current backup schema v${BACKUP_VERSION}. ${exportMetadata ? `Last export: ${formatBackupDate(exportMetadata.exportedAt)}.` : "No export this session."}`}
+          icon="settings"
+          showChevron={false}
+          title="Backup Information"
+          value={`v${BACKUP_VERSION}`}
         />
       </SettingsSection>
 
@@ -436,16 +472,27 @@ export default function SettingsScreen() {
             style={styles.modalCard}
           >
             <AppText style={styles.modalTitle}>
-              {modalMode === "export" ? "Export JSON" : "Import JSON"}
+              {modalMode === "export" ? "Export Data" : "Import Backup"}
             </AppText>
             <AppText style={styles.modalHelper}>
               {modalMode === "export"
-                ? getExportHelper(backupText)
-                : "Paste a Momentum JSON backup to preview before replacing current data."}
+                ? getExportHelper(backupText, exportMetadata)
+                : "Paste a Momentum JSON backup. Momentum will validate it before anything is replaced."}
             </AppText>
 
+            {modalMode === "export" ? (
+              <BackupMetadataCard
+                metadata={exportMetadata}
+                styles={styles}
+                title="Export summary"
+              />
+            ) : null}
             {modalMode === "import" ? (
-              <BackupPreview validation={importValidation} styles={styles} />
+              <BackupPreview
+                summary={importSummary}
+                validation={importValidation}
+                styles={styles}
+              />
             ) : null}
 
             <TextInput
@@ -478,6 +525,22 @@ export default function SettingsScreen() {
               >
                 <AppText style={styles.modalCancelText}>Close</AppText>
               </Pressable>
+
+              {modalMode === "export" ? (
+                <Pressable
+                  accessibilityLabel="Share Momentum backup"
+                  accessibilityRole="button"
+                  disabled={!backupText}
+                  onPress={handleShareBackup}
+                  style={({ pressed }) => [
+                    styles.modalPrimaryButton,
+                    !backupText && styles.disabledButton,
+                    pressed && backupText && styles.buttonPressed,
+                  ]}
+                >
+                  <AppText style={styles.modalPrimaryText}>Share</AppText>
+                </Pressable>
+              ) : null}
 
               {modalMode === "import" ? (
                 <Pressable
@@ -515,7 +578,7 @@ function formatThemeLabel(themeKey) {
     .toUpperCase() + String(themeKey || "dark").slice(1);
 }
 
-function BackupPreview({ validation, styles }) {
+function BackupPreview({ summary, validation, styles }) {
   if (!validation) {
     return (
       <View
@@ -523,10 +586,8 @@ function BackupPreview({ validation, styles }) {
         accessible
         style={styles.previewCard}
       >
-        <AppText style={styles.previewTitle}>Import preview</AppText>
-        <AppText style={styles.previewText}>
-          Paste a backup to see what will be replaced.
-        </AppText>
+        <AppText style={styles.previewTitle}>{summary.title}</AppText>
+        <AppText style={styles.previewText}>{summary.body}</AppText>
       </View>
     );
   }
@@ -539,39 +600,104 @@ function BackupPreview({ validation, styles }) {
       accessible
       style={styles.previewCard}
     >
-      <AppText style={styles.previewTitle}>
-        {validation.ok ? "Backup ready" : "Backup needs attention"}
-      </AppText>
-      <AppText style={styles.previewText}>
-        {metadata.habitCount} habit{metadata.habitCount === 1 ? "" : "s"} -
-        Exported {metadata.exportedAt}
-      </AppText>
-      <AppText style={styles.previewText}>
-        Preferences {metadata.hasPreferences ? "included" : "missing"} -
-        Activity {metadata.hasActivityHistory ? "included" : "empty"}
-      </AppText>
-      <AppText style={styles.previewText}>
-        {metadata.activityHistoryCount} completion
-        {metadata.activityHistoryCount === 1 ? "" : "s"} - {metadata.routineCount} routine
-        {metadata.routineCount === 1 ? "" : "s"} - {metadata.templateCount} template
-        {metadata.templateCount === 1 ? "" : "s"}
-      </AppText>
+      <AppText style={styles.previewTitle}>{summary.title}</AppText>
+      <AppText style={styles.previewText}>{summary.body}</AppText>
+      <BackupMetadataList metadata={metadata} styles={styles} />
       {validation.errors.length > 0 ? (
-        <AppText style={styles.previewError}>{validation.errors[0]}</AppText>
+        <AppText style={styles.previewError}>{summary.detail}</AppText>
       ) : null}
       {validation.warnings.length > 0 ? (
-        <AppText style={styles.previewWarning}>{validation.warnings[0]}</AppText>
+        <AppText style={styles.previewWarning}>{summary.detail}</AppText>
+      ) : null}
+      {validation.ok && validation.warnings.length === 0 ? (
+        <AppText style={styles.previewSuccess}>{summary.detail}</AppText>
       ) : null}
     </View>
   );
 }
 
-function getExportHelper(backupText) {
+function BackupMetadataCard({ metadata, styles, title }) {
+  if (!metadata) {
+    return null;
+  }
+
+  return (
+    <View
+      accessibilityLabel={`Backup summary. ${metadata.habitCount} habits. Schema version ${metadata.version}. Exported ${formatBackupDate(metadata.exportedAt)}.`}
+      accessible
+      style={styles.previewCard}
+    >
+      <AppText style={styles.previewTitle}>{title}</AppText>
+      <BackupMetadataList metadata={metadata} styles={styles} />
+    </View>
+  );
+}
+
+function BackupMetadataList({ metadata, styles }) {
+  return (
+    <View style={styles.metadataGrid}>
+      <MetadataItem
+        label="Exported"
+        styles={styles}
+        value={formatBackupDate(metadata.exportedAt)}
+      />
+      <MetadataItem label="App" styles={styles} value={metadata.appVersion} />
+      <MetadataItem label="Schema" styles={styles} value={`v${metadata.version}`} />
+      <MetadataItem
+        label="Habits"
+        styles={styles}
+        value={String(metadata.habitCount)}
+      />
+      <MetadataItem
+        label="History"
+        styles={styles}
+        value={
+          metadata.hasActivityHistory
+            ? `${metadata.activityHistoryCount}`
+            : "Empty"
+        }
+      />
+      <MetadataItem
+        label="Routines"
+        styles={styles}
+        value={String(metadata.routineCount)}
+      />
+      <MetadataItem
+        label="Templates"
+        styles={styles}
+        value={String(metadata.templateCount)}
+      />
+    </View>
+  );
+}
+
+function MetadataItem({ label, styles, value }) {
+  return (
+    <View style={styles.metadataItem}>
+      <AppText style={styles.metadataLabel}>{label}</AppText>
+      <AppText numberOfLines={2} style={styles.metadataValue}>{value}</AppText>
+    </View>
+  );
+}
+
+function getExportHelper(backupText, metadata) {
   if (!backupText) {
     return "Store this backup somewhere safe.";
   }
 
-  return `Store this backup somewhere safe. Size: ${formatByteSize(backupText.length)}.`;
+  return `Export completed ${metadata ? formatBackupDate(metadata.exportedAt) : "now"}. Store this backup somewhere safe. Size: ${formatByteSize(backupText.length)}.`;
+}
+
+function getRestoreSuccessMessage(result) {
+  const habitCount = Array.isArray(result?.habits) ? result.habits.length : 0;
+  const habitText = `${habitCount} habit${habitCount === 1 ? "" : "s"}`;
+  const warning = Array.isArray(result?.warnings) ? result.warnings[0] : "";
+
+  if (warning) {
+    return `Backup restored. ${habitText} loaded. ${warning}`;
+  }
+
+  return `Backup restored. ${habitText} loaded. Restart not required.`;
 }
 
 function formatByteSize(bytes) {
@@ -580,6 +706,26 @@ function formatByteSize(bytes) {
   }
 
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function formatBackupDate(value) {
+  if (!value || value === "Unknown") {
+    return "Unknown";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function createStyles(colors) {
@@ -643,6 +789,35 @@ function createStyles(colors) {
       fontSize: v2Typography.caption.fontSize,
       lineHeight: v2Typography.caption.lineHeight,
     },
+    metadataGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: v2Spacing.sm,
+      paddingTop: v2Spacing.xs,
+    },
+    metadataItem: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.medium,
+      borderWidth: 1,
+      flexBasis: "30%",
+      flexGrow: 1,
+      minWidth: 92,
+      paddingHorizontal: v2Spacing.sm,
+      paddingVertical: v2Spacing.xs,
+    },
+    metadataLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      lineHeight: v2Typography.caption.lineHeight,
+    },
+    metadataValue: {
+      color: colors.text,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
+      lineHeight: v2Typography.label.lineHeight,
+      marginTop: 2,
+    },
     previewError: {
       color: colors.danger,
       fontSize: v2Typography.caption.fontSize,
@@ -651,6 +826,11 @@ function createStyles(colors) {
     },
     previewWarning: {
       color: colors.warning || colors.primary,
+      fontSize: v2Typography.caption.fontSize,
+      lineHeight: v2Typography.caption.lineHeight,
+    },
+    previewSuccess: {
+      color: colors.success || colors.primary,
       fontSize: v2Typography.caption.fontSize,
       lineHeight: v2Typography.caption.lineHeight,
     },

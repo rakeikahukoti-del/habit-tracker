@@ -145,6 +145,57 @@ export function getBackupMetadata(jsonText) {
   return validateBackup(jsonText).metadata;
 }
 
+export function getBackupPreview(jsonText) {
+  return validateBackup(jsonText);
+}
+
+export function getBackupValidationSummary(validation) {
+  if (!validation) {
+    return {
+      body: "Paste a Momentum backup to preview what will be replaced.",
+      detail: "",
+      status: "empty",
+      title: "Import preview",
+    };
+  }
+
+  if (!validation.ok) {
+    return {
+      body: getValidationFailureBody(validation.errors[0]),
+      detail: "Your current data has not been changed.",
+      status: "error",
+      title: "Backup cannot be imported",
+    };
+  }
+
+  if (validation.warnings.length > 0) {
+    return {
+      body: "Momentum can import this backup after repairing safe issues.",
+      detail: validation.warnings[0],
+      status: "warning",
+      title: "Backup ready with repairs",
+    };
+  }
+
+  return {
+    body: "This backup is valid and ready to restore.",
+    detail: "Your current data will only change after you confirm.",
+    status: "valid",
+    title: "Backup ready",
+  };
+}
+
+export function getImportConfirmationCopy(validation) {
+  const metadata = validation?.metadata || getEmptyMetadata();
+  const habitText = `${metadata.habitCount} habit${metadata.habitCount === 1 ? "" : "s"}`;
+
+  return {
+    confirmLabel: "Replace data",
+    message: `This validated backup will replace your current Momentum data with ${habitText}. This cannot be undone.`,
+    title: "Replace current data?",
+  };
+}
+
 export function validateBackup(input) {
   const parseResult = parseBackupInput(input);
 
@@ -470,6 +521,26 @@ function parseStoredJson(rawValue, fallbackValue) {
   } catch {
     return fallbackValue;
   }
+}
+
+function getValidationFailureBody(error) {
+  if (/empty/i.test(error || "")) {
+    return "The backup is empty. Paste the full JSON backup and try again.";
+  }
+
+  if (/parsed/i.test(error || "")) {
+    return "The backup is not valid JSON. Check that the full backup was copied.";
+  }
+
+  if (/newer|version/i.test(error || "")) {
+    return "This backup was made by a newer version of Momentum.";
+  }
+
+  if (/habits/i.test(error || "")) {
+    return "The backup is missing usable habit data.";
+  }
+
+  return error || "Momentum could not validate this backup.";
 }
 
 function getMetadataFromBackup(backup, data, warnings = []) {

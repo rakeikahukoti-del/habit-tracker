@@ -3221,6 +3221,75 @@ test("app backup validation rejects corrupted, empty, and future backups safely"
   );
 });
 
+test("app backup preview and validation messages are user-readable", () => {
+  const emptySummary = appBackup.getBackupValidationSummary(null);
+  const invalidSummary = appBackup.getBackupValidationSummary(
+    appBackup.getBackupPreview("{bad json")
+  );
+  const validSummary = appBackup.getBackupValidationSummary(
+    appBackup.getBackupPreview(
+      JSON.stringify({
+        app: "Momentum",
+        appVersion: "1.0.0",
+        exportedAt: "2026-04-01T00:00:00.000Z",
+        schemaVersion: 1,
+        exportedData: {
+          habits: [{ id: "preview", name: "Preview" }],
+          preferences: appPreferencesStorage.defaultAppPreferences,
+        },
+      })
+    )
+  );
+  const warningSummary = appBackup.getBackupValidationSummary(
+    appBackup.getBackupPreview(
+      JSON.stringify({
+        app: "Momentum",
+        exportedAt: "2026-04-01T00:00:00.000Z",
+        schemaVersion: 1,
+        exportedData: {
+          habits: [
+            { id: "duplicate", name: "First" },
+            { id: "duplicate", name: "Second" },
+          ],
+          preferences: appPreferencesStorage.defaultAppPreferences,
+        },
+      })
+    )
+  );
+
+  assert.strictEqual(emptySummary.status, "empty");
+  assert.strictEqual(invalidSummary.status, "error");
+  assert.match(invalidSummary.body, /not valid JSON/);
+  assert.strictEqual(validSummary.status, "valid");
+  assert.match(validSummary.body, /valid/);
+  assert.strictEqual(warningSummary.status, "warning");
+  assert.match(warningSummary.detail, /Duplicate habit IDs/);
+});
+
+test("app backup import confirmation copy includes replacement scope", () => {
+  const validation = appBackup.getBackupPreview(
+    JSON.stringify({
+      app: "Momentum",
+      appVersion: "1.0.0",
+      exportedAt: "2026-04-01T00:00:00.000Z",
+      schemaVersion: 1,
+      exportedData: {
+        habits: [
+          { id: "one", name: "One" },
+          { id: "two", name: "Two" },
+        ],
+        preferences: appPreferencesStorage.defaultAppPreferences,
+      },
+    })
+  );
+  const copy = appBackup.getImportConfirmationCopy(validation);
+
+  assert.strictEqual(copy.confirmLabel, "Replace data");
+  assert.match(copy.title, /Replace current data/);
+  assert.match(copy.message, /2 habits/);
+  assert.match(copy.message, /cannot be undone/);
+});
+
 test("app backup validation repairs duplicate ids, invalid reminders, and invalid daily plan", () => {
   const validation = appBackup.validateBackup(
     JSON.stringify({
