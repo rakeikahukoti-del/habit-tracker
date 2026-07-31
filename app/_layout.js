@@ -14,10 +14,20 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AppErrorBoundary>
         <ThemeProvider>
-          <ThemedStack />
+          <ThemedApp />
         </ThemeProvider>
       </AppErrorBoundary>
     </SafeAreaProvider>
+  );
+}
+
+function ThemedApp() {
+  const { colors } = useTheme();
+
+  return (
+    <AppErrorBoundary colors={colors}>
+      <ThemedStack />
+    </AppErrorBoundary>
   );
 }
 

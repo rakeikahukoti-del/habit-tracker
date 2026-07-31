@@ -36,21 +36,47 @@ export default class AppErrorBoundary extends Component {
       return this.props.children;
     }
 
+    const colors = this.props.colors || {
+      background: v2Colors.background,
+      border: v2Colors.borderDefault,
+      card: v2Colors.surfaceElevated,
+      inverseText: v2Colors.accentContrast,
+      muted: v2Colors.textSecondary,
+      primary: v2Colors.accentPrimary,
+      text: v2Colors.textPrimary,
+    };
+
     return (
-      <View style={styles.screen}>
-        <View style={styles.card}>
-          <AppText style={styles.eyebrow}>Momentum</AppText>
-          <AppText style={styles.title}>Something went wrong</AppText>
-          <AppText style={styles.body}>
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <AppText style={[styles.eyebrow, { color: colors.muted }]}>
+            Momentum
+          </AppText>
+          <AppText style={[styles.title, { color: colors.text }]}>
+            Something went wrong
+          </AppText>
+          <AppText style={[styles.body, { color: colors.muted }]}>
             Your habit data is still stored locally. Try reopening this screen.
           </AppText>
           <PressableScale
             accessibilityLabel="Try again"
             accessibilityRole="button"
             onPress={this.handleRetry}
-            style={styles.button}
+            style={[styles.button, { backgroundColor: colors.primary }]}
           >
-            <AppText style={styles.buttonText}>Try again</AppText>
+            <AppText
+              style={[styles.buttonText, { color: colors.inverseText }]}
+            >
+              Try again
+            </AppText>
           </PressableScale>
         </View>
       </View>
@@ -61,14 +87,11 @@ export default class AppErrorBoundary extends Component {
 const styles = StyleSheet.create({
   screen: {
     alignItems: "center",
-    backgroundColor: v2Colors.background,
     flex: 1,
     justifyContent: "center",
     padding: 24,
   },
   card: {
-    backgroundColor: v2Colors.surfaceElevated,
-    borderColor: v2Colors.borderDefault,
     borderRadius: v2Radius.large,
     borderWidth: 1,
     maxWidth: 380,
@@ -77,7 +100,6 @@ const styles = StyleSheet.create({
     ...v2Shadows.low,
   },
   eyebrow: {
-    color: v2Colors.textSecondary,
     fontSize: v2Typography.caption.fontSize,
     fontWeight: v2FontWeight.bold,
     letterSpacing: 0.6,
@@ -85,27 +107,23 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   title: {
-    color: v2Colors.textPrimary,
     fontSize: v2Typography.sectionTitle.fontSize,
     fontWeight: v2FontWeight.bold,
     lineHeight: v2Typography.sectionTitle.lineHeight,
   },
   body: {
-    color: v2Colors.textSecondary,
     fontSize: v2Typography.body.fontSize,
     lineHeight: v2Typography.body.lineHeight,
     marginTop: v2Spacing.sm,
   },
   button: {
     alignItems: "center",
-    backgroundColor: v2Colors.accentPrimary,
     borderRadius: v2Radius.medium,
     justifyContent: "center",
     marginTop: v2Spacing.xl,
     minHeight: 48,
   },
   buttonText: {
-    color: v2Colors.accentContrast,
     fontSize: v2Typography.button.fontSize,
     fontWeight: v2FontWeight.bold,
   },

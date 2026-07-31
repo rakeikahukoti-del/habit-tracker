@@ -163,7 +163,12 @@ export default function HabitDetailsScreen() {
     try {
       const savedHabit = await updateHabit(updatedHabit);
       setHabit(savedHabit);
-      router.back();
+
+      if (router.canGoBack?.()) {
+        router.back();
+      } else {
+        router.replace("/");
+      }
     } catch {
       setError("Could not save this habit. Please try again.");
     } finally {

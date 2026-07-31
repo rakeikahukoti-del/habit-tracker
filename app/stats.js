@@ -30,8 +30,7 @@ import {
 } from "../utils/activityHistory";
 import { getProgressOverview } from "../utils/habitStats";
 import {
-  getLifetimeStats,
-  getPersonalRecords,
+  getAnalyticsAggregates,
 } from "../utils/personalRecords";
 import { getWeeklyReview } from "../utils/weeklyReview";
 
@@ -106,14 +105,12 @@ export default function StatsScreen() {
     [gamification, habits, period]
   );
   const weeklyReview = useMemo(() => getWeeklyReview(habits), [habits]);
-  const lifetimeStats = useMemo(
-    () => getLifetimeStats(habits, gamification),
+  const analyticsAggregates = useMemo(
+    () => getAnalyticsAggregates(habits, gamification),
     [gamification, habits]
   );
-  const personalRecords = useMemo(
-    () => getPersonalRecords(habits, gamification).slice(0, 4),
-    [gamification, habits]
-  );
+  const lifetimeStats = analyticsAggregates.lifetime;
+  const personalRecords = analyticsAggregates.personalRecords.slice(0, 4);
   const availableYears = useMemo(
     () => getAvailableActivityYears(habits),
     [habits]

@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -24,11 +25,28 @@ export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
+  const [error, setError] = useState("");
+  const [starting, setStarting] = useState(false);
+  const startingRef = useRef(false);
   const styles = createStyles(colors, { isSmallScreen, isTablet });
 
   async function handleStart() {
-    await completeOnboarding();
-    router.replace("/");
+    if (startingRef.current) {
+      return;
+    }
+
+    startingRef.current = true;
+    setStarting(true);
+    setError("");
+
+    try {
+      await completeOnboarding();
+      router.replace("/");
+    } catch {
+      startingRef.current = false;
+      setStarting(false);
+      setError("Could not finish setup. Please try again.");
+    }
   }
 
   return (
@@ -67,14 +85,24 @@ export default function OnboardingScreen() {
           </AppText>
         </View>
 
+        {error ? (
+          <AppText accessibilityRole="alert" style={styles.error}>
+            {error}
+          </AppText>
+        ) : null}
+
         <PressableScale
           accessibilityLabel="Start tracking habits"
           accessibilityRole="button"
+          accessibilityState={{ busy: starting, disabled: starting }}
+          disabled={starting}
           hitSlop={8}
           onPress={handleStart}
-          style={styles.button}
+          style={[styles.button, starting && styles.buttonDisabled]}
         >
-          <AppText style={styles.buttonText}>Start tracking</AppText>
+          <AppText style={styles.buttonText}>
+            {starting ? "Starting..." : "Start tracking"}
+          </AppText>
         </PressableScale>
       </View>
       </ScrollView>
@@ -163,10 +191,18 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       paddingHorizontal: v2Spacing.lg,
       paddingVertical: v2Spacing.base,
     },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
     buttonText: {
       color: colors.inverseText,
       fontSize: v2Typography.button.fontSize,
       fontWeight: v2FontWeight.bold,
+    },
+    error: {
+      color: colors.danger,
+      ...v2Typography.bodySupporting,
+      marginTop: v2Spacing.lg,
     },
   });
 }

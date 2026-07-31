@@ -118,7 +118,13 @@ export async function addHabit({
     ...reminderResult,
   };
 
-  await saveHabits([newHabit, ...habits]);
+  try {
+    await saveHabits([newHabit, ...habits]);
+  } catch (error) {
+    await cancelHabitReminders(newHabit);
+    throw error;
+  }
+
   await requestWidgetRefresh("habit-created", { habitId: newHabit.id });
 
   return newHabit;
@@ -167,11 +173,11 @@ export async function updateHabit(updatedHabit) {
   const habits = await getHabits();
   const previousHabit = habits.find((habit) => habit.id === updatedHabit.id);
   let normalizedHabit = normalizeHabit(updatedHabit);
-
-  if (
+  const reminderScheduleChanged =
     previousHabit &&
-    hasReminderScheduleChanged(previousHabit, normalizedHabit)
-  ) {
+    hasReminderScheduleChanged(previousHabit, normalizedHabit);
+
+  if (reminderScheduleChanged) {
     const reminderResult = await scheduleReminderIfEnabled(normalizedHabit, {
       previousHabit,
     });
@@ -191,7 +197,20 @@ export async function updateHabit(updatedHabit) {
     habit.id === updatedHabit.id ? normalizedHabit : habit
   );
 
-  await saveHabits(nextHabits);
+  try {
+    await saveHabits(nextHabits);
+  } catch (error) {
+    if (reminderScheduleChanged) {
+      await cancelHabitReminders(normalizedHabit);
+    }
+
+    throw error;
+  }
+
+  if (reminderScheduleChanged) {
+    await cancelHabitReminders(previousHabit);
+  }
+
   await rebuildGamificationFromHabits(nextHabits);
   await requestWidgetRefresh("habit-updated", { habitId: normalizedHabit.id });
 
@@ -265,14 +284,14 @@ export async function saveHabitOrder(orderedHabitIds) {
 export async function deleteHabit(id) {
   const habits = await getHabits();
   const habitToDelete = habits.find((habit) => habit.id === id);
+  const nextHabits = habits.filter((habit) => habit.id !== id);
+
+  await saveHabits(nextHabits);
 
   if (habitToDelete) {
     await cancelHabitReminders(habitToDelete);
   }
 
-  const nextHabits = habits.filter((habit) => habit.id !== id);
-
-  await saveHabits(nextHabits);
   await rebuildGamificationFromHabits(nextHabits, { includeMessage: false });
   await requestWidgetRefresh("habit-deleted", { habitId: id });
 }
@@ -280,8 +299,8 @@ export async function deleteHabit(id) {
 export async function resetAllHabits() {
   const habits = await getHabits();
 
-  await cancelRemindersForHabits(habits);
   await saveHabits([]);
+  await cancelRemindersForHabits(habits);
   await resetGamification();
   await setLastShownLevel(1);
   await requestWidgetRefresh("habits-reset");
@@ -291,8 +310,8 @@ export async function seedDemoHabits() {
   const habits = await getHabits();
   const demoHabits = createDemoHabits();
 
-  await cancelRemindersForHabits(habits);
   await saveHabits(demoHabits);
+  await cancelRemindersForHabits(habits);
   const gamification = await rebuildGamificationFromHabits(demoHabits);
   await setLastShownLevel(getGamificationLevelInfo(gamification).level);
   await requestWidgetRefresh("demo-data-loaded", { count: demoHabits.length });
@@ -302,8 +321,8 @@ export async function seedMasterDemoHabits() {
   const habits = await getHabits();
   const demoHabits = createMasterDemoHabits();
 
-  await cancelRemindersForHabits(habits);
   await saveHabits(demoHabits);
+  await cancelRemindersForHabits(habits);
   const gamification = await rebuildGamificationFromHabits(demoHabits);
   await setLastShownLevel(getGamificationLevelInfo(gamification).level);
   await requestWidgetRefresh("master-demo-loaded", { count: demoHabits.length });
@@ -353,8 +372,6 @@ export async function importHabitsBackup(jsonText) {
   const existingHabits = await getHabits();
   const normalizedHabits = [];
 
-  await cancelRemindersForHabits(existingHabits);
-
   for (const normalizedHabit of normalizedBaseHabits) {
     const reminderResult = await scheduleReminderIfEnabled(normalizedHabit);
 
@@ -364,7 +381,14 @@ export async function importHabitsBackup(jsonText) {
     });
   }
 
-  await saveHabits(normalizedHabits);
+  try {
+    await saveHabits(normalizedHabits);
+  } catch (error) {
+    await cancelRemindersForHabits(normalizedHabits);
+    throw error;
+  }
+
+  await cancelRemindersForHabits(existingHabits);
   const gamification = await rebuildGamificationFromHabits(normalizedHabits);
   await setLastShownLevel(getGamificationLevelInfo(gamification).level);
   await requestWidgetRefresh("habits-imported", { count: normalizedHabits.length });
@@ -598,10 +622,6 @@ async function scheduleReminderIfEnabled(habit, { previousHabit = null } = {}) {
   const preferences = await getAppPreferences();
 
   if (!preferences.enableDailyReminders) {
-    if (previousHabit) {
-      await cancelHabitReminders(previousHabit);
-    }
-
     return {
       notificationIds: [],
       reminderStatus: habit.reminderTime ? "disabled" : "none",
@@ -609,13 +629,7 @@ async function scheduleReminderIfEnabled(habit, { previousHabit = null } = {}) {
   }
 
   if (previousHabit) {
-    return syncHabitReminder(
-      {
-        ...habit,
-        notificationIds: previousHabit.notificationIds,
-      },
-      { enabled: true }
-    );
+    return scheduleHabitReminder(habit);
   }
 
   return scheduleHabitReminder(habit);

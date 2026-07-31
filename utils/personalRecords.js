@@ -19,6 +19,11 @@ export function getLifetimeStats(habits, gamification = null, now = new Date()) 
 
 export function getAnalyticsAggregates(habits, gamification = null, now = new Date()) {
   const context = buildAnalyticsContext(habits, now);
+
+  return getAnalyticsAggregatesFromContext(context, gamification);
+}
+
+function getAnalyticsAggregatesFromContext(context, gamification) {
   const lifetime = getLifetimeStatsFromContext(context, gamification);
   const dailyRecords = getDailyRecords(context);
   const weeklyRecords = getWeeklyRecords(context);
@@ -83,6 +88,7 @@ export function getHabitMilestones(habit, now = new Date()) {
 
 export function getMonthlyReview(habits, gamification = null, now = new Date()) {
   const context = buildAnalyticsContext(habits, now);
+  const aggregates = getAnalyticsAggregatesFromContext(context, gamification);
   const currentMonthKey = getMonthKey(context.today);
   const month = context.monthlySummaries.find(
     (summary) => summary.key === currentMonthKey
@@ -93,7 +99,7 @@ export function getMonthlyReview(habits, gamification = null, now = new Date()) 
     rate: 0,
   };
   const bestHabit = getBestHabitForMonth(context, currentMonthKey);
-  const recordsThisMonth = getPersonalRecords(habits, gamification, now).filter(
+  const recordsThisMonth = aggregates.personalRecords.filter(
     (record) => record.achievedAt && record.achievedAt.startsWith(currentMonthKey)
   );
 

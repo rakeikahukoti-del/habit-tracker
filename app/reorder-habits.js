@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import {
+  AccessibilityInfo,
   Animated,
   LayoutAnimation,
   PanResponder,
@@ -56,12 +57,14 @@ export default function ReorderHabitsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [draggingId, setDraggingId] = useState(null);
+  const [reorderUpdatingId, setReorderUpdatingId] = useState(null);
   const activeDragY = useRef(new Animated.Value(0)).current;
   const habitsRef = useRef([]);
   const lastAutoScrollAtRef = useRef(0);
   const originalOrderIdsRef = useRef([]);
   const scrollOffsetRef = useRef(0);
   const scrollRef = useRef(null);
+  const reorderUpdatingRef = useRef(false);
   const dragState = useRef({
     id: null,
     lastIndex: 0,
@@ -192,6 +195,51 @@ export default function ReorderHabitsScreen() {
     }
   }
 
+  async function handleAccessibilityMove(index, direction) {
+    if (reorderUpdatingRef.current || draggingId) {
+      return;
+    }
+
+    const targetIndex = clamp(
+      index + direction,
+      0,
+      habitsRef.current.length - 1
+    );
+
+    if (targetIndex === index) {
+      return;
+    }
+
+    const previousHabits = habitsRef.current;
+    const movedHabit = previousHabits[index];
+    const nextHabits = moveArrayItem(previousHabits, index, targetIndex);
+
+    reorderUpdatingRef.current = true;
+    setReorderUpdatingId(movedHabit.id);
+    setError("");
+    habitsRef.current = nextHabits;
+    setHabits(nextHabits);
+
+    try {
+      const savedHabits = await saveHabitOrder(
+        nextHabits.map((habit) => habit.id)
+      );
+
+      habitsRef.current = savedHabits;
+      setHabits(savedHabits);
+      AccessibilityInfo.announceForAccessibility?.(
+        `${movedHabit.name} moved to position ${targetIndex + 1}.`
+      );
+    } catch {
+      habitsRef.current = previousHabits;
+      setHabits(previousHabits);
+      setError("Could not reorder habits. Please try again.");
+    } finally {
+      reorderUpdatingRef.current = false;
+      setReorderUpdatingId(null);
+    }
+  }
+
   function maybeAutoScroll(moveY) {
     const now = Date.now();
 
@@ -252,11 +300,14 @@ export default function ReorderHabitsScreen() {
               habit={habit}
               index={index}
               isDragging={draggingId === habit.id}
+              isUpdating={reorderUpdatingId === habit.id}
               key={habit.id}
+              onAccessibilityMove={handleAccessibilityMove}
               onDragEnd={handleDragEnd}
               onDragMove={handleDragMove}
               onDragStart={handleDragStart}
               styles={styles}
+              totalCount={habits.length}
             />
           ))
         )}
@@ -271,10 +322,13 @@ function HabitOrderRow({
   dragY,
   index,
   isDragging,
+  isUpdating,
+  onAccessibilityMove,
   onDragEnd,
   onDragMove,
   onDragStart,
   styles,
+  totalCount,
 }) {
   const accentColor = habit.color || DEFAULT_HABIT_COLOR;
   const panResponder = useMemo(
@@ -306,12 +360,37 @@ function HabitOrderRow({
       ]}
     >
       <Pressable
-        accessibilityHint="Long press anywhere on this row, then drag up or down to reorder."
+        accessibilityActions={[
+          ...(index > 0 ? [{ name: "decrement", label: "Move up" }] : []),
+          ...(index < totalCount - 1
+            ? [{ name: "increment", label: "Move down" }]
+            : []),
+        ]}
+        accessibilityHint="Long press and drag, or use adjustable actions to move this habit."
         accessibilityLabel={`Reorder ${habit.name}`}
-        accessibilityRole="button"
-        accessibilityState={{ busy: isDragging, selected: isDragging }}
+        accessibilityRole="adjustable"
+        accessibilityState={{
+          busy: isDragging || isUpdating,
+          selected: isDragging,
+        }}
+        accessibilityValue={{
+          max: totalCount,
+          min: 1,
+          now: index + 1,
+          text: `Position ${index + 1} of ${totalCount}`,
+        }}
         delayLongPress={150}
+        disabled={isUpdating}
         onLongPress={() => onDragStart(habit, index)}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === "decrement") {
+            onAccessibilityMove(index, -1);
+          }
+
+          if (event.nativeEvent.actionName === "increment") {
+            onAccessibilityMove(index, 1);
+          }
+        }}
         style={({ pressed }) => [
           styles.habitRow,
           pressed && !isDragging && styles.habitRowPressed,

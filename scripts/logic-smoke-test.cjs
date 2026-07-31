@@ -154,6 +154,7 @@ function resetStorage() {
   asyncStorageFailures.get = false;
   asyncStorageFailures.partialMultiSetAfter = null;
   asyncStorageFailures.set = false;
+  appPreferencesMockState.enableDailyReminders = false;
   Object.keys(asyncStorageStore).forEach((key) => {
     delete asyncStorageStore[key];
   });
@@ -438,8 +439,13 @@ const gamificationStorage = loadModule("storage/gamificationStorage.js", (module
 
   return require(moduleName);
 });
+const appPreferencesMockState = {
+  enableDailyReminders: false,
+};
 const appPreferencesMock = {
-  getAppPreferences: async () => ({ enableDailyReminders: false }),
+  getAppPreferences: async () => ({
+    enableDailyReminders: appPreferencesMockState.enableDailyReminders,
+  }),
   setLastShownLevel: async (level) => {
     asyncStorageStore["habit-tracker:last-shown-level"] = String(level);
   },
@@ -3734,6 +3740,122 @@ test("daily plan storage recovers from invalid data and saves normalized plans",
     version: 1,
   });
   assertJsonEqual(JSON.parse(asyncStorageStore["momentum:daily-plan"]), savedPlan);
+});
+
+test("failed habit creation cancels newly scheduled orphan reminders", async () => {
+  resetStorage();
+  resetNotifications();
+  appPreferencesMockState.enableDailyReminders = true;
+  asyncStorageFailures.set = true;
+
+  await assert.rejects(
+    () =>
+      habitsStorage.addHabit({
+        category: "Health",
+        color: "#64748B",
+        customDays: [],
+        emoji: "•",
+        frequency: "Daily",
+        name: "Reminder rollback",
+        reminderTime: "08:00",
+      }),
+    /set failed/
+  );
+
+  asyncStorageFailures.set = false;
+  assert.strictEqual(notificationState.scheduled.length, 0);
+  assertJsonEqual(notificationState.cancelled, ["notification-1"]);
+  assertJsonEqual(await habitsStorage.getHabits(), []);
+});
+
+test("habit deletion preserves reminders when storage fails and cleans them after success", async () => {
+  resetStorage();
+  resetNotifications();
+  const reminderId = "existing-reminder";
+
+  notificationState.scheduled = [
+    {
+      id: reminderId,
+      request: { content: {}, trigger: {} },
+    },
+  ];
+  await habitsStorage.saveHabits([
+    {
+      completedDates: [],
+      createdAt: habitStats.getTodayKey(),
+      frequency: "Daily",
+      id: "delete-reliability",
+      name: "Delete Reliability",
+      notificationIds: [reminderId],
+      order: 0,
+      reminderStatus: "scheduled",
+      reminderTime: "08:00",
+    },
+  ]);
+
+  asyncStorageFailures.set = true;
+  await assert.rejects(
+    () => habitsStorage.deleteHabit("delete-reliability"),
+    /set failed/
+  );
+  asyncStorageFailures.set = false;
+
+  assert.strictEqual(notificationState.cancelled.length, 0);
+  assert.strictEqual(notificationState.scheduled.length, 1);
+  assert.strictEqual((await habitsStorage.getHabits()).length, 1);
+
+  await habitsStorage.deleteHabit("delete-reliability");
+
+  assertJsonEqual(notificationState.cancelled, [reminderId]);
+  assert.strictEqual(notificationState.scheduled.length, 0);
+  assert.strictEqual((await habitsStorage.getHabits()).length, 0);
+});
+
+test("failed reminder edits preserve the existing schedule and remove the replacement", async () => {
+  resetStorage();
+  resetNotifications();
+  appPreferencesMockState.enableDailyReminders = true;
+  const reminderId = "existing-reminder";
+  const existingHabit = {
+    completedDates: [],
+    createdAt: habitStats.getTodayKey(),
+    frequency: "Daily",
+    id: "update-reminder-reliability",
+    name: "Update Reminder Reliability",
+    notificationIds: [reminderId],
+    order: 0,
+    reminderStatus: "scheduled",
+    reminderTime: "08:00",
+  };
+
+  notificationState.scheduled = [
+    {
+      id: reminderId,
+      request: { content: {}, trigger: {} },
+    },
+  ];
+  await habitsStorage.saveHabits([existingHabit]);
+  asyncStorageFailures.set = true;
+
+  await assert.rejects(
+    () =>
+      habitsStorage.updateHabit({
+        ...existingHabit,
+        reminderTime: "09:00",
+      }),
+    /set failed/
+  );
+
+  asyncStorageFailures.set = false;
+  const storedHabit = (await habitsStorage.getHabits())[0];
+
+  assert.strictEqual(storedHabit.reminderTime, "08:00");
+  assertJsonEqual(storedHabit.notificationIds, [reminderId]);
+  assert.deepStrictEqual(
+    notificationState.scheduled.map((notification) => notification.id),
+    [reminderId]
+  );
+  assertJsonEqual(notificationState.cancelled, ["notification-2"]);
 });
 
 test("imported habits are normalized without corrupting existing storage", async () => {
