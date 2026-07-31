@@ -29,6 +29,7 @@ import {
   v2Typography,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import {
   badges,
   getGamification,
@@ -63,6 +64,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function RankScreen() {
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const styles = useMemo(
@@ -76,6 +78,8 @@ export default function RankScreen() {
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reloadRequest, setReloadRequest] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -83,6 +87,8 @@ export default function RankScreen() {
 
       async function loadRank() {
         try {
+          setLoading(true);
+          setError("");
           const [storedGamification, storedHabits] = await Promise.all([
             getGamification(),
             getHabits(),
@@ -94,6 +100,10 @@ export default function RankScreen() {
 
           setGamification(storedGamification);
           setHabits(storedHabits);
+        } catch {
+          if (isActive) {
+            setError("Could not load progression. Try again.");
+          }
         } finally {
           if (isActive) {
             setLoading(false);
@@ -106,7 +116,7 @@ export default function RankScreen() {
       return () => {
         isActive = false;
       };
-    }, [])
+    }, [reloadRequest])
   );
 
   const levelInfo = useMemo(
@@ -142,7 +152,10 @@ export default function RankScreen() {
     () => sortBadgesByTier(badges, badgeSortDirection),
     [badgeSortDirection]
   );
-  const badgePreview = showAllBadges ? sortedBadges : sortedBadges.slice(0, 8);
+  const badgePreview = useMemo(
+    () => (showAllBadges ? sortedBadges : sortedBadges.slice(0, 8)),
+    [showAllBadges, sortedBadges]
+  );
   const progressionSnapshot = useMemo(
     () => getAchievementSnapshot({ gamification, habits, level: levelInfo.level }),
     [gamification, habits, levelInfo.level]
@@ -169,7 +182,9 @@ export default function RankScreen() {
   );
 
   function toggleBadges() {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     setShowAllBadges((value) => !value);
   }
 
@@ -182,6 +197,7 @@ export default function RankScreen() {
             earned={selectedBadge?.earned}
             onClose={() => setSelectedBadge(null)}
             progress={selectedBadge?.progress}
+            reduceMotion={reduceMotion}
             styles={styles}
             unlockedAt={selectedBadge?.unlockedAt}
             visible={Boolean(selectedBadge)}
@@ -190,6 +206,7 @@ export default function RankScreen() {
             achievement={selectedAchievement}
             colors={colors}
             onClose={() => setSelectedAchievement(null)}
+            reduceMotion={reduceMotion}
             styles={styles}
             visible={Boolean(selectedAchievement)}
           />
@@ -204,8 +221,14 @@ export default function RankScreen() {
         {loading ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
-            <AppText style={styles.loadingText}>Loading progression...</AppText>
+            <AppText style={styles.loadingText}>Preparing progression...</AppText>
           </View>
+        ) : error ? (
+          <RankError
+            message={error}
+            onRetry={() => setReloadRequest((value) => value + 1)}
+            styles={styles}
+          />
         ) : (
           <>
             <View style={styles.hero}>
@@ -386,6 +409,7 @@ export default function RankScreen() {
                     showAllBadges ? "Show fewer badges" : "Show all badges"
                   }
                   accessibilityRole="button"
+                  accessibilityState={{ expanded: showAllBadges }}
                   onPress={toggleBadges}
                   style={({ pressed }) => [
                     styles.showButton,
@@ -432,6 +456,26 @@ function Section({ children, styles, subtitle, title }) {
         {subtitle ? <AppText style={styles.sectionSubtitle}>{subtitle}</AppText> : null}
       </View>
       {children}
+    </View>
+  );
+}
+
+function RankError({ message, onRetry, styles }) {
+  return (
+    <View accessibilityLiveRegion="polite" style={styles.loadingCard}>
+      <AppText style={styles.errorTitle}>Progression unavailable</AppText>
+      <AppText style={styles.loadingText}>{message}</AppText>
+      <Pressable
+        accessibilityLabel="Try loading progression again"
+        accessibilityRole="button"
+        onPress={onRetry}
+        style={({ pressed }) => [
+          styles.retryButton,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppText style={styles.retryButtonText}>Try again</AppText>
+      </Pressable>
     </View>
   );
 }
@@ -666,6 +710,7 @@ function BadgeDetailModal({
   earned,
   onClose,
   progress,
+  reduceMotion,
   styles,
   unlockedAt,
   visible,
@@ -677,7 +722,7 @@ function BadgeDetailModal({
   return (
     <Modal
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       onRequestClose={onClose}
       visible={visible}
     >
@@ -736,7 +781,14 @@ function BadgeDetailModal({
   );
 }
 
-function AchievementDetailModal({ achievement, colors, onClose, styles, visible }) {
+function AchievementDetailModal({
+  achievement,
+  colors,
+  onClose,
+  reduceMotion,
+  styles,
+  visible,
+}) {
   if (!achievement) {
     return null;
   }
@@ -744,7 +796,7 @@ function AchievementDetailModal({ achievement, colors, onClose, styles, visible 
   return (
     <Modal
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       onRequestClose={onClose}
       visible={visible}
     >
@@ -840,6 +892,25 @@ function createStyles(colors, { isSmallScreen }) {
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
+      textAlign: "center",
+    },
+    errorTitle: {
+      color: colors.text,
+      fontSize: v2Typography.cardTitle.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    retryButton: {
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      borderRadius: v2Radius.large,
+      justifyContent: "center",
+      minHeight: 46,
+      paddingHorizontal: v2Spacing.xl,
+    },
+    retryButtonText: {
+      color: colors.inverseText,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     hero: {
       borderBottomColor: colors.border,

@@ -14,6 +14,51 @@ Achievement progress is derived from existing local data only:
 
 No additional storage keys are required for achievement progress.
 
+## XP Flow
+
+Habit completion uses the existing shared completion action and gamification
+storage orchestrator:
+
+1. The habit completion is saved.
+2. `awardHabitCompletion` calculates the existing completion and perfect-day XP.
+3. `calculateAwardState` derives level, rank, achievement, and message changes.
+4. The normalized gamification state is saved once.
+5. Home updates its visible XP feedback immediately, then clears consumed
+   presentation messages.
+
+XP values, level thresholds, rank thresholds, and perfect-day rules live in
+`utils/gamification.js`. Presentation code must not duplicate those formulas.
+
+## Reward Queue
+
+`utils/homeHabitActions.js` normalizes pending reward messages and defines the
+presentation order:
+
+1. Habit completion
+2. Perfect day
+3. Level up
+4. Achievement unlocks
+5. Informational celebration copy
+
+Only one reward surface is active at a time. Achievement unlocks are retained
+as an ordered local queue, duplicate badge IDs are removed, and the dismissal
+timer starts only when the achievement is visible. Legacy level-up and
+perfect-day text messages are normalized into the same presentation types.
+
+Reward presentation is informational. It does not recalculate XP, badges,
+streaks, ranks, or analytics.
+
+## Rank Progression
+
+`utils/gamification.js` owns level and rank calculations.
+`utils/progressionMilestones.js` and `utils/rankDisplay.js` format the next
+visible milestone without changing thresholds. `LevelProgress` displays total
+XP, progress within the current level, and XP remaining to the next level.
+
+The Rank screen derives its hero, rank path, closest achievements, catalogue,
+and recent history from one loaded gamification state and the current habit
+list. None of these views are stored separately.
+
 ## Progress Rules
 
 Progress lives in `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/utils/achievementProgress.js`.
@@ -68,6 +113,25 @@ Achievement cards and rows should expose:
 - a clear button role
 
 Locked achievements should be muted but readable in every theme.
+
+Home announces each active reward with the earned XP, streak, level, rank, or
+achievement description as applicable. These announcements use the same queue
+order as the visual reward surfaces. Progress bars include a complete text
+equivalent with current XP and XP remaining.
+
+The device reduced-motion setting disables confetti, modal fades, and achievement
+expand/collapse animation while preserving all text and reward state.
+
+## Shared Helpers
+
+- `utils/gamification.js`: deterministic XP, level, badge, and achievement logic
+- `storage/gamificationStorage.js`: persistence orchestration and message
+  consumption
+- `utils/homeHabitActions.js`: Home summaries and reward presentation ordering
+- `utils/achievementProgress.js`: measurable achievement progress
+- `utils/progressionMilestones.js`: next rank milestone formatting
+- `utils/rankDisplay.js`: visible rank compatibility
+- `components/progression/LevelProgress.js`: accessible progress presentation
 
 ## Future Asset Integration
 

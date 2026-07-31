@@ -1,4 +1,6 @@
 import {
+  PERFECT_DAY_BONUS_XP,
+  XP_PER_LEVEL,
   getBadgeById,
   getGamificationLevelInfo,
   getRankForLevel,
@@ -80,31 +82,45 @@ export function getHomeSummary(habits, gamification) {
   };
 }
 
-export function getQueuedRewardsFromMessages(messages, gamification, preferences) {
+export function getQueuedRewardsFromMessages(
+  messages,
+  gamification,
+  preferences = {}
+) {
   const safeMessages = Array.isArray(messages) ? messages : [];
   const levelInfo = getGamificationLevelInfo(gamification);
-  const dedupedMessages = dedupeMessages(safeMessages);
+  const dedupedMessages = dedupeMessages(safeMessages).map(
+    normalizeLegacyRewardMessage
+  );
   const levelMessage = dedupedMessages.find((message) => message.type === "level");
   const perfectDayMessage = dedupedMessages.find(
     (message) => message.type === "perfect-day"
   );
-  const badgeMessage = dedupedMessages.find((message) => message.type === "badge");
+  const badgeUnlocks = preferences.showBadgePopups
+    ? Array.from(
+        new Set(
+          dedupedMessages
+            .filter((message) => message.type === "badge" && message.badgeId)
+            .map((message) => message.badgeId)
+        )
+      )
+        .map(getBadgeById)
+        .filter(Boolean)
+    : [];
   const textMessages = dedupedMessages.filter(
     (message) => message.type === "message"
   );
   const queuedLevel = levelMessage?.level || levelInfo.level;
 
   return {
-    badgeUnlock:
-      preferences.showBadgePopups && badgeMessage?.badgeId
-        ? getBadgeById(badgeMessage.badgeId)
-        : null,
+    badgeUnlock: badgeUnlocks[0] || null,
+    badgeUnlocks,
     celebration: textMessages.map((message) => message.text).join(" "),
     levelUp:
       preferences.showLevelUpPopup && levelMessage
         ? {
             level: queuedLevel,
-            progress: (levelInfo.currentLevelXp / 100) * 100,
+            progress: (levelInfo.currentLevelXp / XP_PER_LEVEL) * 100,
             rank: getVisibleRank(getRankForLevel(queuedLevel)),
           }
         : null,
@@ -117,6 +133,58 @@ export function getQueuedRewardsFromMessages(messages, gamification, preferences
           }
         : null,
   };
+}
+
+export function getActiveRewardType({
+  badgeUnlock,
+  celebration,
+  completionReward,
+  levelUp,
+  perfectDay,
+} = {}) {
+  if (completionReward) {
+    return "completion";
+  }
+
+  if (perfectDay) {
+    return "perfect-day";
+  }
+
+  if (levelUp) {
+    return "level-up";
+  }
+
+  if (badgeUnlock) {
+    return "badge";
+  }
+
+  return celebration ? "celebration" : null;
+}
+
+export function getRewardAccessibilityAnnouncement(type, rewards = {}) {
+  if (type === "completion" && rewards.completionReward) {
+    const reward = rewards.completionReward;
+    return `${reward.habitName} completed. ${reward.xpEarned} XP earned. ${reward.streak} day streak. Level progress ${reward.rankProgress} of ${XP_PER_LEVEL} XP.`;
+  }
+
+  if (type === "perfect-day" && rewards.perfectDay) {
+    return `Perfect day. All scheduled habits are complete. ${PERFECT_DAY_BONUS_XP} bonus XP earned.`;
+  }
+
+  if (type === "level-up" && rewards.levelUp) {
+    return `Level up. You reached level ${rewards.levelUp.level}, ${rewards.levelUp.rank} rank.`;
+  }
+
+  if (type === "badge" && rewards.badgeUnlock) {
+    const badge = rewards.badgeUnlock;
+    return `Achievement unlocked. ${badge.label}. ${badge.description}`;
+  }
+
+  if (type === "celebration" && rewards.celebration) {
+    return rewards.celebration;
+  }
+
+  return "";
 }
 
 export function shouldShowConfetti(messages, preferences) {
@@ -257,12 +325,16 @@ function getTodayXp(habits) {
 function dedupeMessages(messages) {
   const seenIds = new Set();
 
-  return messages.filter((message, index) => {
+  return messages.filter((message) => {
     if (!message || typeof message !== "object") {
       return false;
     }
 
-    const messageId = message.id || `${message.type}-${message.text}-${index}`;
+    const messageId =
+      message.id ||
+      `${message.type}-${message.badgeId || ""}-${message.level || ""}-${
+        message.text || ""
+      }`;
 
     if (seenIds.has(messageId)) {
       return false;
@@ -272,6 +344,31 @@ function dedupeMessages(messages) {
 
     return true;
   });
+}
+
+function normalizeLegacyRewardMessage(message) {
+  if (message.type !== "message" || typeof message.text !== "string") {
+    return message;
+  }
+
+  if (message.text.startsWith("Level up!")) {
+    const levelMatch = message.text.match(/level\s+(\d+)/i);
+
+    return {
+      ...message,
+      level: levelMatch ? Number(levelMatch[1]) : undefined,
+      type: "level",
+    };
+  }
+
+  if (message.text.startsWith("Perfect day!")) {
+    return {
+      ...message,
+      type: "perfect-day",
+    };
+  }
+
+  return message;
 }
 
 function getSafeHabits(habits) {

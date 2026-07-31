@@ -31,8 +31,13 @@ import {
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useHomeController } from "../hooks/useHomeController";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import { getNextPriorityHabit } from "../utils/dailyPlanning";
 import { getCurrentStreak } from "../utils/habitStats";
+import {
+  PERFECT_DAY_BONUS_XP,
+  XP_PER_LEVEL,
+} from "../utils/gamification";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -48,6 +53,7 @@ export default function HomeScreen() {
     [colors, isSmallScreen, isTablet]
   );
   const {
+    activeRewardType,
     addPriorityForToday,
     availablePriorityHabits,
     badgeUnlock,
@@ -72,11 +78,11 @@ export default function HomeScreen() {
     progressExpanded,
     refreshing,
     dismissSwipeHint,
+    dismissBadgeUnlock,
     dismissReturnMessage,
     returnExperience,
     remainingHabits,
     removePriorityForToday,
-    setBadgeUnlock,
     setCelebration,
     setCompletionReward,
     setLevelUp,
@@ -86,6 +92,7 @@ export default function HomeScreen() {
     toggleProgressExpanded,
     visibleHabits,
   } = useHomeController();
+  const reduceMotion = useReducedMotion();
   const [focusModeVisible, setFocusModeVisible] = useState(false);
   const [skippedFocusIds, setSkippedFocusIds] = useState([]);
   const [focusBusy, setFocusBusy] = useState(false);
@@ -333,7 +340,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {celebration ? (
+        {activeRewardType === "celebration" ? (
           <Pressable
             accessibilityLabel="Dismiss celebration message"
             accessibilityRole="button"
@@ -347,11 +354,9 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
-        {completionReward ? (
+        {activeRewardType === "completion" && completionReward ? (
           <Pressable
-            accessibilityLabel={`Dismiss completion reward for ${
-              completionReward.habitName
-            }`}
+            accessibilityLabel={`${completionReward.habitName} completed. ${completionReward.xpEarned} XP earned. ${completionReward.streak} day streak. Double tap to dismiss.`}
             accessibilityRole="button"
             onPress={() => setCompletionReward(null)}
             style={({ pressed }) => [
@@ -370,16 +375,16 @@ export default function HomeScreen() {
             </AppText>
             <AppText style={styles.completionPopupMeta}>
               {completionReward.streak} day streak • {completionReward.rank} •{" "}
-              {completionReward.rankProgress}/100 XP
+              {completionReward.rankProgress}/{XP_PER_LEVEL} XP
             </AppText>
           </Pressable>
         ) : null}
 
-        {badgeUnlock && !completionReward && !perfectDay && !levelUp ? (
+        {activeRewardType === "badge" && badgeUnlock ? (
           <Pressable
-            accessibilityLabel={`Dismiss ${badgeUnlock.label} badge unlock`}
+            accessibilityLabel={`${badgeUnlock.label} achievement unlocked. ${badgeUnlock.description}. Double tap to dismiss.`}
             accessibilityRole="button"
-            onPress={() => setBadgeUnlock(null)}
+            onPress={dismissBadgeUnlock}
             style={({ pressed }) => [
               styles.badgeUnlockPopup,
               pressed && styles.cardPressed,
@@ -786,9 +791,9 @@ export default function HomeScreen() {
 
       <Modal
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? "none" : "fade"}
         onRequestClose={() => setLevelUp(null)}
-        visible={Boolean(levelUp) && !completionReward && !perfectDay}
+        visible={activeRewardType === "level-up"}
       >
         <View style={styles.levelModalBackdrop}>
           <View
@@ -801,11 +806,11 @@ export default function HomeScreen() {
               showsVerticalScrollIndicator={false}
             >
               <RankMedal rank={levelUp?.rank} size="large" />
-              <AppText style={styles.levelModalEyebrow}>Rank up</AppText>
+              <AppText style={styles.levelModalEyebrow}>Level up</AppText>
               <AppText style={styles.levelModalTitle}>Level {levelUp?.level}</AppText>
               <AppText style={styles.levelModalRank}>{levelUp?.rank} Rank</AppText>
               <AppText style={styles.levelModalMessage}>
-                Your consistency is turning into momentum.
+                Your progress has reached a new level.
               </AppText>
               <View style={styles.levelModalTrack}>
                 <View
@@ -824,7 +829,7 @@ export default function HomeScreen() {
                   pressed && styles.buttonPressed,
                 ]}
               >
-                <AppText style={styles.levelModalButtonText}>Keep Going</AppText>
+                <AppText style={styles.levelModalButtonText}>Continue</AppText>
               </Pressable>
             </ScrollView>
           </View>
@@ -833,9 +838,9 @@ export default function HomeScreen() {
 
       <Modal
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? "none" : "fade"}
         onRequestClose={() => setPerfectDay(null)}
-        visible={Boolean(perfectDay) && !completionReward}
+        visible={activeRewardType === "perfect-day"}
       >
         <View style={styles.levelModalBackdrop}>
           <View
@@ -860,7 +865,9 @@ export default function HomeScreen() {
               <AppText style={styles.levelModalMessage}>
                 You cleared every habit today and earned the perfect day bonus.
               </AppText>
-              <AppText style={styles.levelModalUnlock}>+25 bonus XP</AppText>
+              <AppText style={styles.levelModalUnlock}>
+                +{PERFECT_DAY_BONUS_XP} bonus XP
+              </AppText>
               <Pressable
                 accessibilityLabel="Close perfect day message"
                 accessibilityRole="button"

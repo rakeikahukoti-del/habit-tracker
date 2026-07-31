@@ -11,19 +11,28 @@ import { AppText } from "../ui";
 
 export default function LevelProgress({ levelInfo, rank, compact = false }) {
   const { colors } = useTheme();
-  const progress = ((levelInfo?.currentLevelXp || 0) / XP_PER_LEVEL) * 100;
-  const xp = levelInfo?.xp || 0;
+  const currentLevelXp = Math.min(
+    XP_PER_LEVEL,
+    Math.max(0, levelInfo?.currentLevelXp || 0)
+  );
+  const level = Math.max(1, levelInfo?.level || 1);
+  const nextLevelXp = Math.max(
+    0,
+    levelInfo?.nextLevelXp ?? XP_PER_LEVEL
+  );
+  const progress = (currentLevelXp / XP_PER_LEVEL) * 100;
+  const xp = Math.max(0, levelInfo?.xp || 0);
+  const rankLabel = rank ? `${rank} rank, ` : "";
 
   return (
     <View
-      accessibilityLabel={`Level ${levelInfo?.level || 1}, ${xp} XP, ${Math.round(progress)}% to next level`}
+      accessibilityLabel={`${rankLabel}level ${level}, ${xp} total XP, ${currentLevelXp} of ${XP_PER_LEVEL} XP toward level ${level + 1}. ${nextLevelXp} XP remaining.`}
       accessible
       style={[styles.wrap, compact && styles.wrapCompact]}
     >
       <View style={styles.top}>
         <View>
-          <AppText style={[styles.label, { color: colors.text }]}>LEVEL {levelInfo?.level || 1}</AppText>
-          {rank ? <AppText style={[styles.rank, { color: colors.muted }]}>{rank}</AppText> : null}
+          <AppText style={[styles.label, { color: colors.text }]}>LEVEL {level}</AppText>
         </View>
         <AppText style={[styles.xp, { color: colors.text }]}>{xp} XP</AppText>
       </View>
@@ -32,14 +41,14 @@ export default function LevelProgress({ levelInfo, rank, compact = false }) {
           style={[
             styles.fill,
             {
-              backgroundColor: colors.text,
+              backgroundColor: colors.primary,
               width: `${progress}%`,
             },
           ]}
         />
       </View>
       <AppText style={[styles.helper, { color: colors.muted }]}>
-        {levelInfo?.nextLevelXp || XP_PER_LEVEL} XP to level {(levelInfo?.level || 1) + 1}
+        {nextLevelXp} XP to level {level + 1}
       </AppText>
     </View>
   );
@@ -61,11 +70,6 @@ const styles = StyleSheet.create({
     fontSize: v2Typography.label.fontSize,
     fontWeight: v2FontWeight.bold,
     letterSpacing: 0.6,
-  },
-  rank: {
-    fontSize: v2Typography.caption.fontSize,
-    fontWeight: v2FontWeight.medium,
-    marginTop: 3,
   },
   xp: {
     fontSize: v2Typography.body.fontSize,

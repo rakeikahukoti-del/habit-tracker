@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -20,7 +21,10 @@ export default function GamificationScreen({ children, overlay }) {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
-  const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const styles = useMemo(
+    () => createStyles(colors, { isSmallScreen, isTablet }),
+    [colors, isSmallScreen, isTablet]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -38,7 +42,7 @@ export default function GamificationScreen({ children, overlay }) {
 
 export function GamificationHeader({ subtitle, title }) {
   const { colors } = useTheme();
-  const styles = createHeaderStyles(colors);
+  const styles = useMemo(() => createHeaderStyles(colors), [colors]);
 
   return (
     <View style={styles.header}>

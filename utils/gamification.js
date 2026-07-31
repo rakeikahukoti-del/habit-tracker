@@ -257,12 +257,21 @@ export function calculateAwardState({
       const unlockedBadge = newBadgeUnlocks.find(
         (badge) => text === `Badge unlocked: ${badge.label}.`
       );
+      const isLevelUp = text.startsWith("Level up!");
+      const isPerfectDay = text.startsWith("Perfect day!");
 
       return {
         badgeId: unlockedBadge?.id,
         id: createRewardId(["award-message", index, text, completionDate, now]),
+        level: isLevelUp ? nextLevel : undefined,
         text,
-        type: unlockedBadge ? "badge" : "message",
+        type: unlockedBadge
+          ? "badge"
+          : isLevelUp
+            ? "level"
+            : isPerfectDay
+              ? "perfect-day"
+              : "message",
       };
     }),
   ];

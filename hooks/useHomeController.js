@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
-import { AppState, LayoutAnimation } from "react-native";
+import { AccessibilityInfo, AppState, LayoutAnimation } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { getDailyPlan, saveDailyPlan } from "../storage/dailyPlanStorage";
 import {
@@ -22,11 +22,14 @@ import {
 } from "../storage/gamificationStorage";
 import { getHabits } from "../storage/habitsStorage";
 import {
+  getActiveRewardType,
   getHomeSummary,
   getQueuedRewardsFromMessages,
+  getRewardAccessibilityAnnouncement,
   getVisibleHomeHabits,
   shouldShowConfetti,
 } from "../utils/homeHabitActions";
+import { XP_PER_COMPLETION, XP_PER_LEVEL } from "../utils/gamification";
 import {
   addPriorityId,
   getAvailablePriorityHabits,
@@ -49,15 +52,17 @@ import {
 import { getFirstSwipeHintState } from "../utils/firstUseExperience";
 import { getReturnExperienceState } from "../utils/returnExperience";
 import { shouldRunInitialCompletionHaptic } from "../utils/interactionFeedback";
+import { useReducedMotion } from "./useReducedMotion";
 
 export function useHomeController() {
+  const reduceMotion = useReducedMotion();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [celebration, setCelebration] = useState("");
   const [completionReward, setCompletionReward] = useState(null);
-  const [badgeUnlock, setBadgeUnlock] = useState(null);
+  const [badgeUnlockQueue, setBadgeUnlockQueue] = useState([]);
   const [confettiKey, setConfettiKey] = useState(0);
   const [gamification, setGamification] = useState(null);
   const [levelUp, setLevelUp] = useState(null);
@@ -75,6 +80,36 @@ export function useHomeController() {
   const [returnExperience, setReturnExperience] = useState(null);
   const habitActionInProgressRef = useRef(new Set());
   const todayKeyRef = useRef(getTodayKey());
+  const badgeUnlock = badgeUnlockQueue[0] || null;
+  const activeRewardType = useMemo(
+    () =>
+      getActiveRewardType({
+        badgeUnlock,
+        celebration,
+        completionReward,
+        levelUp,
+        perfectDay,
+      }),
+    [badgeUnlock, celebration, completionReward, levelUp, perfectDay]
+  );
+  const activeRewardAnnouncement = useMemo(
+    () =>
+      getRewardAccessibilityAnnouncement(activeRewardType, {
+        badgeUnlock,
+        celebration,
+        completionReward,
+        levelUp,
+        perfectDay,
+      }),
+    [
+      activeRewardType,
+      badgeUnlock,
+      celebration,
+      completionReward,
+      levelUp,
+      perfectDay,
+    ]
+  );
 
   const loadHabits = useCallback(async ({ isActive = () => true } = {}) => {
     try {
@@ -148,10 +183,14 @@ export function useHomeController() {
         setCelebration(queuedRewards.celebration);
         setPerfectDay(queuedRewards.perfectDay);
         setLevelUp(queuedRewards.levelUp);
-        setBadgeUnlock(queuedRewards.badgeUnlock);
+        setBadgeUnlockQueue(queuedRewards.badgeUnlocks);
 
         if (queuedRewards.levelUp) {
-          await setLastShownLevel(queuedRewards.levelUp.level);
+          try {
+            await setLastShownLevel(queuedRewards.levelUp.level);
+          } catch {
+            // Consumed rewards can still be shown without failing Home hydration.
+          }
         }
       }
     } catch {
@@ -217,7 +256,7 @@ export function useHomeController() {
   }, [loadHabits]);
 
   useEffect(() => {
-    if (!completionReward) {
+    if (activeRewardType !== "completion") {
       return undefined;
     }
 
@@ -226,19 +265,37 @@ export function useHomeController() {
     }, 3200);
 
     return () => clearTimeout(timeoutId);
-  }, [completionReward]);
+  }, [activeRewardType]);
 
   useEffect(() => {
-    if (!badgeUnlock) {
+    if (activeRewardType !== "badge") {
       return undefined;
     }
 
     const timeoutId = setTimeout(() => {
-      setBadgeUnlock(null);
+      setBadgeUnlockQueue((queue) => queue.slice(1));
     }, 4200);
 
     return () => clearTimeout(timeoutId);
-  }, [badgeUnlock]);
+  }, [activeRewardType, badgeUnlock]);
+
+  useEffect(() => {
+    if (activeRewardType !== "celebration") {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setCelebration("");
+    }, 3200);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeRewardType, celebration]);
+
+  useEffect(() => {
+    if (activeRewardAnnouncement) {
+      AccessibilityInfo.announceForAccessibility?.(activeRewardAnnouncement);
+    }
+  }, [activeRewardAnnouncement]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -297,6 +354,10 @@ export function useHomeController() {
         setHabits(undoResult.habits);
         setGamification(undoResult.gamification);
         setCelebration("");
+        setCompletionReward(null);
+        setBadgeUnlockQueue([]);
+        setPerfectDay(null);
+        setLevelUp(null);
 
         return;
       }
@@ -311,15 +372,11 @@ export function useHomeController() {
 
       const award = completionResult.award;
       const xpEarned = Math.max(
-        10,
+        XP_PER_COMPLETION,
         completionResult.gamification.xp - (completionResult.previousXp || 0)
       );
       const rewardLevelInfo = getGamificationLevelInfo(award.gamification);
       const rewardRank = getVisibleRank(getRankForLevel(rewardLevelInfo.level));
-
-      await consumeGamificationMessages();
-      await dismissSwipeHint();
-      await dismissReturnMessage();
 
       setHabits(completionResult.habits);
       setGamification(award.gamification);
@@ -331,31 +388,35 @@ export function useHomeController() {
         streak: getCurrentStreak(savedHabit.completedDates, savedHabit),
         xpEarned,
       });
-      setBadgeUnlock(
-        preferences.showBadgePopups && award.badgeUnlocks.length > 0
-          ? award.badgeUnlocks[0]
-          : null
+      setBadgeUnlockQueue(
+        preferences.showBadgePopups ? award.badgeUnlocks : []
       );
       setPerfectDay(award.perfectDay || null);
-      setCelebration(
-        preferences.showBadgePopups ? award.messages.join(" ") : ""
-      );
+      setCelebration("");
 
       if (shouldShowConfetti(award.messages, preferences)) {
         setConfettiKey((currentKey) => currentKey + 1);
       }
 
+      if (preferences.enableRewardHaptics) {
+        triggerSuccessHaptic();
+      }
+
       if (preferences.showLevelUpPopup) {
-        await maybeShowLevelUp(
+        await maybeShowLevelUpSafely(
           award.gamification,
           award.messages,
           setLevelUp
         );
       }
 
-      if (preferences.enableRewardHaptics) {
-        triggerSuccessHaptic();
-      }
+      // These flags improve future presentation but must not turn a saved
+      // completion into a visible failure when a cleanup write is unavailable.
+      await Promise.allSettled([
+        consumeGamificationMessages(),
+        dismissSwipeHint(),
+        dismissReturnMessage(),
+      ]);
     } catch {
       setError("Could not update this habit. Please try again.");
     } finally {
@@ -389,9 +450,11 @@ export function useHomeController() {
   }, [dailyPlan, habits, persistDailyPlan]);
 
   const toggleProgressExpanded = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     setProgressExpanded((value) => !value);
-  }, []);
+  }, [reduceMotion]);
 
   const homeSummary = useMemo(
     () => getHomeSummary(habits, gamification),
@@ -425,8 +488,12 @@ export function useHomeController() {
     () => getNextPriorityHabit({ habits, plan: dailyPlan }),
     [dailyPlan, habits]
   );
+  const dismissBadgeUnlock = useCallback(() => {
+    setBadgeUnlockQueue((queue) => queue.slice(1));
+  }, []);
 
   return {
+    activeRewardType,
     addPriorityForToday,
     availablePriorityHabits,
     badgeUnlock,
@@ -452,10 +519,10 @@ export function useHomeController() {
     refreshing,
     dismissSwipeHint,
     dismissReturnMessage,
+    dismissBadgeUnlock,
     returnExperience,
     remainingHabits,
     removePriorityForToday,
-    setBadgeUnlock,
     setCelebration,
     setCompletionReward,
     setLevelUp,
@@ -483,7 +550,7 @@ async function triggerSuccessHaptic() {
   }
 }
 
-async function maybeShowLevelUp(gamification, messages, setLevelUp) {
+async function maybeShowLevelUpSafely(gamification, messages, setLevelUp) {
   if (!messages.some((message) => message.includes("Level up"))) {
     return;
   }
@@ -495,10 +562,16 @@ async function maybeShowLevelUp(gamification, messages, setLevelUp) {
     return;
   }
 
-  await setLastShownLevel(levelInfo.level);
+  try {
+    await setLastShownLevel(levelInfo.level);
+  } catch {
+    // Do not show a popup that cannot be marked as seen and may repeat.
+    return;
+  }
+
   setLevelUp({
     level: levelInfo.level,
-    progress: (levelInfo.currentLevelXp / 100) * 100,
+    progress: (levelInfo.currentLevelXp / XP_PER_LEVEL) * 100,
     rank: getVisibleRank(getRankForLevel(levelInfo.level)),
   });
 }

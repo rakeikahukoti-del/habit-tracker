@@ -1447,6 +1447,46 @@ test("pure award calculation prevents duplicate badges and preserves reward shap
   assert.strictEqual(result.achievements.length, 0);
 });
 
+test("award messages preserve level and perfect-day presentation metadata", () => {
+  const levelResult = gamificationLogic.calculateAwardState({
+    messages: ["+10 XP for completing Read."],
+    now: "2026-01-02T08:00:00.000Z",
+    previousState: {
+      earnedBadges: [],
+      pendingMessages: [],
+      perfectDayBonusDates: [],
+      recentAchievements: [],
+      xp: 90,
+    },
+    todayKey: "2026-01-02",
+    xpToAdd: 10,
+  });
+  const perfectDayResult = gamificationLogic.calculateAwardState({
+    messages: [
+      "+10 XP for completing Read.",
+      "Perfect day! +25 bonus XP.",
+    ],
+    now: "2026-01-03T08:00:00.000Z",
+    perfectDayBonusDate: "2026-01-03",
+    previousState: {
+      earnedBadges: [],
+      pendingMessages: [],
+      perfectDayBonusDates: [],
+      recentAchievements: [],
+      xp: 0,
+    },
+    todayKey: "2026-01-03",
+    xpToAdd: 35,
+  });
+
+  assert.strictEqual(levelResult.gamification.pendingMessages[1].type, "level");
+  assert.strictEqual(levelResult.gamification.pendingMessages[1].level, 2);
+  assert.strictEqual(
+    perfectDayResult.gamification.pendingMessages[1].type,
+    "perfect-day"
+  );
+});
+
 test("gamification ignores invalid dates and preserves rank thresholds", async () => {
   resetStorage();
 
@@ -1578,6 +1618,8 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
       { id: "same", text: "Level up! You reached level 5.", type: "level", level: 5 },
       { id: "same", text: "Duplicate", type: "level", level: 5 },
       { id: "badge", type: "badge", badgeId: "first-completion" },
+      { id: "badge-2", type: "badge", badgeId: "three-day-streak" },
+      { id: "badge-duplicate", type: "badge", badgeId: "first-completion" },
       { id: "message", text: "Nice work.", type: "message" },
     ],
     { xp: 400 },
@@ -1589,7 +1631,56 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
 
   assert.strictEqual(rewards.levelUp.level, 5);
   assert.strictEqual(rewards.badgeUnlock.id, "first-completion");
+  assertJsonEqual(
+    rewards.badgeUnlocks.map((badge) => badge.id),
+    ["first-completion", "three-day-streak"]
+  );
   assert.strictEqual(rewards.celebration, "Nice work.");
+});
+
+test("reward presentation order and announcements remain deterministic", () => {
+  const rewards = {
+    badgeUnlock: {
+      description: "Complete any habit for the first time.",
+      label: "First Completion",
+    },
+    celebration: "Progress updated.",
+    completionReward: {
+      habitName: "Read",
+      rankProgress: 35,
+      streak: 4,
+      xpEarned: 10,
+    },
+    levelUp: { level: 2, rank: "Bronze" },
+    perfectDay: { title: "Perfect Day" },
+  };
+
+  assert.strictEqual(
+    homeHabitActions.getActiveRewardType(rewards),
+    "completion"
+  );
+  assert.strictEqual(
+    homeHabitActions.getActiveRewardType({
+      ...rewards,
+      completionReward: null,
+    }),
+    "perfect-day"
+  );
+  assert.strictEqual(
+    homeHabitActions.getActiveRewardType({
+      ...rewards,
+      completionReward: null,
+      perfectDay: null,
+    }),
+    "level-up"
+  );
+  assert.strictEqual(
+    homeHabitActions.getRewardAccessibilityAnnouncement(
+      "badge",
+      rewards
+    ),
+    "Achievement unlocked. First Completion. Complete any habit for the first time."
+  );
 });
 
 test("widget models render empty, small, medium, and large states from local data", () => {
