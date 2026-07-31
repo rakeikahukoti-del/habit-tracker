@@ -1,16 +1,17 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Share,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import {
   SettingsMessage,
   SettingsRow,
@@ -27,6 +28,7 @@ import {
   v2Typography,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import {
   exportAppData,
   BACKUP_VERSION,
@@ -40,25 +42,22 @@ import {
   resetOnboarding,
 } from "../storage/appPreferences";
 import {
-  getGamification,
-  getGamificationLevelInfo,
-} from "../storage/gamificationStorage";
-import {
   resetAllHabits,
   seedDemoHabits,
   seedMasterDemoHabits,
 } from "../storage/habitsStorage";
+import { getSettingsConfirmation } from "../utils/settingsPresentation";
 import { getSupportedWidgetSizes } from "../widgets/widgetDataProvider";
 import packageJson from "../package.json";
 
 export default function SettingsScreen() {
   const { colors, resolvedTheme } = useTheme();
+  const reduceMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [actionLoading, setActionLoading] = useState(false);
   const [backupText, setBackupText] = useState("");
   const [exportMetadata, setExportMetadata] = useState(null);
   const [importText, setImportText] = useState("");
-  const [level, setLevel] = useState(1);
   const [modalMode, setModalMode] = useState(null);
   const [message, setMessage] = useState("");
   const actionLoadingRef = useRef(false);
@@ -75,33 +74,6 @@ export default function SettingsScreen() {
     []
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      async function loadLevel() {
-        try {
-          const storedGamification = await getGamification();
-          const levelInfo = getGamificationLevelInfo(storedGamification);
-
-          if (isActive) {
-            setLevel(levelInfo.level);
-          }
-        } catch {
-          if (isActive) {
-            setMessage("Could not load app progress.");
-          }
-        }
-      }
-
-      loadLevel();
-
-      return () => {
-        isActive = false;
-      };
-    }, [])
-  );
-
   async function runDataAction(action, successMessage, failureMessage) {
     if (actionLoadingRef.current) {
       return;
@@ -113,7 +85,6 @@ export default function SettingsScreen() {
     try {
       setMessage("");
       await action();
-      await refreshLevel();
       setMessage(successMessage);
     } catch {
       setMessage(failureMessage);
@@ -123,103 +94,70 @@ export default function SettingsScreen() {
     }
   }
 
+  function confirmDataAction(
+    confirmationKey,
+    action,
+    successMessage,
+    failureMessage
+  ) {
+    const copy = getSettingsConfirmation(confirmationKey);
+
+    if (!copy) {
+      return;
+    }
+
+    Alert.alert(copy.title, copy.message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: copy.confirmLabel,
+        style: "destructive",
+        onPress: () => runDataAction(action, successMessage, failureMessage),
+      },
+    ]);
+  }
+
   function confirmLoadDemoData() {
-    Alert.alert(
-      "Load demo data?",
-      "This replaces your current habits with sample habits for testing.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Load demo data",
-          style: "destructive",
-          onPress: () =>
-            runDataAction(
-              seedDemoHabits,
-              "Demo data loaded.",
-              "Could not load demo data. Please try again."
-            ),
-        },
-      ]
+    confirmDataAction(
+      "demo-data",
+      seedDemoHabits,
+      "Demo data loaded.",
+      "Could not load demo data. Please try again."
     );
   }
 
   function confirmLoadMasterDemoData() {
-    Alert.alert(
-      "Load Master demo?",
-      "This replaces your current habits with high-progress sample habits.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Load Master demo",
-          style: "destructive",
-          onPress: () =>
-            runDataAction(
-              seedMasterDemoHabits,
-              "Master demo data loaded.",
-              "Could not load Master demo data. Please try again."
-            ),
-        },
-      ]
+    confirmDataAction(
+      "master-demo",
+      seedMasterDemoHabits,
+      "Master demo data loaded.",
+      "Could not load Master demo data. Please try again."
     );
   }
 
   function confirmResetAllData() {
-    Alert.alert(
-      "Reset all data?",
-      "This permanently removes habits, history, progress, badges, and scheduled reminders from this device. Preferences stay unchanged.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: () =>
-            runDataAction(
-              resetAllHabits,
-              "All local data reset.",
-              "Could not reset data. Please try again."
-            ),
-        },
-      ]
+    confirmDataAction(
+      "reset-data",
+      resetAllHabits,
+      "All local data reset.",
+      "Could not reset data. Please try again."
     );
   }
 
   function confirmResetOnboarding() {
-    Alert.alert(
-      "Reset onboarding?",
-      "Momentum will show onboarding again the next time the app starts.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset onboarding",
-          style: "destructive",
-          onPress: () =>
-            runDataAction(
-              resetOnboarding,
-              "Onboarding reset.",
-              "Could not reset onboarding. Please try again."
-            ),
-        },
-      ]
+    confirmDataAction(
+      "reset-onboarding",
+      resetOnboarding,
+      "Onboarding reset.",
+      "Could not reset onboarding. Please try again."
     );
   }
 
   function confirmResetPreferences() {
-    Alert.alert(
-      "Reset preferences?",
-      "This restores app preferences to their defaults. Habits and progress stay intact.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset preferences",
-          style: "destructive",
-          onPress: () =>
-            runDataAction(
-              resetAppPreferences,
-              "Preferences reset.",
-              "Could not reset preferences. Please try again."
-            ),
-        },
-      ]
+    confirmDataAction(
+      "reset-preferences",
+      resetAppPreferences,
+      "Preferences reset.",
+      "Could not reset preferences. Please try again."
     );
   }
 
@@ -290,7 +228,6 @@ export default function SettingsScreen() {
 
       setModalMode(null);
       setImportText("");
-      await refreshLevel();
       setMessage(
         getRestoreSuccessMessage(result)
       );
@@ -302,13 +239,6 @@ export default function SettingsScreen() {
     }
   }
 
-  async function refreshLevel() {
-    const storedGamification = await getGamification();
-    const levelInfo = getGamificationLevelInfo(storedGamification);
-
-    setLevel(levelInfo.level);
-  }
-
   return (
     <SettingsShell
       bottomNav
@@ -318,47 +248,33 @@ export default function SettingsScreen() {
     >
       <SettingsMessage>{message}</SettingsMessage>
 
-      <SettingsSection title="General">
+      <SettingsSection title="Appearance">
         <SettingsRow
-          description="Choose Light or Dark mode."
-          icon="settings"
+          description="Choose a light or dark appearance."
           onPress={() => router.push("/appearance")}
           title="Appearance"
           value={formatThemeLabel(resolvedTheme)}
         />
+      </SettingsSection>
+
+      <SettingsSection title="Daily experience">
         <SettingsRow
-          description="Reminder access and daily reminder preference."
-          icon="flame"
+          description="Permission, reminder status, and scheduling preference."
           onPress={() => router.push("/notification-preferences")}
           title="Notifications"
         />
         <SettingsRow
-          description="Sorting, swipe, and reorder behavior."
-          icon="settings"
+          description="Sorting, completion gestures, and habit order."
           onPress={() => router.push("/habit-preferences")}
           title="Habit preferences"
         />
       </SettingsSection>
 
-      <SettingsSection title="Progress">
+      <SettingsSection title="Gamification">
         <SettingsRow
-          description="Levels, rank, achievements, and badges."
-          icon="rank"
-          onPress={() => router.push("/rank")}
-          title="Rank and achievements"
-          value={`Level ${level}`}
-        />
-        <SettingsRow
-          description="Completion trends and habit insights."
-          icon="analytics"
-          onPress={() => router.push("/analytics")}
-          title="Analytics"
-        />
-        <SettingsRow
-          description="Home progress, reward popups, and haptics."
-          icon="star"
+          description="Home progress, reward popups, and reward haptics."
           onPress={() => router.push("/gamification-preferences")}
-          title="Reward preferences"
+          title="Gamification preferences"
         />
       </SettingsSection>
 
@@ -368,14 +284,12 @@ export default function SettingsScreen() {
       >
         <SettingsRow
           description="Glance at today's progress and remaining habits from the Home Screen."
-          icon="home"
           showChevron={false}
-          title="Home Screen Widgets"
+          title="Home screen widgets"
           value={widgetSizeLabel}
         />
         <SettingsRow
           description="Add Momentum from your device widget gallery where native widgets are supported."
-          icon="check"
           showChevron={false}
           title="Quick setup"
           value="Offline"
@@ -390,7 +304,6 @@ export default function SettingsScreen() {
           <>
             <SettingsRow
               disabled={actionLoading}
-              icon="plus"
               onPress={confirmLoadDemoData}
               title="Load demo data"
               value={actionLoading ? "Working" : undefined}
@@ -398,7 +311,6 @@ export default function SettingsScreen() {
             <SettingsRow
               description="Loads a high-progress sample profile."
               disabled={actionLoading}
-              icon="rank"
               onPress={confirmLoadMasterDemoData}
               title="Load Master demo"
             />
@@ -406,54 +318,50 @@ export default function SettingsScreen() {
         ) : null}
         <SettingsRow
           disabled={actionLoading}
-          icon="analytics"
           onPress={handleExportData}
-          title="Export Data"
+          title="Export data"
           value={actionLoading ? "Working" : undefined}
         />
         <SettingsRow
           disabled={actionLoading}
-          icon="plus"
           onPress={() => setModalMode("import")}
-          title="Import Backup"
+          title="Import backup"
         />
         <SettingsRow
           description={`Current backup schema v${BACKUP_VERSION}. ${exportMetadata ? `Last export: ${formatBackupDate(exportMetadata.exportedAt)}.` : "No export this session."}`}
-          icon="settings"
           showChevron={false}
-          title="Backup Information"
+          title="Backup information"
           value={`v${BACKUP_VERSION}`}
         />
       </SettingsSection>
 
-      <SettingsSection title="Application">
+      <SettingsSection title="Privacy and legal">
         <SettingsRow
-          description="Personal habit tracking only. No account or backend."
-          icon="home"
-          showChevron={false}
-          title="About Momentum"
-          value={`v${packageJson.version}`}
-        />
-        <SettingsRow
-          icon="settings"
           onPress={() => router.push("/privacy")}
           title="Privacy Policy"
         />
         <SettingsRow
-          icon="settings"
           onPress={() => router.push("/terms")}
           title="Terms of Use"
         />
         <SettingsRow
-          icon="settings"
           onPress={() => router.push("/disclaimer")}
           title="Disclaimer"
         />
       </SettingsSection>
 
+      <SettingsSection title="About">
+        <SettingsRow
+          description="Personal habit tracking only. No account or backend."
+          showChevron={false}
+          title="About Momentum"
+          value={`v${packageJson.version}`}
+        />
+      </SettingsSection>
+
       <SettingsSection
         footer="These actions are local to this device and require confirmation."
-        title="Danger Zone"
+        title="Reset"
       >
         <SettingsRow
           destructive
@@ -482,7 +390,7 @@ export default function SettingsScreen() {
       </SettingsSection>
 
       <Modal
-        animationType="slide"
+        animationType={reduceMotion ? "none" : "slide"}
         onRequestClose={() => setModalMode(null)}
         transparent
         visible={Boolean(modalMode)}
@@ -496,47 +404,61 @@ export default function SettingsScreen() {
             importantForAccessibility="yes"
             style={styles.modalCard}
           >
-            <AppText style={styles.modalTitle}>
-              {modalMode === "export" ? "Export Data" : "Import Backup"}
-            </AppText>
-            <AppText style={styles.modalHelper}>
-              {modalMode === "export"
-                ? getExportHelper(backupText, exportMetadata)
-                : "Paste a Momentum JSON backup. Momentum will validate it before anything is replaced."}
-            </AppText>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={styles.modalScroll}
+            >
+              <AppText accessibilityRole="header" style={styles.modalTitle}>
+                {modalMode === "export" ? "Export data" : "Import backup"}
+              </AppText>
+              <AppText style={styles.modalHelper}>
+                {modalMode === "export"
+                  ? getExportHelper(backupText, exportMetadata)
+                  : "Paste a Momentum JSON backup. Momentum validates it before replacing any data."}
+              </AppText>
 
-            {modalMode === "export" ? (
-              <BackupMetadataCard
-                metadata={exportMetadata}
-                styles={styles}
-                title="Export summary"
-              />
-            ) : null}
-            {modalMode === "import" ? (
-              <BackupPreview
-                summary={importSummary}
-                validation={importValidation}
-                styles={styles}
-              />
-            ) : null}
+              {modalMode === "export" ? (
+                <BackupMetadataCard
+                  metadata={exportMetadata}
+                  styles={styles}
+                  title="Export summary"
+                />
+              ) : null}
+              {modalMode === "import" ? (
+                <BackupPreview
+                  summary={importSummary}
+                  validation={importValidation}
+                  styles={styles}
+                />
+              ) : null}
 
-            <TextInput
-              accessibilityHint={
-                modalMode === "export"
-                  ? "Copy this JSON backup."
-                  : "Paste a Momentum JSON backup before importing."
-              }
-              accessibilityLabel={
-                modalMode === "export" ? "Exported JSON backup" : "Import JSON backup"
-              }
-              multiline
-              onChangeText={modalMode === "export" ? setBackupText : setImportText}
-              placeholder="Paste JSON here"
-              placeholderTextColor={colors.muted}
-              scrollEnabled
-              style={styles.jsonInput}
-              value={modalMode === "export" ? backupText : importText}
-            />
+              <TextInput
+                accessibilityHint={
+                  modalMode === "export"
+                    ? "Copy this JSON backup."
+                    : "Paste a Momentum JSON backup before importing."
+                }
+                accessibilityLabel={
+                  modalMode === "export"
+                    ? "Exported JSON backup"
+                    : "Import JSON backup"
+                }
+                multiline
+                onChangeText={
+                  modalMode === "export" ? setBackupText : setImportText
+                }
+                placeholder={
+                  modalMode === "export" ? "Backup JSON" : "Paste JSON here"
+                }
+                placeholderTextColor={colors.muted}
+                scrollEnabled
+                style={styles.jsonInput}
+                value={modalMode === "export" ? backupText : importText}
+              />
+            </ScrollView>
 
             <View style={styles.modalActions}>
               <Pressable
@@ -766,12 +688,18 @@ function createStyles(colors) {
       borderTopLeftRadius: v2Radius.large,
       borderTopRightRadius: v2Radius.large,
       borderWidth: 1,
-      gap: v2Spacing.md,
       maxHeight: "82%",
       padding: v2Spacing.lg,
       ...v2Shadows.floating,
       shadowColor: colors.shadow,
       shadowOpacity: 0.16,
+    },
+    modalContent: {
+      gap: v2Spacing.md,
+      paddingBottom: v2Spacing.md,
+    },
+    modalScroll: {
+      flexShrink: 1,
     },
     modalTitle: {
       color: colors.text,
@@ -862,6 +790,7 @@ function createStyles(colors) {
     modalActions: {
       flexDirection: "row",
       gap: v2Spacing.md,
+      paddingTop: v2Spacing.sm,
     },
     modalCancelButton: {
       alignItems: "center",

@@ -17,6 +17,11 @@ Current users:
 `app/notification-preferences.js` remains separate because it also handles
 notification permission state and reminder scheduling side effects.
 
+`components/settings/SettingsSection.js` provides the shared layout and
+interaction model for Settings rows. `utils/settingsPresentation.js` contains
+pure copy and summary helpers that can be tested without rendering React Native
+screens.
+
 ## Storage Safety
 
 Storage helpers should continue to return safe defaults when stored data is

@@ -11,7 +11,6 @@ import {
 import {
   getNotificationPermissionMessage,
   getNotificationPermissionState,
-  getReminderPreview,
 } from "../notifications/habitNotifications";
 import {
   defaultAppPreferences,
@@ -23,12 +22,20 @@ import {
   getHabits,
   reconcileHabitNotifications,
 } from "../storage/habitsStorage";
+import {
+  getNotificationPermissionLabel,
+  getReminderSettingsSummary,
+} from "../utils/settingsPresentation";
 
 export default function NotificationPreferencesScreen() {
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [permissionState, setPermissionState] = useState("not-requested");
-  const [reminderSummary, setReminderSummary] = useState(getEmptyReminderSummary());
+  const [reminderSummary, setReminderSummary] = useState(
+    getReminderSettingsSummary([])
+  );
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [preferenceUpdating, setPreferenceUpdating] = useState(false);
   const preferenceUpdatingRef = useRef(false);
 
   useFocusEffect(
@@ -37,22 +44,35 @@ export default function NotificationPreferencesScreen() {
 
       async function loadPreferences() {
         try {
-          await reconcileHabitNotifications();
+          setLoading(true);
+          setMessage("");
+
+          try {
+            await reconcileHabitNotifications();
+          } catch {
+            // Reminders are optional; preferences should still load if repair fails.
+          }
+
+          const [savedPreferences, savedPermissionState, habits] =
+            await Promise.all([
+              getAppPreferences(),
+              getNotificationPermissionState(),
+              getHabits(),
+            ]);
+
+          if (isActive) {
+            setPreferences(savedPreferences);
+            setPermissionState(savedPermissionState);
+            setReminderSummary(getReminderSettingsSummary(habits));
+          }
         } catch {
-          // Reminders are optional; preferences should still load if repair fails.
-        }
-
-        const [savedPreferences, savedPermissionState, habits] =
-          await Promise.all([
-            getAppPreferences(),
-            getNotificationPermissionState(),
-            getHabits(),
-          ]);
-
-        if (isActive) {
-          setPreferences(savedPreferences);
-          setPermissionState(savedPermissionState);
-          setReminderSummary(getReminderSummary(habits));
+          if (isActive) {
+            setMessage("Could not load notification settings. Try again.");
+          }
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
         }
       }
 
@@ -70,6 +90,7 @@ export default function NotificationPreferencesScreen() {
     }
 
     preferenceUpdatingRef.current = true;
+    setPreferenceUpdating(true);
 
     try {
       setMessage("");
@@ -85,13 +106,23 @@ export default function NotificationPreferencesScreen() {
       const habits = await getHabits();
 
       setPreferences(savedPreferences);
-      setReminderSummary(getReminderSummary(habits));
+      setReminderSummary(getReminderSettingsSummary(habits));
       setPermissionState(await getNotificationPermissionState());
     } catch {
       setMessage("Could not update reminders. Please try again.");
       setPreferences(await getAppPreferences());
     } finally {
       preferenceUpdatingRef.current = false;
+      setPreferenceUpdating(false);
+    }
+  }
+
+  async function openNotificationSettings() {
+    try {
+      setMessage("");
+      await Linking.openSettings();
+    } catch {
+      setMessage("Could not open device settings.");
     }
   }
 
@@ -108,14 +139,18 @@ export default function NotificationPreferencesScreen() {
           description={getNotificationPermissionMessage(permissionState)}
           showChevron={false}
           title="Notification access"
-          value={getPermissionLabel(permissionState)}
+          value={
+            loading
+              ? "Checking"
+              : getNotificationPermissionLabel(permissionState)
+          }
         />
         {permissionState === "blocked" ? (
           <SettingsRow
             accessibilityLabel="Open device notification settings"
             description="Update notification access in your device settings."
-            onPress={() => Linking.openSettings()}
-            title="Open Settings"
+            onPress={openNotificationSettings}
+            title="Open device settings"
           />
         ) : null}
       </SettingsSection>
@@ -126,6 +161,7 @@ export default function NotificationPreferencesScreen() {
       >
         <SettingsToggleRow
           description="Allow scheduled reminders for habits with reminder times."
+          disabled={loading || preferenceUpdating}
           onValueChange={handleDailyReminderChange}
           title="Daily reminders"
           value={preferences.enableDailyReminders}
@@ -139,54 +175,4 @@ export default function NotificationPreferencesScreen() {
       </SettingsSection>
     </SettingsScreen>
   );
-}
-
-function getPermissionLabel(state) {
-  if (state === "granted") {
-    return "Allowed";
-  }
-
-  if (state === "blocked") {
-    return "Blocked";
-  }
-
-  if (state === "unavailable") {
-    return "Unavailable";
-  }
-
-  return "Not asked";
-}
-
-function getReminderSummary(habits) {
-  const safeHabits = Array.isArray(habits) ? habits : [];
-  const scheduledHabits = safeHabits.filter(
-    (habit) => habit.reminderStatus === "scheduled"
-  );
-  const notificationCount = scheduledHabits.reduce(
-    (sum, habit) =>
-      sum +
-      (Array.isArray(habit.notificationIds) ? habit.notificationIds.length : 0),
-    0
-  );
-  const nextPreview = scheduledHabits[0]
-    ? getReminderPreview(scheduledHabits[0])
-    : "";
-
-  if (scheduledHabits.length === 0) {
-    return getEmptyReminderSummary();
-  }
-
-  return {
-    description: nextPreview
-      ? `${nextPreview}. ${scheduledHabits.length} habit reminder${scheduledHabits.length === 1 ? "" : "s"} enabled.`
-      : `${scheduledHabits.length} habit reminder${scheduledHabits.length === 1 ? "" : "s"} enabled.`,
-    value: String(notificationCount),
-  };
-}
-
-function getEmptyReminderSummary() {
-  return {
-    description: "Add a reminder time to any habit to schedule reminders.",
-    value: "0",
-  };
 }

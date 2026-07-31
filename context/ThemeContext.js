@@ -59,19 +59,24 @@ export function ThemeProvider({ children }) {
 
   const setThemePreference = useCallback(async (nextPreference) => {
     if (!isSupportedThemePreference(nextPreference)) {
-      return;
+      return false;
     }
 
     if (nextPreference === themePreference) {
-      return;
+      return true;
     }
+
+    const previousPreference = themePreference;
 
     setThemePreferenceState(nextPreference);
 
     try {
       await AsyncStorage.setItem(THEME_PREFERENCE_KEY, nextPreference);
+      return true;
     } catch (error) {
       logStorageError("Could not save theme preference.", error);
+      setThemePreferenceState(previousPreference);
+      return false;
     }
   }, [themePreference]);
 

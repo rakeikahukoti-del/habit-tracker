@@ -19,6 +19,7 @@ import {
   v2Spacing,
   v2Typography,
 } from "../../src/design";
+import { getSettingsRowAccessibilityLabel } from "../../utils/settingsPresentation";
 
 export function SettingsScreen({
   backLabel = "Back to Settings",
@@ -50,6 +51,7 @@ export function SettingsScreen({
           bottomNav && styles.containerWithBottomNav,
         ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         onScroll={onScroll}
         ref={scrollRef}
         scrollEnabled={scrollEnabled}
@@ -95,7 +97,9 @@ export function SettingsHeader({
         </IconButton>
       ) : null}
       {eyebrow ? <AppText style={styles.eyebrow}>{eyebrow}</AppText> : null}
-      <AppText style={styles.title}>{title}</AppText>
+      <AppText accessibilityRole="header" style={styles.title}>
+        {title}
+      </AppText>
       {subtitle ? <AppText style={styles.subtitle}>{subtitle}</AppText> : null}
     </View>
   );
@@ -114,7 +118,8 @@ export function SettingsMessage({ tone = "info", children }) {
 
   return (
     <AppText
-      accessibilityRole="text"
+      accessibilityLiveRegion="polite"
+      accessibilityRole={tone === "danger" ? "alert" : "text"}
       style={[
         styles.message,
         tone === "danger" && styles.messageDanger,
@@ -134,7 +139,9 @@ export function SettingsSection({ children, footer, title }) {
 
   return (
     <View style={styles.section}>
-      <AppText style={styles.sectionTitle}>{title}</AppText>
+      <AppText accessibilityRole="header" style={styles.sectionTitle}>
+        {title}
+      </AppText>
       <View style={styles.group}>{children}</View>
       {footer ? <AppText style={styles.footer}>{footer}</AppText> : null}
     </View>
@@ -142,7 +149,11 @@ export function SettingsSection({ children, footer, title }) {
 }
 
 export function SettingsRow({
+  accessibilityHint,
   accessibilityLabel,
+  accessibilityRole,
+  accessibilityState,
+  accessibilityValue,
   description,
   disabled = false,
   destructive = false,
@@ -161,9 +172,18 @@ export function SettingsRow({
 
   return (
     <Pressable
-      accessibilityLabel={accessibilityLabel || title}
-      accessibilityRole={onPress ? "button" : undefined}
-      accessibilityState={{ disabled }}
+      accessibilityHint={accessibilityHint || (onPress ? description : undefined)}
+      accessibilityLabel={
+        accessibilityLabel ||
+        getSettingsRowAccessibilityLabel({
+          description: onPress ? "" : description,
+          title,
+          value,
+        })
+      }
+      accessibilityRole={accessibilityRole || (onPress ? "button" : "text")}
+      accessibilityState={{ ...accessibilityState, disabled }}
+      accessibilityValue={accessibilityValue}
       disabled={!onPress || disabled}
       hitSlop={{ bottom: 8, left: 8, right: 8, top: 8 }}
       onPress={onPress}
@@ -185,7 +205,6 @@ export function SettingsRow({
       ) : null}
       <View style={styles.rowText}>
         <AppText
-          numberOfLines={2}
           style={[
             styles.rowTitle,
             destructive && styles.destructiveText,
@@ -195,19 +214,14 @@ export function SettingsRow({
           {title}
         </AppText>
         {description ? (
-          <AppText numberOfLines={3} style={styles.rowDescription}>
+          <AppText style={styles.rowDescription}>
             {description}
           </AppText>
         ) : null}
       </View>
       {right ? <View style={styles.trailingControl}>{right}</View> : null}
       {value ? (
-        <AppText
-          adjustsFontSizeToFit
-          minimumFontScale={0.82}
-          numberOfLines={2}
-          style={styles.value}
-        >
+        <AppText style={styles.value}>
           {value}
         </AppText>
       ) : null}
@@ -237,21 +251,23 @@ export function SettingsToggleRow({
   return (
     <SettingsRow
       accessibilityLabel={`${title}, ${value ? "on" : "off"}`}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: Boolean(value) }}
       description={description}
       disabled={disabled}
       onPress={() => onValueChange?.(!value)}
       right={
-        <Switch
-          accessibilityLabel={title}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: Boolean(value), disabled }}
-          disabled={disabled}
-          ios_backgroundColor={colors.border}
-          onValueChange={onValueChange}
-          thumbColor={value ? colors.inverseText : colors.surface}
-          trackColor={{ false: colors.border, true: colors.primary }}
-          value={Boolean(value)}
-        />
+        <View pointerEvents="none">
+          <Switch
+            accessibilityElementsHidden
+            disabled={disabled}
+            importantForAccessibility="no-hide-descendants"
+            ios_backgroundColor={colors.border}
+            thumbColor={value ? colors.inverseText : colors.surface}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            value={Boolean(value)}
+          />
+        </View>
       }
       showChevron={false}
       title={title}
@@ -276,7 +292,10 @@ export function ThemePreviewRow({
   return (
     <Pressable
       accessibilityLabel={`${label} theme${selected ? ", selected" : ""}${disabled ? `, locked ${lockedText || ""}` : ""}`}
-      accessibilityRole="button"
+      accessibilityHint={
+        disabled ? lockedText : "Applies this appearance immediately."
+      }
+      accessibilityRole="radio"
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
       hitSlop={{ bottom: 8, left: 8, right: 8, top: 8 }}

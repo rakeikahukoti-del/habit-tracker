@@ -8,7 +8,7 @@ import {
 import { useAppPreferenceSettings } from "../hooks/useAppPreferenceSettings";
 
 export default function GamificationPreferencesScreen() {
-  const { message, preferences, setPreferenceValue } =
+  const { message, preferences, setPreferenceValue, updating } =
     useAppPreferenceSettings();
 
   return (
@@ -17,11 +17,12 @@ export default function GamificationPreferencesScreen() {
       subtitle="Control reward presentation without resetting progress."
       title="Gamification"
     >
-      <SettingsMessage>{message}</SettingsMessage>
+      <SettingsMessage tone="danger">{message}</SettingsMessage>
 
       <SettingsSection title="Home">
         <SettingsToggleRow
           description="Shows your daily progress summary on Home."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("showProgressCard", value)
           }
@@ -30,6 +31,7 @@ export default function GamificationPreferencesScreen() {
         />
         <SettingsToggleRow
           description="Shows XP, level, and rank details on Home."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("showXpRankOnHome", value)
           }
@@ -41,6 +43,7 @@ export default function GamificationPreferencesScreen() {
       <SettingsSection title="Rewards">
         <SettingsToggleRow
           description="Future badge unlocks can show a short popup."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("showBadgePopups", value)
           }
@@ -49,6 +52,7 @@ export default function GamificationPreferencesScreen() {
         />
         <SettingsToggleRow
           description="Future level changes can show a short popup."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("showLevelUpPopup", value)
           }
@@ -57,6 +61,7 @@ export default function GamificationPreferencesScreen() {
         />
         <SettingsToggleRow
           description="Uses subtle haptics for reward moments."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("enableRewardHaptics", value)
           }

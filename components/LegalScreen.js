@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { SettingsScreen } from "./settings";
@@ -13,7 +14,7 @@ import {
 
 export default function LegalScreen({ title, body }) {
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <SettingsScreen

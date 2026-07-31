@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { router } from "expo-router";
 import {
   SettingsMessage,
@@ -11,9 +12,26 @@ import { appearanceOptions } from "../utils/themePreferences";
 
 export default function AppearanceScreen() {
   const { resolvedTheme, setThemePreference, themePreference } = useTheme();
+  const [message, setMessage] = useState("");
+  const updateInProgressRef = useRef(false);
 
-  function selectTheme(themeKey) {
-    setThemePreference(themeKey);
+  async function selectTheme(themeKey) {
+    if (updateInProgressRef.current) {
+      return;
+    }
+
+    updateInProgressRef.current = true;
+    setMessage("");
+
+    try {
+      const saved = await setThemePreference(themeKey);
+
+      if (!saved) {
+        setMessage("Could not save appearance. Try again.");
+      }
+    } finally {
+      updateInProgressRef.current = false;
+    }
   }
 
   return (
@@ -22,11 +40,12 @@ export default function AppearanceScreen() {
       subtitle={`Current appearance: ${formatThemeLabel(resolvedTheme)}.`}
       title="Appearance"
     >
-      <SettingsMessage>
-        Rank progression now uses medals instead of changing the app theme.
-      </SettingsMessage>
+      <SettingsMessage tone="danger">{message}</SettingsMessage>
 
-      <SettingsSection title="Mode">
+      <SettingsSection
+        footer="Appearance changes immediately and is saved on this device."
+        title="Mode"
+      >
         {appearanceOptions.map((option) => (
           <ThemePreviewRow
             key={option.value}

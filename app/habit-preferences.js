@@ -9,7 +9,7 @@ import {
 import { useAppPreferenceSettings } from "../hooks/useAppPreferenceSettings";
 
 export default function HabitPreferencesScreen() {
-  const { message, preferences, setPreferenceValue } =
+  const { message, preferences, setPreferenceValue, updating } =
     useAppPreferenceSettings();
 
   return (
@@ -18,7 +18,7 @@ export default function HabitPreferencesScreen() {
       subtitle="Control how habits behave on Home."
       title="Habit preferences"
     >
-      <SettingsMessage>{message}</SettingsMessage>
+      <SettingsMessage tone="danger">{message}</SettingsMessage>
 
       <SettingsSection title="Order">
         <SettingsRow
@@ -28,6 +28,7 @@ export default function HabitPreferencesScreen() {
         />
         <SettingsToggleRow
           description="Keeps unfinished habits at the top of Today."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("moveCompletedToBottom", value)
           }
@@ -39,6 +40,7 @@ export default function HabitPreferencesScreen() {
       <SettingsSection title="Interactions">
         <SettingsToggleRow
           description="Swipe right to complete and left to undo."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("enableSwipeToComplete", value)
           }
@@ -47,6 +49,7 @@ export default function HabitPreferencesScreen() {
         />
         <SettingsToggleRow
           description="Allows drag reordering where supported."
+          disabled={updating}
           onValueChange={(value) =>
             setPreferenceValue("enableLongPressReorder", value)
           }

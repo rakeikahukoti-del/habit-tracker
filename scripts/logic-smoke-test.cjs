@@ -388,6 +388,16 @@ const appPreferencesStorage = loadModule("storage/appPreferences.js", (moduleNam
 
   return require(moduleName);
 });
+const settingsPresentation = loadModule(
+  "utils/settingsPresentation.js",
+  (moduleName) => {
+    if (moduleName === "../notifications/habitNotifications") {
+      return habitNotifications;
+    }
+
+    return require(moduleName);
+  }
+);
 const gamificationStorage = loadModule("storage/gamificationStorage.js", (moduleName) => {
   if (moduleName === "@react-native-async-storage/async-storage") {
     return { __esModule: true, default: asyncStorageMock };
@@ -2140,6 +2150,88 @@ test("app preferences reset to defaults while preserving legacy compatibility", 
 
   assertJsonEqual(resetPreferences, appPreferencesStorage.defaultAppPreferences);
   assert.strictEqual(asyncStorageStore["momentum:move-completed-to-bottom"], "false");
+});
+
+test("individual app preferences persist safely and reject unknown keys", async () => {
+  resetStorage();
+
+  const updatedPreferences = await appPreferencesStorage.setAppPreference(
+    "showProgressCard",
+    false
+  );
+
+  assert.strictEqual(updatedPreferences.showProgressCard, false);
+  assert.strictEqual(updatedPreferences.enableDailyReminders, true);
+  assert.strictEqual(
+    JSON.parse(asyncStorageStore["momentum:app-preferences"]).showProgressCard,
+    false
+  );
+
+  await assert.rejects(
+    () => appPreferencesStorage.setAppPreference("unknownPreference", true),
+    /Unknown app preference/
+  );
+
+  asyncStorageStore["momentum:app-preferences"] = "{invalid";
+  asyncStorageStore["momentum:move-completed-to-bottom"] = "true";
+
+  const recoveredPreferences = await appPreferencesStorage.getAppPreferences();
+
+  assert.strictEqual(recoveredPreferences.moveCompletedToBottom, true);
+  assert.strictEqual(
+    recoveredPreferences.showProgressCard,
+    appPreferencesStorage.defaultAppPreferences.showProgressCard
+  );
+});
+
+test("settings presentation keeps labels, reminders, and confirmations clear", () => {
+  assert.strictEqual(
+    settingsPresentation.getSettingsRowAccessibilityLabel({
+      description: "Choose an appearance.",
+      title: "Appearance",
+      value: "Dark",
+    }),
+    "Appearance, Dark, Choose an appearance."
+  );
+  assert.strictEqual(
+    settingsPresentation.getNotificationPermissionLabel("blocked"),
+    "Blocked"
+  );
+  assertJsonEqual(settingsPresentation.getReminderSettingsSummary(null), {
+    description: "Add a reminder time to a habit to schedule reminders.",
+    value: "0",
+  });
+  assertJsonEqual(
+    settingsPresentation.getReminderSettingsSummary([
+      {
+        frequency: "Daily",
+        notificationIds: ["first"],
+        reminderStatus: "scheduled",
+        reminderTime: "08:00",
+      },
+      {
+        frequency: "Weekdays",
+        notificationIds: ["two", "three", "four", "five", "six"],
+        reminderStatus: "scheduled",
+        reminderTime: "09:00",
+      },
+    ]),
+    {
+      description:
+        "Every day at 8:00 AM. 2 habit reminders enabled.",
+      value: "6",
+    }
+  );
+
+  const resetCopy = settingsPresentation.getSettingsConfirmation("reset-data");
+
+  assert.match(resetCopy.title, /Reset all data/);
+  assert.match(resetCopy.message, /permanently removes/);
+  assert.strictEqual(resetCopy.confirmLabel, "Reset");
+  assert.strictEqual(
+    settingsPresentation.getSettingsConfirmation("unknown"),
+    null
+  );
 });
 
 test("first swipe hint eligibility is action-based and one-time", () => {

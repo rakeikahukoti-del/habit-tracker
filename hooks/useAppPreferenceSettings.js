@@ -9,6 +9,7 @@ import {
 export function useAppPreferenceSettings() {
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [message, setMessage] = useState("");
+  const [updating, setUpdating] = useState(false);
   const preferenceUpdatingRef = useRef(false);
 
   useFocusEffect(
@@ -43,6 +44,7 @@ export function useAppPreferenceSettings() {
     }
 
     preferenceUpdatingRef.current = true;
+    setUpdating(true);
 
     try {
       setMessage("");
@@ -57,6 +59,7 @@ export function useAppPreferenceSettings() {
       }
     } finally {
       preferenceUpdatingRef.current = false;
+      setUpdating(false);
     }
   }
 
@@ -64,5 +67,6 @@ export function useAppPreferenceSettings() {
     message,
     preferences,
     setPreferenceValue,
+    updating,
   };
 }

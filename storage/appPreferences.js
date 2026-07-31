@@ -184,14 +184,13 @@ export async function saveAppPreferences(preferences) {
   const nextPreferences = sanitizeAppPreferences(preferences);
 
   try {
-    await AsyncStorage.setItem(
-      APP_PREFERENCES_KEY,
-      JSON.stringify(nextPreferences)
-    );
-    await AsyncStorage.setItem(
-      MOVE_COMPLETED_TO_BOTTOM_KEY,
-      nextPreferences.moveCompletedToBottom ? "true" : "false"
-    );
+    await AsyncStorage.multiSet([
+      [APP_PREFERENCES_KEY, JSON.stringify(nextPreferences)],
+      [
+        MOVE_COMPLETED_TO_BOTTOM_KEY,
+        nextPreferences.moveCompletedToBottom ? "true" : "false",
+      ],
+    ]);
 
     return nextPreferences;
   } catch (error) {
