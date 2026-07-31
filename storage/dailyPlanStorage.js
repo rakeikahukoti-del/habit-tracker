@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getTodayKey } from "../utils/habitStats";
 import { normalizeDailyPlan } from "../utils/dailyPlanning";
+import { requestWidgetRefresh } from "../widgets/widgetRefresh";
 import { logStorageError } from "./storageUtils";
 
 export const DAILY_PLAN_KEY = "momentum:daily-plan";
@@ -30,6 +31,9 @@ export async function saveDailyPlan(plan, habits, todayKey = getTodayKey()) {
 
   try {
     await AsyncStorage.setItem(DAILY_PLAN_KEY, JSON.stringify(normalizedPlan));
+    await requestWidgetRefresh("daily-plan-changed", {
+      date: normalizedPlan.date,
+    });
   } catch (error) {
     logStorageError("Could not save daily plan.", error);
     throw error;

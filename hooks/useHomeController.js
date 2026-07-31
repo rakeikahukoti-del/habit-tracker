@@ -15,18 +15,12 @@ import {
   setLastShownLevel,
 } from "../storage/appPreferences";
 import {
-  awardHabitCompletion,
   consumeGamificationMessages,
   getGamification,
   getGamificationLevelInfo,
   getRankForLevel,
-  rebuildGamificationFromHabits,
 } from "../storage/gamificationStorage";
-import {
-  completeHabitForToday,
-  getHabits,
-  uncompleteHabitForToday,
-} from "../storage/habitsStorage";
+import { getHabits } from "../storage/habitsStorage";
 import {
   getHomeSummary,
   getQueuedRewardsFromMessages,
@@ -48,6 +42,10 @@ import {
   getTodayKey,
   wasCompletedToday,
 } from "../utils/habitStats";
+import {
+  completeHabitTodayWithRewards,
+  undoHabitTodayWithRewards,
+} from "../utils/habitCompletionActions";
 import { getFirstSwipeHintState } from "../utils/firstUseExperience";
 import { getReturnExperienceState } from "../utils/returnExperience";
 
@@ -288,41 +286,33 @@ export function useHomeController() {
       }
 
       if (wasCompletedToday(habit)) {
-        const savedHabit = await uncompleteHabitForToday(habit.id);
+        const undoResult = await undoHabitTodayWithRewards(habit.id);
 
-        if (!savedHabit) {
+        if (!undoResult.habit) {
           setError("Could not find this habit. Pull to refresh and try again.");
           return;
         }
 
-        const nextHabits = await getHabits();
-        const nextGamification = await rebuildGamificationFromHabits(
-          nextHabits,
-          { includeMessage: false }
-        );
-
-        setHabits(nextHabits);
-        setGamification(nextGamification);
+        setHabits(undoResult.habits);
+        setGamification(undoResult.gamification);
         setCelebration("");
 
         return;
       }
 
-      const savedHabit = await completeHabitForToday(habit.id);
+      const completionResult = await completeHabitTodayWithRewards(habit.id);
+      const savedHabit = completionResult.habit;
 
       if (!savedHabit) {
         setError("Could not find this habit. Pull to refresh and try again.");
         return;
       }
 
-      const nextHabits = await getHabits();
-      const previousGamification = await getGamification();
-      const previousXp = previousGamification.xp || 0;
-      const award = await awardHabitCompletion({
-        completedHabit: savedHabit,
-        habits: nextHabits,
-      });
-      const xpEarned = Math.max(10, award.gamification.xp - previousXp);
+      const award = completionResult.award;
+      const xpEarned = Math.max(
+        10,
+        completionResult.gamification.xp - (completionResult.previousXp || 0)
+      );
       const rewardLevelInfo = getGamificationLevelInfo(award.gamification);
       const rewardRank = getVisibleRank(getRankForLevel(rewardLevelInfo.level));
 
@@ -330,7 +320,7 @@ export function useHomeController() {
       await dismissSwipeHint();
       await dismissReturnMessage();
 
-      setHabits(nextHabits);
+      setHabits(completionResult.habits);
       setGamification(award.gamification);
       setCompletionReward({
         habitName: savedHabit.name,

@@ -14,6 +14,7 @@ import {
   resetGamification,
 } from "./gamificationStorage";
 import { isPlainObject, logStorageError } from "./storageUtils";
+import { requestWidgetRefresh } from "../widgets/widgetRefresh";
 import {
   cancelHabitReminders,
   hasReminderScheduleChanged,
@@ -118,6 +119,7 @@ export async function addHabit({
   };
 
   await saveHabits([newHabit, ...habits]);
+  await requestWidgetRefresh("habit-created", { habitId: newHabit.id });
 
   return newHabit;
 }
@@ -152,6 +154,7 @@ export async function addHabitsFromDrafts(habitDrafts) {
 
   try {
     await saveHabits([...newHabits, ...habits]);
+    await requestWidgetRefresh("habits-created", { count: newHabits.length });
   } catch (error) {
     await cancelRemindersForHabits(newHabits);
     throw error;
@@ -190,6 +193,7 @@ export async function updateHabit(updatedHabit) {
 
   await saveHabits(nextHabits);
   await rebuildGamificationFromHabits(nextHabits);
+  await requestWidgetRefresh("habit-updated", { habitId: normalizedHabit.id });
 
   return normalizedHabit;
 }
@@ -253,6 +257,7 @@ export async function saveHabitOrder(orderedHabitIds) {
   const orderedHabits = normalizeHabitOrder(habits, orderedHabitIds);
 
   await saveHabits(orderedHabits);
+  await requestWidgetRefresh("habit-order-changed");
 
   return orderedHabits;
 }
@@ -269,6 +274,7 @@ export async function deleteHabit(id) {
 
   await saveHabits(nextHabits);
   await rebuildGamificationFromHabits(nextHabits, { includeMessage: false });
+  await requestWidgetRefresh("habit-deleted", { habitId: id });
 }
 
 export async function resetAllHabits() {
@@ -278,6 +284,7 @@ export async function resetAllHabits() {
   await saveHabits([]);
   await resetGamification();
   await setLastShownLevel(1);
+  await requestWidgetRefresh("habits-reset");
 }
 
 export async function seedDemoHabits() {
@@ -288,6 +295,7 @@ export async function seedDemoHabits() {
   await saveHabits(demoHabits);
   const gamification = await rebuildGamificationFromHabits(demoHabits);
   await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+  await requestWidgetRefresh("demo-data-loaded", { count: demoHabits.length });
 }
 
 export async function seedMasterDemoHabits() {
@@ -298,6 +306,7 @@ export async function seedMasterDemoHabits() {
   await saveHabits(demoHabits);
   const gamification = await rebuildGamificationFromHabits(demoHabits);
   await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+  await requestWidgetRefresh("master-demo-loaded", { count: demoHabits.length });
 }
 
 export async function exportHabitsBackup() {
@@ -358,6 +367,7 @@ export async function importHabitsBackup(jsonText) {
   await saveHabits(normalizedHabits);
   const gamification = await rebuildGamificationFromHabits(normalizedHabits);
   await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+  await requestWidgetRefresh("habits-imported", { count: normalizedHabits.length });
 
   return normalizedHabits;
 }
@@ -377,6 +387,7 @@ export async function applyDailyReminderPreference(enabled) {
     }));
 
     await saveHabits(nextHabits);
+    await requestWidgetRefresh("reminders-updated", { enabled: false });
 
     return nextHabits;
   }
@@ -393,6 +404,7 @@ export async function applyDailyReminderPreference(enabled) {
   }
 
   await saveHabits(nextHabits);
+  await requestWidgetRefresh("reminders-updated", { enabled: true });
 
   return nextHabits;
 }

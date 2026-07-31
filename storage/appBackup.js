@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import packageJson from "../package.json";
 import { normalizeDailyPlan } from "../utils/dailyPlanning";
+import { requestWidgetRefresh } from "../widgets/widgetRefresh";
 import {
   calculateGamificationState,
   normalizeGamificationState,
@@ -132,6 +133,9 @@ export async function importAppData(jsonText, { mode = "replace" } = {}) {
   }
 
   const gamification = commit.gamification;
+  await requestWidgetRefresh("backup-imported", {
+    habits: importedHabits.length,
+  });
 
   return {
     gamification,
