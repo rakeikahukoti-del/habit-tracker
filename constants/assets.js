@@ -1,7 +1,15 @@
 export const BRAND_ASSETS = {
   appIconDark: require("../assets/branding/app-icon-dark.png"),
   appIconLight: require("../assets/branding/app-icon-light.png"),
+  logoDark: require("../assets/branding/momentum-logo-dark.png"),
+  logoLight: require("../assets/branding/momentum-logo-light.png"),
 };
+
+export function getBrandLogoAsset(resolvedTheme) {
+  return resolvedTheme === "light"
+    ? BRAND_ASSETS.logoLight
+    : BRAND_ASSETS.logoDark;
+}
 
 export const RANK_BADGE_ASSETS = {
   bronze: require("../assets/ranks/bronze.png"),

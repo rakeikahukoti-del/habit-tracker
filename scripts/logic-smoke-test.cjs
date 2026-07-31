@@ -2985,6 +2985,42 @@ test("badges sort by tier progression in stable ascending and descending order",
 test("visual asset manifest covers rank and achievement identifiers", () => {
   assert(appAssets.brandAssets.appIconDark.endsWith("app-icon-dark.png"));
   assert(appAssets.brandAssets.appIconLight.endsWith("app-icon-light.png"));
+  assert(appAssets.brandAssets.logoDark.endsWith("momentum-logo-dark.png"));
+  assert(appAssets.brandAssets.logoLight.endsWith("momentum-logo-light.png"));
+  assert(
+    appAssets
+      .getBrandLogoAsset("light")
+      .endsWith("momentum-logo-light.png"),
+    "Light mode should use the black runtime logo"
+  );
+  assert(
+    appAssets
+      .getBrandLogoAsset("dark")
+      .endsWith("momentum-logo-dark.png"),
+    "Dark mode should use the white runtime logo"
+  );
+  assert(
+    appAssets
+      .getBrandLogoAsset(
+        themePreferences.normalizeThemePreference("system", "light")
+      )
+      .endsWith("momentum-logo-light.png"),
+    "A system preference resolved to Light should use the black logo"
+  );
+  assert(
+    appAssets
+      .getBrandLogoAsset(
+        themePreferences.normalizeThemePreference("system", "dark")
+      )
+      .endsWith("momentum-logo-dark.png"),
+    "A system preference resolved to Dark should use the white logo"
+  );
+  assert(
+    appAssets
+      .getBrandLogoAsset("unknown")
+      .endsWith("momentum-logo-dark.png"),
+    "Unknown resolved themes should use the existing dark fallback"
+  );
   assert.strictEqual(
     Object.keys(appAssets.RANK_BADGE_ASSETS).includes("diamond"),
     false,

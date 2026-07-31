@@ -1,15 +1,16 @@
 import { Image, StyleSheet, View } from "react-native";
-import { BRAND_ASSETS } from "../constants/assets";
+import { getBrandLogoAsset } from "../constants/assets";
+import { useTheme } from "../context/ThemeContext";
 
 export default function BrandLogo({
   accessibilityLabel = "Momentum logo",
   decorative = false,
   size = 96,
   style,
-  variant = "dark",
 }) {
-  const source =
-    variant === "light" ? BRAND_ASSETS.appIconLight : BRAND_ASSETS.appIconDark;
+  const { resolvedTheme, themeLoaded } = useTheme();
+  const source = getBrandLogoAsset(resolvedTheme);
+  const resolvedSize = Number.isFinite(size) && size > 0 ? size : 96;
 
   return (
     <View
@@ -17,14 +18,21 @@ export default function BrandLogo({
       accessibilityRole={decorative ? undefined : "image"}
       accessible={!decorative}
       importantForAccessibility={decorative ? "no" : "auto"}
-      style={[styles.wrap, { height: size, width: size }, style]}
+      style={[
+        styles.wrap,
+        { height: resolvedSize, width: resolvedSize },
+        style,
+      ]}
     >
-      <Image
-        accessibilityIgnoresInvertColors
-        resizeMode="contain"
-        source={source}
-        style={styles.image}
-      />
+      {themeLoaded ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          accessible={false}
+          resizeMode="contain"
+          source={source}
+          style={styles.image}
+        />
+      ) : null}
     </View>
   );
 }

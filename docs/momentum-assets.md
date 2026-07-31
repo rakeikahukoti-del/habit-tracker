@@ -5,8 +5,27 @@
 - Dark icon: `assets/branding/app-icon-dark.png`
 - Light icon: `assets/branding/app-icon-light.png`
 
-The dark icon is the primary Expo app icon. The light icon is reserved for
-light-surface in-app branding.
+The dark icon remains the primary Expo app icon. Launcher, adaptive-icon, and
+splash configuration remain separate from runtime branding.
+
+## Runtime Logo
+
+- Light Mode: `assets/branding/momentum-logo-light.png` contains the black wolf.
+- Dark Mode: `assets/branding/momentum-logo-dark.png` contains the white wolf.
+
+Both runtime files are unchanged 1024 x 1024 RGBA copies of the supplied
+artwork. They contain real transparent pixels and are rendered with `contain`
+resizing.
+
+`components/BrandLogo.js` reads the already-resolved theme from
+`ThemeContext` and selects the matching static asset through
+`getBrandLogoAsset`. It performs no storage reads and updates automatically
+when the resolved theme changes. The component reserves its requested square
+size while the persisted theme is loading so the wrong logo cannot flash.
+
+Current runtime placements are the loading shell, onboarding, the Home header,
+and the Home empty state. Repeated marks next to visible Momentum branding are
+decorative for screen readers.
 
 ## Rank Badges
 
@@ -32,11 +51,12 @@ separate recoloured locked assets.
 
 ## Logo Usage
 
-- Use the dark logo on dark surfaces.
-- Use the light logo on light surfaces.
+- Use the white `logoDark` artwork on dark surfaces.
+- Use the black `logoLight` artwork on light surfaces.
 - Do not tint the logo.
 - Do not use rank colours as app-wide themes.
 - Use `BrandLogo` for in-app logo rendering.
+- Do not use the transparent runtime logos as launcher or notification icons.
 
 ## Achievement Protection
 

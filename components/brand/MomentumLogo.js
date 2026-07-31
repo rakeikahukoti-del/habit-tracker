@@ -5,16 +5,17 @@ import MomentumWordmark from "./MomentumWordmark";
 
 export default function MomentumLogo({
   color,
-  cutoutColor,
+  decorative,
   markSize = 96,
   showWordmark = true,
   style,
 }) {
+  const markIsDecorative = decorative ?? showWordmark;
+
   return (
     <View style={[styles.logo, style]}>
       <MomentumWolfMark
-        color={color}
-        cutoutColor={cutoutColor}
+        decorative={markIsDecorative}
         size={markSize}
       />
       {showWordmark ? <MomentumWordmark color={color} /> : null}

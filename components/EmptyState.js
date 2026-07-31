@@ -18,12 +18,7 @@ export default function EmptyState() {
 
   return (
     <View style={styles.container}>
-      <MomentumWolfMark
-        color={colors.text}
-        cutoutColor={colors.card}
-        size={72}
-        style={styles.mark}
-      />
+      <MomentumWolfMark decorative size={72} style={styles.mark} />
       <AppText style={styles.title}>No habits yet</AppText>
       <AppText style={styles.message}>
         Add one small habit. Swipe it complete today, then watch your streak

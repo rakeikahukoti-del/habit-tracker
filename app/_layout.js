@@ -112,7 +112,6 @@ function LaunchShell() {
       <StatusBar backgroundColor={v2Colors.background} style="light" />
       <MomentumLogo
         color={v2Colors.textPrimary}
-        cutoutColor={v2Colors.background}
         markSize={104}
       />
     </View>

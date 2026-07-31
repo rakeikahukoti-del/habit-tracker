@@ -229,11 +229,7 @@ export default function HomeScreen() {
             <AppText style={styles.todayTitle}>Momentum</AppText>
             <AppText style={styles.todayDate}>{formatTodayDate()}</AppText>
           </View>
-          <MomentumWolfMark
-            color={colors.text}
-            cutoutColor={colors.background}
-            size={34}
-          />
+          <MomentumWolfMark decorative size={34} />
         </View>
 
         {preferences.showProgressCard ? (

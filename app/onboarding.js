@@ -21,7 +21,7 @@ import { useTheme } from "../context/ThemeContext";
 import { completeOnboarding } from "../storage/appPreferences";
 
 export default function OnboardingScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width >= 768;
@@ -60,7 +60,6 @@ export default function OnboardingScreen() {
           <BrandLogo
             decorative
             size={isSmallScreen ? 76 : 88}
-            variant={isDark ? "dark" : "light"}
           />
           <AppText style={styles.wordmark}>MOMENTUM</AppText>
         </View>
