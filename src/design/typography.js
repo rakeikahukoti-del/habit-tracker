@@ -6,6 +6,12 @@ export const v2FontWeight = {
 };
 
 export const v2Typography = {
+  heroMetric: {
+    fontSize: 64,
+    fontWeight: v2FontWeight.bold,
+    lineHeight: 70,
+    letterSpacing: 0,
+  },
   display: {
     fontSize: 36,
     fontWeight: v2FontWeight.semibold,
