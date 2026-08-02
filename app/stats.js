@@ -1057,9 +1057,9 @@ function createStyles(colors, { isSmallScreen }) {
     },
     heroValue: {
       color: colors.text,
-      fontSize: isSmallScreen ? 54 : 64,
-      fontWeight: v2FontWeight.bold,
-      lineHeight: isSmallScreen ? 60 : 70,
+      fontSize: isSmallScreen ? 54 : v2Typography.heroMetric.fontSize,
+      fontWeight: v2Typography.heroMetric.fontWeight,
+      lineHeight: isSmallScreen ? 60 : v2Typography.heroMetric.lineHeight,
     },
     heroLabel: {
       color: colors.text,
@@ -1076,7 +1076,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     heroFill: {
       backgroundColor: colors.text,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: "100%",
     },
     heroContext: {
@@ -1324,7 +1324,7 @@ function createStyles(colors, { isSmallScreen }) {
     weekDot: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       borderWidth: 1,
       height: 16,
       width: 16,
@@ -1338,7 +1338,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     weekCount: {
       color: colors.muted,
-      fontSize: 10,
+      fontSize: v2Typography.navigationLabel.fontSize,
       fontWeight: v2FontWeight.medium,
     },
     monthCard: {
@@ -1488,7 +1488,7 @@ function createStyles(colors, { isSmallScreen }) {
       minHeight: 24,
     },
     legendSwatch: {
-      borderRadius: 5,
+      borderRadius: v2Radius.small,
       height: 14,
       width: 14,
     },
@@ -1524,7 +1524,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     heatmapCell: {
       aspectRatio: 1,
-      borderRadius: 5,
+      borderRadius: v2Radius.small,
       borderWidth: 1,
       minHeight: isSmallScreen ? 18 : 20,
       width: "100%",

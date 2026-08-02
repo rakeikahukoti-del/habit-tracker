@@ -1116,9 +1116,9 @@ function createStyles(colors, { isSmallScreen }) {
     },
     comparisonValue: {
       color: colors.text,
-      fontSize: 30,
+      fontSize: v2Typography.largeMetric.fontSize,
       fontWeight: v2FontWeight.bold,
-      lineHeight: 36,
+      lineHeight: v2Typography.largeMetric.lineHeight,
       marginTop: v2Spacing.sm,
     },
     comparisonSummary: {
@@ -1436,7 +1436,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     habitFill: {
       backgroundColor: colors.text,
-      borderRadius: 999,
+      borderRadius: v2Radius.pill,
       height: "100%",
     },
     habitRateValue: {

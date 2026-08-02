@@ -11,6 +11,7 @@ import {
 import { AppIcon, AppText } from "./ui";
 import ProgressDots from "./ProgressDots";
 import {
+  v2ActionColors,
   v2FontWeight,
   v2Radius,
   v2Shadows,
@@ -32,8 +33,8 @@ import { useTheme } from "../context/ThemeContext";
 import { router } from "expo-router";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 
-const SWIPE_COMPLETE_COLOR = "#4F755B";
-const SWIPE_UNDO_COLOR = "#85494D";
+const SWIPE_COMPLETE_COLOR = v2ActionColors.complete;
+const SWIPE_UNDO_COLOR = v2ActionColors.undo;
 const SWIPE_START_DISTANCE = 6;
 const SWIPE_DIRECTION_RATIO = 1.15;
 const SWIPE_THRESHOLD = 30;
@@ -294,7 +295,12 @@ function HabitCard({
             },
           ]}
         >
-          <AppIcon color="#111111" name="check" size={18} strokeWidth={2.4} />
+          <AppIcon
+            color={v2ActionColors.completeIcon}
+            name="check"
+            size={18}
+            strokeWidth={2.4}
+          />
         </Animated.View>
         <Animated.Text
           style={[styles.swipeText, { opacity: completeInstructionOpacity }]}
@@ -336,7 +342,12 @@ function HabitCard({
             },
           ]}
         >
-          <AppIcon color="#111111" name="undo" size={18} strokeWidth={2.2} />
+          <AppIcon
+            color={v2ActionColors.undoIcon}
+            name="undo"
+            size={18}
+            strokeWidth={2.2}
+          />
         </Animated.View>
       </Animated.View>
       <Animated.View
@@ -557,7 +568,7 @@ function createStyles(colors, isCompact) {
       width: 34,
     },
     swipeText: {
-      color: "#F3F3F3",
+      color: v2ActionColors.completeText,
       ...v2Typography.button,
       fontWeight: v2FontWeight.bold,
     },

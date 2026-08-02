@@ -28,6 +28,15 @@ export const v2Colors = {
   transparent: "transparent",
 };
 
+export const v2ActionColors = {
+  complete: "#4F755B",
+  completeIcon: v2Colors.accentContrast,
+  completeText: v2Colors.textPrimary,
+  undo: "#85494D",
+  undoIcon: v2Colors.accentContrast,
+  undoText: v2Colors.textPrimary,
+};
+
 export const v2BadgeColors = {
   common: "#555555",
   rare: "#A7ACB2",

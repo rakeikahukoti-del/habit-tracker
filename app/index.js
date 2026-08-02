@@ -693,7 +693,7 @@ export default function HomeScreen() {
           <View
             accessibilityViewIsModal
             importantForAccessibility="yes"
-            style={styles.focusModalCard}
+            style={styles.modalCard}
           >
             <ScrollView
               contentContainerStyle={styles.focusModalContent}
@@ -795,7 +795,7 @@ export default function HomeScreen() {
           <View
             accessibilityViewIsModal
             importantForAccessibility="yes"
-            style={styles.levelModalCard}
+            style={styles.modalCard}
           >
             <ScrollView
               contentContainerStyle={styles.levelModalScrollContent}
@@ -842,7 +842,7 @@ export default function HomeScreen() {
           <View
             accessibilityViewIsModal
             importantForAccessibility="yes"
-            style={styles.levelModalCard}
+            style={styles.modalCard}
           >
             <ScrollView
               contentContainerStyle={styles.levelModalScrollContent}
@@ -952,9 +952,9 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
   },
   progressValue: {
     color: colors.text,
-    fontSize: isSmallScreen ? 28 : 32,
+    fontSize: isSmallScreen ? 28 : v2Typography.largeMetric.fontSize,
     fontWeight: v2FontWeight.bold,
-    lineHeight: isSmallScreen ? 33 : 38,
+    lineHeight: isSmallScreen ? 33 : v2Typography.largeMetric.lineHeight,
   },
   progressCompactHint: {
     color: colors.muted,
@@ -1499,7 +1499,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderRadius: v2Radius.feature,
+    borderRadius: v2Radius.large,
     borderWidth: 1,
     gap: 10,
     marginTop: 24,
@@ -1557,21 +1557,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     justifyContent: "center",
     padding: 24,
   },
-  levelModalCard: {
-    alignItems: "stretch",
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: v2Radius.large,
-    borderWidth: 1,
-    maxHeight: "82%",
-    maxWidth: 360,
-    padding: 22,
-    ...v2Shadows.floating,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.18,
-    width: "100%",
-  },
-  focusModalCard: {
+  modalCard: {
     alignItems: "stretch",
     backgroundColor: colors.card,
     borderColor: colors.border,
