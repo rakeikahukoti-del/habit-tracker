@@ -13,7 +13,7 @@ import {
   rebuildGamificationFromHabits,
   resetGamification,
 } from "./gamificationStorage";
-import { isPlainObject, logStorageError } from "./storageUtils";
+import { createExclusiveQueue, isPlainObject, logStorageError } from "./storageUtils";
 import { requestWidgetRefresh } from "../widgets/widgetRefresh";
 import {
   cancelHabitReminders,
@@ -27,6 +27,8 @@ import { getTodayKey, toDateKey, wasCompletedToday } from "../utils/habitStats";
 
 const HABITS_KEY = "habit-tracker:habits";
 const HABITS_BACKUP_KEY = "habit-tracker:habits-backup";
+const runHabitsTask = createExclusiveQueue();
+
 export async function getHabits() {
   try {
     const rawHabits = await AsyncStorage.getItem(HABITS_KEY);
@@ -73,17 +75,19 @@ export async function saveHabits(habits) {
 }
 
 export async function reconcileHabitNotifications() {
-  const habits = await getHabits();
-  const preferences = await getAppPreferences();
-  const result = await reconcileNotifications(habits, {
-    enabled: preferences.enableDailyReminders,
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const preferences = await getAppPreferences();
+    const result = await reconcileNotifications(habits, {
+      enabled: preferences.enableDailyReminders,
+    });
+
+    if (result.changed) {
+      await saveHabits(result.habits);
+    }
+
+    return result;
   });
-
-  if (result.changed) {
-    await saveHabits(result.habits);
-  }
-
-  return result;
 }
 
 export async function addHabit({
@@ -95,39 +99,41 @@ export async function addHabit({
   customDays,
   reminderTime,
 }) {
-  const habits = await getHabits();
-  const now = new Date().toISOString();
-  const newHabitWithoutNotifications = normalizeHabit({
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name: name.trim(),
-    emoji,
-    category,
-    color,
-    frequency,
-    customDays,
-    reminderTime,
-    createdAt: now,
-    completedDates: [],
-    order: getNextTopOrder(habits),
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const now = new Date().toISOString();
+    const newHabitWithoutNotifications = normalizeHabit({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      name: name.trim(),
+      emoji,
+      category,
+      color,
+      frequency,
+      customDays,
+      reminderTime,
+      createdAt: now,
+      completedDates: [],
+      order: getNextTopOrder(habits),
+    });
+    const reminderResult = await scheduleReminderIfEnabled(
+      newHabitWithoutNotifications
+    );
+    const newHabit = {
+      ...newHabitWithoutNotifications,
+      ...reminderResult,
+    };
+
+    try {
+      await saveHabits([newHabit, ...habits]);
+    } catch (error) {
+      await cancelHabitReminders(newHabit);
+      throw error;
+    }
+
+    await requestWidgetRefresh("habit-created", { habitId: newHabit.id });
+
+    return newHabit;
   });
-  const reminderResult = await scheduleReminderIfEnabled(
-    newHabitWithoutNotifications
-  );
-  const newHabit = {
-    ...newHabitWithoutNotifications,
-    ...reminderResult,
-  };
-
-  try {
-    await saveHabits([newHabit, ...habits]);
-  } catch (error) {
-    await cancelHabitReminders(newHabit);
-    throw error;
-  }
-
-  await requestWidgetRefresh("habit-created", { habitId: newHabit.id });
-
-  return newHabit;
 }
 
 export async function addHabitsFromDrafts(habitDrafts) {
@@ -135,197 +141,215 @@ export async function addHabitsFromDrafts(habitDrafts) {
     return [];
   }
 
-  const habits = await getHabits();
-  const now = new Date().toISOString();
-  const baseOrder = getNextTopOrder(habits) - (habitDrafts.length - 1);
-  const newHabits = [];
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const now = new Date().toISOString();
+    const baseOrder = getNextTopOrder(habits) - (habitDrafts.length - 1);
+    const newHabits = [];
 
-  for (const draft of habitDrafts) {
-    const normalizedDraft = normalizeHabit({
-      ...draft,
-      completedDates: [],
-      createdAt: now,
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      notificationIds: [],
-      order: baseOrder + newHabits.length,
-      reminderStatus: "none",
-    });
-    const reminderResult = await scheduleReminderIfEnabled(normalizedDraft);
+    for (const draft of habitDrafts) {
+      const normalizedDraft = normalizeHabit({
+        ...draft,
+        completedDates: [],
+        createdAt: now,
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        notificationIds: [],
+        order: baseOrder + newHabits.length,
+        reminderStatus: "none",
+      });
+      const reminderResult = await scheduleReminderIfEnabled(normalizedDraft);
 
-    newHabits.push({
-      ...normalizedDraft,
-      ...reminderResult,
-    });
-  }
+      newHabits.push({
+        ...normalizedDraft,
+        ...reminderResult,
+      });
+    }
 
-  try {
-    await saveHabits([...newHabits, ...habits]);
-    await requestWidgetRefresh("habits-created", { count: newHabits.length });
-  } catch (error) {
-    await cancelRemindersForHabits(newHabits);
-    throw error;
-  }
+    try {
+      await saveHabits([...newHabits, ...habits]);
+      await requestWidgetRefresh("habits-created", { count: newHabits.length });
+    } catch (error) {
+      await cancelRemindersForHabits(newHabits);
+      throw error;
+    }
 
-  return newHabits;
+    return newHabits;
+  });
 }
 
 export async function updateHabit(updatedHabit) {
-  const habits = await getHabits();
-  const previousHabit = habits.find((habit) => habit.id === updatedHabit.id);
-  let normalizedHabit = normalizeHabit(updatedHabit);
-  const reminderScheduleChanged =
-    previousHabit &&
-    hasReminderScheduleChanged(previousHabit, normalizedHabit);
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const previousHabit = habits.find((habit) => habit.id === updatedHabit.id);
+    let normalizedHabit = normalizeHabit(updatedHabit);
+    const reminderScheduleChanged =
+      previousHabit &&
+      hasReminderScheduleChanged(previousHabit, normalizedHabit);
 
-  if (reminderScheduleChanged) {
-    const reminderResult = await scheduleReminderIfEnabled(normalizedHabit, {
-      previousHabit,
-    });
-    normalizedHabit = {
-      ...normalizedHabit,
-      ...reminderResult,
-    };
-  } else if (previousHabit) {
-    normalizedHabit = {
-      ...normalizedHabit,
-      notificationIds: previousHabit.notificationIds,
-      reminderStatus: previousHabit.reminderStatus,
-    };
-  }
-
-  const nextHabits = habits.map((habit) =>
-    habit.id === updatedHabit.id ? normalizedHabit : habit
-  );
-
-  try {
-    await saveHabits(nextHabits);
-  } catch (error) {
     if (reminderScheduleChanged) {
-      await cancelHabitReminders(normalizedHabit);
+      const reminderResult = await scheduleReminderIfEnabled(normalizedHabit, {
+        previousHabit,
+      });
+      normalizedHabit = {
+        ...normalizedHabit,
+        ...reminderResult,
+      };
+    } else if (previousHabit) {
+      normalizedHabit = {
+        ...normalizedHabit,
+        notificationIds: previousHabit.notificationIds,
+        reminderStatus: previousHabit.reminderStatus,
+      };
     }
 
-    throw error;
-  }
+    const nextHabits = habits.map((habit) =>
+      habit.id === updatedHabit.id ? normalizedHabit : habit
+    );
 
-  if (reminderScheduleChanged) {
-    await cancelHabitReminders(previousHabit);
-  }
+    try {
+      await saveHabits(nextHabits);
+    } catch (error) {
+      if (reminderScheduleChanged) {
+        await cancelHabitReminders(normalizedHabit);
+      }
 
-  await rebuildGamificationFromHabits(nextHabits);
-  await requestWidgetRefresh("habit-updated", { habitId: normalizedHabit.id });
+      throw error;
+    }
 
-  return normalizedHabit;
+    if (reminderScheduleChanged) {
+      await cancelHabitReminders(previousHabit);
+    }
+
+    await rebuildGamificationFromHabits(nextHabits);
+    await requestWidgetRefresh("habit-updated", { habitId: normalizedHabit.id });
+
+    return normalizedHabit;
+  });
 }
 
 export async function completeHabitForToday(id) {
-  const habits = await getHabits();
-  const habitToComplete = habits.find((habit) => habit.id === id);
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const habitToComplete = habits.find((habit) => habit.id === id);
 
-  if (!habitToComplete) {
-    return null;
-  }
+    if (!habitToComplete) {
+      return null;
+    }
 
-  if (wasCompletedToday(habitToComplete)) {
-    return habitToComplete;
-  }
+    if (wasCompletedToday(habitToComplete)) {
+      return habitToComplete;
+    }
 
-  const completedHabit = {
-    ...habitToComplete,
-    completedDates: [...habitToComplete.completedDates, getTodayKey()],
-  };
-  const nextHabits = habits.map((habit) =>
-    habit.id === id ? completedHabit : habit
-  );
+    const completedHabit = {
+      ...habitToComplete,
+      completedDates: [...habitToComplete.completedDates, getTodayKey()],
+    };
+    const nextHabits = habits.map((habit) =>
+      habit.id === id ? completedHabit : habit
+    );
 
-  await saveHabits(nextHabits);
+    await saveHabits(nextHabits);
 
-  return completedHabit;
+    return completedHabit;
+  });
 }
 
 export async function uncompleteHabitForToday(id) {
-  const habits = await getHabits();
-  const habitToUpdate = habits.find((habit) => habit.id === id);
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const habitToUpdate = habits.find((habit) => habit.id === id);
 
-  if (!habitToUpdate) {
-    return null;
-  }
+    if (!habitToUpdate) {
+      return null;
+    }
 
-  const todayKey = getTodayKey();
+    const todayKey = getTodayKey();
 
-  if (!habitToUpdate.completedDates.includes(todayKey)) {
-    return habitToUpdate;
-  }
+    if (!habitToUpdate.completedDates.includes(todayKey)) {
+      return habitToUpdate;
+    }
 
-  const updatedHabit = {
-    ...habitToUpdate,
-    completedDates: habitToUpdate.completedDates.filter(
-      (dateKey) => dateKey !== todayKey
-    ),
-  };
-  const nextHabits = habits.map((habit) =>
-    habit.id === id ? updatedHabit : habit
-  );
+    const updatedHabit = {
+      ...habitToUpdate,
+      completedDates: habitToUpdate.completedDates.filter(
+        (dateKey) => dateKey !== todayKey
+      ),
+    };
+    const nextHabits = habits.map((habit) =>
+      habit.id === id ? updatedHabit : habit
+    );
 
-  await saveHabits(nextHabits);
+    await saveHabits(nextHabits);
 
-  return updatedHabit;
+    return updatedHabit;
+  });
 }
 
 export async function saveHabitOrder(orderedHabitIds) {
-  const habits = await getHabits();
-  const orderedHabits = normalizeHabitOrder(habits, orderedHabitIds);
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const orderedHabits = normalizeHabitOrder(habits, orderedHabitIds);
 
-  await saveHabits(orderedHabits);
-  await requestWidgetRefresh("habit-order-changed");
+    await saveHabits(orderedHabits);
+    await requestWidgetRefresh("habit-order-changed");
 
-  return orderedHabits;
+    return orderedHabits;
+  });
 }
 
 export async function deleteHabit(id) {
-  const habits = await getHabits();
-  const habitToDelete = habits.find((habit) => habit.id === id);
-  const nextHabits = habits.filter((habit) => habit.id !== id);
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const habitToDelete = habits.find((habit) => habit.id === id);
+    const nextHabits = habits.filter((habit) => habit.id !== id);
 
-  await saveHabits(nextHabits);
+    await saveHabits(nextHabits);
 
-  if (habitToDelete) {
-    await cancelHabitReminders(habitToDelete);
-  }
+    if (habitToDelete) {
+      await cancelHabitReminders(habitToDelete);
+    }
 
-  await rebuildGamificationFromHabits(nextHabits, { includeMessage: false });
-  await requestWidgetRefresh("habit-deleted", { habitId: id });
+    await rebuildGamificationFromHabits(nextHabits, { includeMessage: false });
+    await requestWidgetRefresh("habit-deleted", { habitId: id });
+  });
 }
 
 export async function resetAllHabits() {
-  const habits = await getHabits();
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
 
-  await saveHabits([]);
-  await cancelRemindersForHabits(habits);
-  await resetGamification();
-  await setLastShownLevel(1);
-  await requestWidgetRefresh("habits-reset");
+    await saveHabits([]);
+    await cancelRemindersForHabits(habits);
+    await resetGamification();
+    await setLastShownLevel(1);
+    await requestWidgetRefresh("habits-reset");
+  });
 }
 
 export async function seedDemoHabits() {
-  const habits = await getHabits();
-  const demoHabits = createDemoHabits();
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const demoHabits = createDemoHabits();
 
-  await saveHabits(demoHabits);
-  await cancelRemindersForHabits(habits);
-  const gamification = await rebuildGamificationFromHabits(demoHabits);
-  await setLastShownLevel(getGamificationLevelInfo(gamification).level);
-  await requestWidgetRefresh("demo-data-loaded", { count: demoHabits.length });
+    await saveHabits(demoHabits);
+    await cancelRemindersForHabits(habits);
+    const gamification = await rebuildGamificationFromHabits(demoHabits);
+    await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+    await requestWidgetRefresh("demo-data-loaded", { count: demoHabits.length });
+  });
 }
 
 export async function seedMasterDemoHabits() {
-  const habits = await getHabits();
-  const demoHabits = createMasterDemoHabits();
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
+    const demoHabits = createMasterDemoHabits();
 
-  await saveHabits(demoHabits);
-  await cancelRemindersForHabits(habits);
-  const gamification = await rebuildGamificationFromHabits(demoHabits);
-  await setLastShownLevel(getGamificationLevelInfo(gamification).level);
-  await requestWidgetRefresh("master-demo-loaded", { count: demoHabits.length });
+    await saveHabits(demoHabits);
+    await cancelRemindersForHabits(habits);
+    const gamification = await rebuildGamificationFromHabits(demoHabits);
+    await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+    await requestWidgetRefresh("master-demo-loaded", { count: demoHabits.length });
+  });
 }
 
 export async function exportHabitsBackup() {
@@ -369,68 +393,72 @@ export async function importHabitsBackup(jsonText) {
     throw new Error("Backup does not include any valid habits.");
   }
 
-  const existingHabits = await getHabits();
-  const normalizedHabits = [];
+  return runHabitsTask(async () => {
+    const existingHabits = await getHabits();
+    const normalizedHabits = [];
 
-  for (const normalizedHabit of normalizedBaseHabits) {
-    const reminderResult = await scheduleReminderIfEnabled(normalizedHabit);
+    for (const normalizedHabit of normalizedBaseHabits) {
+      const reminderResult = await scheduleReminderIfEnabled(normalizedHabit);
 
-    normalizedHabits.push({
-      ...normalizedHabit,
-      ...reminderResult,
-    });
-  }
+      normalizedHabits.push({
+        ...normalizedHabit,
+        ...reminderResult,
+      });
+    }
 
-  try {
-    await saveHabits(normalizedHabits);
-  } catch (error) {
-    await cancelRemindersForHabits(normalizedHabits);
-    throw error;
-  }
+    try {
+      await saveHabits(normalizedHabits);
+    } catch (error) {
+      await cancelRemindersForHabits(normalizedHabits);
+      throw error;
+    }
 
-  await cancelRemindersForHabits(existingHabits);
-  const gamification = await rebuildGamificationFromHabits(normalizedHabits);
-  await setLastShownLevel(getGamificationLevelInfo(gamification).level);
-  await requestWidgetRefresh("habits-imported", { count: normalizedHabits.length });
+    await cancelRemindersForHabits(existingHabits);
+    const gamification = await rebuildGamificationFromHabits(normalizedHabits);
+    await setLastShownLevel(getGamificationLevelInfo(gamification).level);
+    await requestWidgetRefresh("habits-imported", { count: normalizedHabits.length });
 
-  return normalizedHabits;
+    return normalizedHabits;
+  });
 }
 
 export async function applyDailyReminderPreference(enabled) {
-  const habits = await getHabits();
+  return runHabitsTask(async () => {
+    const habits = await getHabits();
 
-  if (!enabled) {
-    for (const habit of habits) {
-      await cancelHabitReminders(habit);
+    if (!enabled) {
+      for (const habit of habits) {
+        await cancelHabitReminders(habit);
+      }
+
+      const nextHabits = habits.map((habit) => ({
+        ...habit,
+        notificationIds: [],
+        reminderStatus: habit.reminderTime ? "disabled" : "none",
+      }));
+
+      await saveHabits(nextHabits);
+      await requestWidgetRefresh("reminders-updated", { enabled: false });
+
+      return nextHabits;
     }
 
-    const nextHabits = habits.map((habit) => ({
-      ...habit,
-      notificationIds: [],
-      reminderStatus: habit.reminderTime ? "disabled" : "none",
-    }));
+    const nextHabits = [];
+
+    for (const habit of habits) {
+      const reminderResult = await syncHabitReminder(habit, { enabled: true });
+
+      nextHabits.push({
+        ...habit,
+        ...reminderResult,
+      });
+    }
 
     await saveHabits(nextHabits);
-    await requestWidgetRefresh("reminders-updated", { enabled: false });
+    await requestWidgetRefresh("reminders-updated", { enabled: true });
 
     return nextHabits;
-  }
-
-  const nextHabits = [];
-
-  for (const habit of habits) {
-    const reminderResult = await syncHabitReminder(habit, { enabled: true });
-
-    nextHabits.push({
-      ...habit,
-      ...reminderResult,
-    });
-  }
-
-  await saveHabits(nextHabits);
-  await requestWidgetRefresh("reminders-updated", { enabled: true });
-
-  return nextHabits;
+  });
 }
 
 export function normalizeHabit(habit, fallbackOrder = 0) {

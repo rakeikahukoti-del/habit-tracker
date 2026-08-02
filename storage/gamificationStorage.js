@@ -14,10 +14,10 @@ import {
   normalizeGamificationState,
   rankMilestones,
 } from "../utils/gamification";
-import { isPlainObject, logStorageError } from "./storageUtils";
+import { createExclusiveQueue, isPlainObject, logStorageError } from "./storageUtils";
 
 const GAMIFICATION_KEY = "habit-tracker:gamification";
-let messageConsumptionQueue = Promise.resolve();
+const runGamificationTask = createExclusiveQueue();
 
 export {
   XP_PER_LEVEL,
@@ -55,38 +55,36 @@ export async function getGamification() {
 }
 
 export async function resetGamification() {
-  try {
-    await AsyncStorage.removeItem(GAMIFICATION_KEY);
-  } catch (error) {
-    logStorageError("Could not reset gamification data.", error);
-    throw error;
-  }
+  return runGamificationTask(async () => {
+    try {
+      await AsyncStorage.removeItem(GAMIFICATION_KEY);
+    } catch (error) {
+      logStorageError("Could not reset gamification data.", error);
+      throw error;
+    }
+  });
 }
 
 export async function rebuildGamificationFromHabits(
   habits,
   { includeMessage = true } = {}
 ) {
-  const previousState = await getGamification();
-  const result = calculateGamificationState({
-    habits,
-    includeMessage,
-    previousState,
+  return runGamificationTask(async () => {
+    const previousState = await getGamification();
+    const result = calculateGamificationState({
+      habits,
+      includeMessage,
+      previousState,
+    });
+
+    await saveGamification(result.state);
+
+    return result.state;
   });
-
-  await saveGamification(result.state);
-
-  return result.state;
 }
 
 export function consumeGamificationMessages() {
-  const consumption = messageConsumptionQueue
-    .catch(() => {})
-    .then(consumeStoredGamificationMessages);
-
-  messageConsumptionQueue = consumption;
-
-  return consumption;
+  return runGamificationTask(consumeStoredGamificationMessages);
 }
 
 async function consumeStoredGamificationMessages() {
@@ -104,46 +102,50 @@ async function consumeStoredGamificationMessages() {
 }
 
 export async function awardHabitCreatedBadge() {
-  const gamification = await getGamification();
-  const result = calculateAwardState({
-    badgesToAdd: ["first-habit-created"],
-    previousState: gamification,
+  return runGamificationTask(async () => {
+    const gamification = await getGamification();
+    const result = calculateAwardState({
+      badgesToAdd: ["first-habit-created"],
+      previousState: gamification,
+    });
+
+    await saveGamification(result.gamification);
+
+    return result;
   });
-
-  await saveGamification(result.gamification);
-
-  return result;
 }
 
 export async function awardHabitCompletion({ completedHabit, habits }) {
-  const gamification = await getGamification();
-  const todayKey = getTodayKey();
-  const habitName = completedHabit?.name || "habit";
-  const completedAllToday = isPerfectDayForDate(habits, todayKey);
-  const perfectDayAlreadyAwarded =
-    gamification.perfectDayBonusDates.includes(todayKey);
-  const perfectDayBonusDate =
-    completedAllToday && !perfectDayAlreadyAwarded ? todayKey : null;
-  const messages = [`+${XP_PER_COMPLETION} XP for completing ${habitName}.`];
+  return runGamificationTask(async () => {
+    const gamification = await getGamification();
+    const todayKey = getTodayKey();
+    const habitName = completedHabit?.name || "habit";
+    const completedAllToday = isPerfectDayForDate(habits, todayKey);
+    const perfectDayAlreadyAwarded =
+      gamification.perfectDayBonusDates.includes(todayKey);
+    const perfectDayBonusDate =
+      completedAllToday && !perfectDayAlreadyAwarded ? todayKey : null;
+    const messages = [`+${XP_PER_COMPLETION} XP for completing ${habitName}.`];
 
-  if (perfectDayBonusDate) {
-    messages.push(`Perfect day! +${PERFECT_DAY_BONUS_XP} bonus XP.`);
-  }
+    if (perfectDayBonusDate) {
+      messages.push(`Perfect day! +${PERFECT_DAY_BONUS_XP} bonus XP.`);
+    }
 
-  const result = calculateAwardState({
-    completedHabit,
-    habits,
-    messages,
-    perfectDayBonusDate,
-    previousState: gamification,
-    todayKey,
-    xpToAdd:
-      XP_PER_COMPLETION + (perfectDayBonusDate ? PERFECT_DAY_BONUS_XP : 0),
+    const result = calculateAwardState({
+      completedHabit,
+      habits,
+      messages,
+      perfectDayBonusDate,
+      previousState: gamification,
+      todayKey,
+      xpToAdd:
+        XP_PER_COMPLETION + (perfectDayBonusDate ? PERFECT_DAY_BONUS_XP : 0),
+    });
+
+    await saveGamification(result.gamification);
+
+    return result;
   });
-
-  await saveGamification(result.gamification);
-
-  return result;
 }
 
 async function saveGamification(gamification) {

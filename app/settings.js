@@ -47,7 +47,6 @@ import {
   seedMasterDemoHabits,
 } from "../storage/habitsStorage";
 import { getSettingsConfirmation } from "../utils/settingsPresentation";
-import { getSupportedWidgetSizes } from "../widgets/widgetDataProvider";
 import packageJson from "../package.json";
 
 export default function SettingsScreen() {
@@ -68,10 +67,6 @@ export default function SettingsScreen() {
   const importSummary = useMemo(
     () => getBackupValidationSummary(importValidation),
     [importValidation]
-  );
-  const widgetSizeLabel = useMemo(
-    () => getSupportedWidgetSizes().map((size) => size.label).join(", "),
-    []
   );
 
   async function runDataAction(action, successMessage, failureMessage) {
@@ -275,24 +270,6 @@ export default function SettingsScreen() {
           description="Home progress, reward popups, and reward haptics."
           onPress={() => router.push("/gamification-preferences")}
           title="Gamification preferences"
-        />
-      </SettingsSection>
-
-      <SettingsSection
-        footer="Widgets use local device data only. Quick completion follows the same habit, XP, and achievement logic as Momentum."
-        title="Widgets"
-      >
-        <SettingsRow
-          description="Glance at today's progress and remaining habits from the Home Screen."
-          showChevron={false}
-          title="Home screen widgets"
-          value={widgetSizeLabel}
-        />
-        <SettingsRow
-          description="Add Momentum from your device widget gallery where native widgets are supported."
-          showChevron={false}
-          title="Quick setup"
-          value="Offline"
         />
       </SettingsSection>
 

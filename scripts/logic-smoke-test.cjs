@@ -217,6 +217,17 @@ const storageUtils = {
   isPlainObject: (value) =>
     Boolean(value) && typeof value === "object" && !Array.isArray(value),
   logStorageError: () => {},
+  createExclusiveQueue: () => {
+    let queueTail = Promise.resolve();
+
+    return function runExclusive(task) {
+      const result = queueTail.catch(() => {}).then(task);
+
+      queueTail = result.catch(() => {});
+
+      return result;
+    };
+  },
 };
 const habitStats = loadModule("utils/habitStats.js");
 const gamificationLogic = loadModule("utils/gamification.js", (moduleName) => {
@@ -1870,6 +1881,59 @@ test("rapid completion and undo requests are serialized per habit", async () => 
   assert.strictEqual(
     (await habitsStorage.getHabits())[0].completedDates.includes(todayKey),
     false
+  );
+});
+
+test("concurrent completion writes to different habits do not drop updates", async () => {
+  resetStorage();
+
+  const todayKey = habitStats.getTodayKey();
+
+  await habitsStorage.saveHabits([
+    {
+      completedDates: [],
+      createdAt: todayKey,
+      frequency: "Daily",
+      id: "concurrent-habit-a",
+      name: "Concurrent Habit A",
+      order: 0,
+    },
+    {
+      completedDates: [],
+      createdAt: todayKey,
+      frequency: "Daily",
+      id: "concurrent-habit-b",
+      name: "Concurrent Habit B",
+      order: 1,
+    },
+  ]);
+
+  await Promise.all([
+    habitsStorage.completeHabitForToday("concurrent-habit-a"),
+    habitsStorage.completeHabitForToday("concurrent-habit-b"),
+  ]);
+
+  const habitsAfterCompletion = await habitsStorage.getHabits();
+  const habitA = habitsAfterCompletion.find(
+    (habit) => habit.id === "concurrent-habit-a"
+  );
+  const habitB = habitsAfterCompletion.find(
+    (habit) => habit.id === "concurrent-habit-b"
+  );
+
+  assert.strictEqual(habitA.completedDates.includes(todayKey), true);
+  assert.strictEqual(habitB.completedDates.includes(todayKey), true);
+
+  await Promise.all([
+    habitsStorage.uncompleteHabitForToday("concurrent-habit-a"),
+    habitsStorage.uncompleteHabitForToday("concurrent-habit-b"),
+  ]);
+
+  const habitsAfterUndo = await habitsStorage.getHabits();
+
+  assertJsonEqual(
+    habitsAfterUndo.map((habit) => habit.completedDates.includes(todayKey)),
+    [false, false]
   );
 });
 

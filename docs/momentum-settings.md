@@ -11,7 +11,6 @@ The main Settings screen is organised around actions that change the app:
 - Appearance
 - Daily experience
 - Gamification
-- Widgets
 - Data
 - Privacy and legal
 - About
