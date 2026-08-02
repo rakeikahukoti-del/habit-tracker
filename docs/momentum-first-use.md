@@ -12,7 +12,9 @@ The flow should stay calm, short, and practical.
 
 ## Onboarding
 
-The onboarding screen uses `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/components/BrandLogo.js` with the theme-aware transparent wolf asset. Light Mode uses the black wolf and Dark Mode uses the white wolf. The logo is decorative because nearby text already names Momentum.
+The onboarding screen uses `components/BrandLogo.js` with the theme-aware
+transparent wolf asset. Light Mode uses the black wolf and Dark Mode uses the
+white wolf. The logo is decorative because nearby text already names Momentum.
 
 Onboarding copy should stay focused on:
 
@@ -74,7 +76,7 @@ Analytics and Progress should avoid empty charts before enough data exists. Spar
 
 The first-week message helper lives in:
 
-- `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/utils/firstUseExperience.js`
+- `utils/firstUseExperience.js`
 
 It reuses existing analytics readiness concepts and does not invent trends.
 

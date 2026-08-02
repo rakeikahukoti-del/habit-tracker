@@ -2983,10 +2983,8 @@ test("badges sort by tier progression in stable ascending and descending order",
 });
 
 test("visual asset manifest covers rank and achievement identifiers", () => {
-  assert(appAssets.brandAssets.appIconDark.endsWith("app-icon-dark.png"));
-  assert(appAssets.brandAssets.appIconLight.endsWith("app-icon-light.png"));
-  assert(appAssets.brandAssets.logoDark.endsWith("momentum-logo-dark.png"));
-  assert(appAssets.brandAssets.logoLight.endsWith("momentum-logo-light.png"));
+  assert(appAssets.BRAND_ASSETS.logoDark.endsWith("momentum-logo-dark.png"));
+  assert(appAssets.BRAND_ASSETS.logoLight.endsWith("momentum-logo-light.png"));
   assert(
     appAssets
       .getBrandLogoAsset("light")

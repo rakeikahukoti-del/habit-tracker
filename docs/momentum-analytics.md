@@ -102,8 +102,8 @@ The same helper can aggregate:
 - Quarterly totals
 - Year totals
 
-These helpers are intentionally UI-agnostic so future yearly summaries can reuse
-the same data without changing storage.
+These helpers are intentionally UI-agnostic and are reused by the Year in Review
+without changing storage.
 
 ## Habit Milestones
 
@@ -116,8 +116,8 @@ Habit milestones are informational only:
 - 250 completions
 - 365 completions
 
-They do not award XP, unlock badges, or change rank. Future achievement work can
-reuse the same milestone progress if needed.
+They do not award XP, unlock badges, or change rank. Achievement progression
+remains independently defined in `utils/gamification.js`.
 
 ## Empty States
 

@@ -4,6 +4,8 @@ Momentum keeps feature logic intentionally small and local-first. Storage keys,
 route names, reward rules, and persisted data shapes are treated as stable
 compatibility boundaries.
 
+For the complete V1 system and folder overview, see `docs/Momentum-V1.md`.
+
 ## Shared Preference Screens
 
 `hooks/useAppPreferenceSettings.js` centralizes the common loading, saving, and
@@ -28,10 +30,13 @@ Storage helpers should continue to return safe defaults when stored data is
 missing or malformed. New persistence helpers should avoid overwriting valid
 data after a failed parse or failed write.
 
-## Remaining Cleanup Candidates
+## Maintenance Boundaries
 
-- Date-range helpers are still repeated across analytics and record utilities.
-- `hooks/useHomeController.js` owns several Home workflows and could eventually
-  be split by concern after behavior is covered by tests.
-- Rank and reward presentation remain large UI files, but they are stable and
-  should only be split when the extracted pieces are reused.
+- Date-range behavior is shared where definitions match; schedule-specific
+  analytics retain separate helpers where their denominators differ.
+- `hooks/useHomeController.js` intentionally coordinates the coupled Home
+  workflows. Split it only with equivalent behavior coverage.
+- Rank, analytics, and Home are large presentation files. Extract sections only
+  when reuse or a confirmed correctness issue justifies the additional API.
+- Keep storage, notification, analytics, and gamification calculations outside
+  reusable visual components.

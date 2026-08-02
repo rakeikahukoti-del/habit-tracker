@@ -15,7 +15,7 @@ The review uses:
 - existing streak helpers for current and best streaks
 - gamification state for current XP, level, rank, and recent achievements
 
-No new storage keys are required for the initial implementation.
+Year in Review requires no separate storage key.
 
 ## Architecture
 

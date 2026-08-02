@@ -14,7 +14,7 @@ Return guidance is derived from existing habit data:
 
 The helper lives in:
 
-- `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/utils/returnExperience.js`
+- `utils/returnExperience.js`
 
 It returns:
 

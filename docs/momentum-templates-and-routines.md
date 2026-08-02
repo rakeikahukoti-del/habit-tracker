@@ -67,14 +67,15 @@ modified.
 
 ## Custom Templates
 
-Custom templates were not added in this phase. No new custom-template storage key
-exists, and import/export behavior is unchanged.
+Momentum V1 does not persist custom templates. No custom-template storage key
+exists.
 
 ## Import and Export
 
-Habit import/export remains habit-only. Built-in templates and routines are
-code-defined and are not exported. Older exports continue to import through the
-existing habit backup path.
+Built-in templates and routine definitions are code-defined and are not
+exported. Full-app backup includes habits created from them because those are
+ordinary habit records. Older habit-only exports continue to import through the
+legacy habit backup path.
 
 ## Accessibility
 

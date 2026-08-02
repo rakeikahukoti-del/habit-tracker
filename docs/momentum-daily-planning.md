@@ -45,4 +45,6 @@ Daily plan loading is defensive:
 - Failed reads never crash the app.
 - Failed writes surface a Home error and leave the existing in-memory plan intact.
 
-The daily plan does not alter the habit data shape, gamification data, analytics calculations, import/export format, or notification scheduling.
+The daily plan does not alter the habit data shape, gamification calculations,
+analytics definitions, or notification scheduling. Full-app backup includes the
+current plan and normalizes it against restored habits during import.

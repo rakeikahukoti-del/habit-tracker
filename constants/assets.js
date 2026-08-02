@@ -1,6 +1,4 @@
 export const BRAND_ASSETS = {
-  appIconDark: require("../assets/branding/app-icon-dark.png"),
-  appIconLight: require("../assets/branding/app-icon-light.png"),
   logoDark: require("../assets/branding/momentum-logo-dark.png"),
   logoLight: require("../assets/branding/momentum-logo-light.png"),
 };
@@ -66,7 +64,3 @@ export function getRankBadgeAsset(rank) {
 export function getAchievementBadgeAsset(badgeId) {
   return ACHIEVEMENT_BADGE_ASSETS[badgeId] || null;
 }
-
-export const brandAssets = BRAND_ASSETS;
-export const rankBadgeAssets = RANK_BADGE_ASSETS;
-export const achievementBadgeAssets = ACHIEVEMENT_BADGE_ASSETS;

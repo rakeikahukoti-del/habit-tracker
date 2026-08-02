@@ -60,7 +60,10 @@ Cards should use `colors.card`, `colors.border`, and `v2Shadows.low` by default.
 Use:
 
 - `PrimaryButton` for the main action.
-- `SecondaryButton` for neutral alternatives.
+- `PrimaryButton` for prominent form and empty-state actions.
+- `IconButton` for compact icon-only navigation and commands.
+- Settings rows provide the standard neutral action treatment inside grouped
+  settings surfaces.
 - `IconButton` for icon-only navigation or compact actions.
 - `PressableScale` for custom pressable components that still need consistent feedback.
 

@@ -3,10 +3,9 @@
 ## App Icons
 
 - Dark icon: `assets/branding/app-icon-dark.png`
-- Light icon: `assets/branding/app-icon-light.png`
 
-The dark icon remains the primary Expo app icon. Launcher, adaptive-icon, and
-splash configuration remain separate from runtime branding.
+The icon is referenced by the Expo launcher, splash, and Android adaptive-icon
+configuration. Native branding remains separate from runtime theme-aware logos.
 
 ## Runtime Logo
 
@@ -73,7 +72,9 @@ raster logo or rank images.
 
 Legacy root app icons, generated logo variants, generated transparent wolf
 exports, generated adaptive/splash helper files, and generated Diamond/locked
-rank placeholders were removed after the supplied assets were integrated.
+rank placeholders were removed after the supplied assets were integrated. The
+unused light launcher-icon variant was removed during the V1 closeout; Light
+Mode continues to use the transparent black runtime logo.
 
 Momentum remains a Light/Dark-only app. Rank badge colours are rewards, not app
 themes.

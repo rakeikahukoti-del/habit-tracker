@@ -61,7 +61,7 @@ list. None of these views are stored separately.
 
 ## Progress Rules
 
-Progress lives in `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/utils/achievementProgress.js`.
+Progress lives in `utils/achievementProgress.js`.
 
 The helper exposes deterministic pure functions for:
 
@@ -75,7 +75,7 @@ Progress values are clamped, zero-target achievements are handled safely, unlock
 
 ## Icon Mapping
 
-Achievement icon metadata lives in `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/constants/achievements.js`.
+Achievement icon metadata lives in `constants/achievements.js`.
 
 This map intentionally uses lightweight icon metadata only:
 
@@ -89,7 +89,8 @@ It must not import:
 - `RankBadge`
 - branding image files
 
-The current collectible badge art remains in `/Users/rakeipaul/Documents/Codex/2026-05-31/build-a-fully-functional-mobile-habit/assets/achievements` until final standalone achievement PNG assets are supplied.
+Collectible badge art lives in `assets/achievements` and is mapped by stable
+achievement ID in `constants/assets.js`.
 
 ## UI Pattern
 
@@ -133,11 +134,9 @@ expand/collapse animation while preserving all text and reward state.
 - `utils/rankDisplay.js`: visible rank compatibility
 - `components/progression/LevelProgress.js`: accessible progress presentation
 
-## Future Asset Integration
+## Asset Maintenance
 
-When final achievement PNG assets are provided:
-
-1. Add them under `assets/achievements`.
-2. Update `ACHIEVEMENT_BADGE_ASSETS` in `constants/assets.js`.
-3. Keep achievement assets separate from rank assets.
-4. Run `npm test`, `git diff --check`, and `npx expo export`.
+New or replacement achievement art must keep the existing achievement IDs,
+remain under `assets/achievements`, and stay separate from rank assets. Update
+`ACHIEVEMENT_BADGE_ASSETS`, then run `npm test`, `git diff --check`, and
+`npx expo export`.

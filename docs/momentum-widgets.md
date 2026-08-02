@@ -121,5 +121,7 @@ Good next steps:
 - connect native renderers to `getMomentumWidgetData`
 - invoke `completeHabitFromWidget` from supported interactive widgets
 - add widget preview screens inside the app
-- add explicit refresh triggers after habit edits, imports, backup restores, and
-  daily plan changes
+
+Habit creation, editing, deletion, completion, undo, reordering, reminder
+changes, imports, backup restore, demo replacement, reset, and Daily Planning
+already record refresh requests through the shared refresh boundary.

@@ -1,146 +1,117 @@
 # Momentum
 
-Momentum is an offline-first mobile habit tracker built with React Native and Expo. It is designed for personal habit tracking, daily completion, progress review, and portfolio/demo use without a backend or account system.
+Momentum is an offline-first habit tracker built with React Native and Expo. It
+combines daily habit completion, planning, analytics, reminders, and a
+deterministic reward system without accounts or a backend.
 
-## Features
+## Current Feature Set
 
-- Create, edit, delete, complete, and undo habits
-- Emoji, category, color, frequency, custom days, and optional reminder time
-- Swipe completion, monthly history editing, and manual habit reordering
-- Current streak, best streak, weekly progress, monthly calendar, and analytics
-- XP, levels, ranks, badges, recent achievements, and rank medals
-- Progress dashboard, Analytics, Rank, Settings, Appearance, and Legal screens
-- Local notifications for habit reminders with permission-safe fallback
-- Light and Dark appearance modes with legacy theme migration
-- Demo data and Master demo data for portfolio walkthroughs
-- JSON export/import for local backup transfer
-- Fully local AsyncStorage persistence
+- Create, edit, delete, reorder, complete, and undo habits
+- Daily, weekday, and custom-day schedules
+- Emoji, category, colour, and optional local reminders
+- Swipe actions, monthly history editing, and local-date-safe streaks
+- Daily Planning with up to three priorities and a focused completion flow
+- Built-in habit templates and routines that create ordinary editable habits
+- Progress dashboard, Activity History heatmap, Analytics, personal records,
+  weekly review, and Year in Review
+- XP, levels, visible ranks, achievement badges, recent achievements, and
+  queued reward presentation
+- Light and Dark appearance modes with transparent theme-aware wolf branding
+- Local backup export, validation, preview, and transactional restore
+- Demo and Master demo data behind the configured demo-tools flag
+- Offline widget data/action/refresh foundations for future native hosts
 
-## Tech Stack
+## Technology
 
-- React Native
-- Expo SDK 54
-- Expo Router
+- React Native 0.81
+- Expo SDK 54 and Expo Router
 - AsyncStorage
-- Expo Notifications
-- Expo Haptics
+- Expo Notifications and Expo Haptics
 - JavaScript
 
-## Setup
-
-Install dependencies:
+## Run Locally
 
 ```sh
 npm install
+npm start
 ```
 
-Start the app:
+Useful alternatives:
 
 ```sh
 npm run start:clear
-```
-
-If your machine hits file watcher limits, use:
-
-```sh
 npm run start:high-files
+npm run ios
+npm run android
 ```
 
-Then open the app with Expo Go, an iOS Simulator, an Android Emulator, or a native development build.
+`start:high-files` raises the file-descriptor limit before starting Metro on
+machines that encounter `EMFILE` watcher errors.
 
 ## Verification
 
-Run the lightweight logic smoke tests:
-
 ```sh
 npm test
+git diff --check
+npx expo export
 ```
 
-Run the Expo export check:
+The project uses a deterministic Node smoke-test suite. No lint or static-type
+script is currently configured.
 
-```sh
-npx expo export --platform ios --output-dir /private/tmp/momentum-export
-```
-
-There is no lint script configured yet.
-
-## Project Structure
+## Repository Layout
 
 ```text
-app/                         Expo Router screens
-components/                  Reusable app, habit, brand, progression, settings, and UI components
-constants/                   App config, colors, habit options, quotes, typography
-context/                     Theme provider and theme persistence
-docs/                        QA and release documentation
-notifications/               Expo Notifications scheduling helpers
-scripts/                     Local verification scripts
-src/design/                  Momentum v2 design tokens
-storage/                     AsyncStorage helpers and data normalization
-utils/                       Habit stats, analytics, and color utilities
+app/             Expo Router screens and route shell
+assets/          Native branding, runtime logos, ranks, and achievements
+components/      Shared habit, brand, analytics, progression, settings, and UI
+constants/       Stable app configuration, assets, colours, and habit options
+context/         Theme resolution and persistence
+docs/            Architecture and feature-specific implementation notes
+hooks/           Home controller, preferences, and reduced-motion hooks
+notifications/   Local permission, scheduling, cancellation, and reconciliation
+scripts/         Deterministic logic test runner
+src/design/      Shared design tokens and the legacy dark-theme adapter
+storage/         AsyncStorage ownership, normalization, backup, and recovery
+utils/           Pure habit, analytics, planning, progression, and copy helpers
+widgets/         Offline widget models, actions, and refresh request boundary
 ```
 
-## Local Data Model
+## Data and Privacy
 
-Momentum stores data only on the user's device.
+Habit and preference data stays on the device. Momentum does not use accounts,
+cloud synchronization, advertising, analytics SDKs, or external data services.
+Local JSON backup is the supported transfer and recovery mechanism.
 
-| Storage key | Owner | Data | Fallback |
-| --- | --- | --- | --- |
-| `habit-tracker:habits` | Habits | Habit array with completion dates, order, and notification metadata | Invalid JSON is backed up and the app uses an empty list |
-| `habit-tracker:habits-backup` | Recovery | Raw unreadable habits JSON | Kept for manual recovery |
-| `habit-tracker:gamification` | Rewards | XP, earned badge IDs, perfect-day dates, pending messages, recent achievements | Invalid data normalizes to empty progress |
-| `momentum:app-preferences` | Preferences | Boolean app preferences | Missing/invalid values use defaults |
-| `momentum:move-completed-to-bottom` | Legacy preference | Legacy completed-order fallback | Preserved for older installs |
-| `momentum:theme-preference` | Appearance | Theme key | Unknown values fall back through the theme provider |
-| `momentum:onboarding-complete` | Onboarding | Completion flag | Missing value shows onboarding |
-| `momentum:last-shown-level` | Rewards | Last displayed level-up popup | Invalid value falls back to level 1 |
+Storage ownership and compatibility rules are documented in
+[Momentum V1](docs/Momentum-V1.md) and
+[Backup and Restore](docs/momentum-backup.md).
 
-## Notifications
+## Architecture
 
-Momentum uses Expo Notifications for local habit reminders.
+Screens own presentation and navigation. Shared components own reusable UI.
+Storage modules own persisted state and normalization. Notification services own
+OS reminder behavior. Pure utilities own habit schedules, streaks, analytics,
+planning, and gamification calculations.
 
-- Permission is requested only when a habit reminder needs scheduling.
-- If permission is denied or blocked, habits still save and the app remains usable.
-- Updating habit reminder fields cancels stale notifications before scheduling new ones.
-- Deleting habits or resetting data cancels scheduled reminders.
-- Expo Go notification behavior can vary by platform. Use a development build or native build for final notification QA.
+Business rules are kept outside presentation components where practical. XP,
+rank thresholds, achievement requirements, analytics definitions, storage keys,
+and backup schema version are compatibility boundaries.
 
-## Demo Data
+## Important Limitations
 
-Settings includes demo controls when `SHOW_DEMO_TOOLS` is enabled in:
+- Data is local to one device unless the user exports a backup.
+- Uninstalling the app or clearing app storage can remove local history.
+- Local reminders depend on OS permission and should be verified in a native or
+  development build; Expo Go behavior can vary.
+- Appearance currently exposes Light and Dark modes. Legacy appearance values
+  are normalized for compatibility.
+- Widget modules are an integration foundation; this managed Expo project does
+  not contain native iOS or Android widget extensions.
+- Deleting a habit removes its history from future aggregate analytics.
 
-```text
-constants/appConfig.js
-```
+## Documentation
 
-Demo data replaces current habits after confirmation. Export JSON first if you need a backup.
-
-## Known Limitations
-
-- Data is local to one device.
-- There is no cloud sync, account system, or automatic backup.
-- Uninstalling the app or clearing app data can remove habits and history.
-- Notifications depend on device permissions, OS settings, and platform behavior.
-- Store bundle identifiers, support contact details, and final legal review require owner input before public release.
-
-## QA and Release Checklist
-
-Use [docs/production-qa-matrix.md](docs/production-qa-matrix.md) before demos or releases.
-
-Owner-confirmed items before App Store or Play Store release:
-
-- Version and build number
-- Bundle identifiers
-- App icon and splash assets
-- Privacy, Terms, and Disclaimer review
-- Notification behavior on physical iOS and Android devices
-- Accessibility pass with large text and screen reader
-- Store screenshots and copy
-- Support/contact information
-- Backup branch or tag
-
-## Future Improvements
-
-- Add automated unit coverage for more storage and progression helpers
-- Add optional archive flow instead of permanent habit deletion
-- Add native build profiles when bundle identifiers are confirmed
-- Add screenshot assets after final device QA
+Start with [docs/Momentum-V1.md](docs/Momentum-V1.md) for the complete project
+overview. Feature-specific documents in `docs/` explain calculations,
+persistence, accessibility, and compatibility constraints in more detail.

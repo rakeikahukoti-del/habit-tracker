@@ -59,12 +59,15 @@ Declining permission never blocks habit tracking.
 ## Reminder Lifecycle
 
 - Create habit with reminder: schedule the appropriate local notifications.
-- Edit time, frequency, days, name, or emoji: cancel old IDs and schedule the new reminder.
+- Edit time, frequency, days, name, or emoji: schedule the replacement, save the
+  updated habit, then cancel the old IDs. If persistence fails, the replacement
+  is removed and the previous schedule remains active.
 - Disable daily reminders globally: cancel existing habit reminders and mark reminder state as disabled.
 - Re-enable daily reminders: schedule valid habit reminders again.
-- Delete habit: cancel its saved notification IDs.
-- Import backup: cancel existing reminders, normalize imported habits, and schedule valid imported reminders.
-- Reset or demo data: cancel existing reminders before replacing data.
+- Delete habit: save the deletion, then cancel its notification IDs.
+- Import backup: validate and commit imported data before old reminders are
+  removed; reconciliation then schedules valid imported reminders.
+- Reset or demo data: save replacement habits before cancelling old reminders.
 
 ## Accessibility
 
