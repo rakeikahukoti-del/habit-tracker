@@ -1,9 +1,17 @@
 export { default as AnalyticsError } from "./AnalyticsError";
 export { default as DataBuildingAnalytics } from "./DataBuildingAnalytics";
 export { default as EmptyAnalytics } from "./EmptyAnalytics";
+export { default as HabitAnalyticsHeader } from "./HabitAnalyticsHeader";
+export { default as HabitConsistencyCard } from "./HabitConsistencyCard";
+export { default as HabitHeroSection } from "./HabitHeroSection";
+export { default as HabitMetricList } from "./HabitMetricList";
+export { default as HabitMiniTrend } from "./HabitMiniTrend";
 export { default as HabitPerformanceList } from "./HabitPerformanceList";
+export { default as HabitRecentDaysGrid } from "./HabitRecentDaysGrid";
+export { default as HabitWeekCard } from "./HabitWeekCard";
 export { default as InsightsDashboardSection } from "./InsightsDashboardSection";
 export { default as KeyMetricsGrid } from "./KeyMetricsGrid";
+export { default as MilestoneCard } from "./MilestoneCard";
 export { default as MonthlyReviewCard } from "./MonthlyReviewCard";
 export { default as Section } from "./Section";
 export { default as TrendChart } from "./TrendChart";
