@@ -4,13 +4,7 @@ import { router } from "expo-router";
 import { SettingsScreen } from "./settings";
 import { AppText } from "./ui";
 import { useTheme } from "../context/ThemeContext";
-import {
-  v2FontWeight,
-  v2Radius,
-  v2Shadows,
-  v2Spacing,
-  v2Typography,
-} from "../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 
 export default function LegalScreen({ title, body }) {
   const { colors } = useTheme();
@@ -45,13 +39,8 @@ function createStyles(colors) {
   return StyleSheet.create({
     document: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       overflow: "hidden",
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.07,
     },
     paragraphBlock: {
       alignItems: "flex-start",

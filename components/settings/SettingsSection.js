@@ -15,7 +15,6 @@ import {
   v2FontWeight,
   v2Layout,
   v2Radius,
-  v2Shadows,
   v2Spacing,
   v2Typography,
 } from "../../src/design";
@@ -395,9 +394,7 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     message: {
       backgroundColor: colors.primarySoft,
-      borderColor: colors.border,
       borderRadius: v2Radius.small,
-      borderWidth: 1,
       color: colors.text,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.medium,
@@ -425,13 +422,8 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     group: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       overflow: "hidden",
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.07,
     },
     footer: {
       color: colors.muted,

@@ -64,9 +64,7 @@ function createStyles(colors) {
   return StyleSheet.create({
     metricList: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       paddingHorizontal: v2Spacing.lg,
     },
     metricRow: {

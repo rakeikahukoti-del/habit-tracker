@@ -1,6 +1,12 @@
-export { v2ActionColors, v2BadgeColors, v2Colors, v2StateColors } from "./colors";
+export {
+  v2ActionColors,
+  v2BadgeColors,
+  v2Colors,
+  v2LightColors,
+  v2StateColors,
+} from "./colors";
 export { v2Layout } from "./layout";
-export { v2LegacyDarkTheme } from "./legacyThemeAdapter";
+export { v2LegacyDarkTheme, v2LegacyLightTheme } from "./legacyThemeAdapter";
 export { v2Motion } from "./motion";
 export { v2Radius } from "./radius";
 export { v2Shadows } from "./shadows";

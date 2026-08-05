@@ -61,9 +61,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     habitWeekCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     habitWeekHeader: {

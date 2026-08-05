@@ -46,9 +46,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     weekVisual: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       justifyContent: "space-between",
       padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,

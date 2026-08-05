@@ -50,9 +50,9 @@ function createStyles(colors) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       flexDirection: "row",
-      gap: 4,
+      gap: v2Spacing.xs,
       marginBottom: v2Spacing.lg,
-      padding: 4,
+      padding: v2Spacing.xs,
     },
     periodItem: {
       alignItems: "center",

@@ -48,9 +48,7 @@ function createStyles(colors) {
     trendCard: {
       alignItems: "flex-end",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.sm,
       height: 138,

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getRecentAchievementIconName } from "../../constants/achievements";
 import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
@@ -84,16 +84,11 @@ function createStyles(colors) {
     achievementRow: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.md,
       minHeight: 78,
       padding: v2Spacing.lg,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
     },
     achievementMark: {
       alignItems: "center",

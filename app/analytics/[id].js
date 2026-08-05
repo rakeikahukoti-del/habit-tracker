@@ -152,9 +152,7 @@ function createStyles(colors) {
     },
     guidanceCard: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginBottom: v2Spacing.xl,
       padding: v2Spacing.lg,
     },
@@ -173,17 +171,13 @@ function createStyles(colors) {
     },
     weekCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: 10,
       padding: 28,
     },
@@ -204,9 +198,7 @@ function createStyles(colors) {
     },
     emptyCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.xl,
     },
     emptyTitle: {

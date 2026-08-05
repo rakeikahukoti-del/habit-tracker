@@ -218,9 +218,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     activityCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
     },
     yearTabs: {
@@ -230,9 +228,9 @@ function createStyles(colors, { isSmallScreen }) {
       borderWidth: 1,
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 4,
+      gap: v2Spacing.xs,
       marginBottom: v2Spacing.lg,
-      padding: 4,
+      padding: v2Spacing.xs,
     },
     yearTab: {
       alignItems: "center",
@@ -368,7 +366,7 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.medium,
       lineHeight: v2Typography.label.lineHeight,
-      marginTop: 4,
+      marginTop: v2Spacing.xs,
     },
     selectedDayHabits: {
       color: colors.muted,
@@ -379,9 +377,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     emptyInlineText: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       lineHeight: v2Typography.body.lineHeight,

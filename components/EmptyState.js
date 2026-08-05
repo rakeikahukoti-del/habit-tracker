@@ -2,13 +2,7 @@ import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
 import { AppIcon, AppText, PrimaryButton } from "./ui";
-import {
-  v2FontWeight,
-  v2Radius,
-  v2Shadows,
-  v2Spacing,
-  v2Typography,
-} from "../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 
 export default function EmptyState() {
@@ -71,17 +65,12 @@ function createStyles(colors, isSmallScreen) {
     container: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginTop: v2Spacing.xl,
       maxWidth: 420,
       paddingHorizontal: isSmallScreen ? v2Spacing.lg : v2Spacing.xxl,
       paddingVertical: isSmallScreen ? v2Spacing.xxl : 36,
       width: "100%",
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
     },
     mark: {
       marginBottom: v2Spacing.xl,
@@ -109,9 +98,7 @@ function createStyles(colors, isSmallScreen) {
     tipRow: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: v2Radius.medium,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.sm,
       minHeight: 44,

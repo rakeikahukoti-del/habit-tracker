@@ -464,9 +464,7 @@ function createStyles(colors) {
     templateCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.md,
       padding: v2Spacing.md,
@@ -516,9 +514,7 @@ function createStyles(colors) {
     },
     routineSummary: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     routineTitle: {
@@ -543,9 +539,7 @@ function createStyles(colors) {
       backgroundColor: colors.warning
         ? colors.primarySoft
         : colors.dangerSoft,
-      borderColor: colors.border,
       borderRadius: v2Radius.medium,
-      borderWidth: 1,
       color: colors.text,
       ...v2Typography.label,
       fontWeight: v2FontWeight.medium,
@@ -580,9 +574,7 @@ function createStyles(colors) {
     },
     emptyPickerText: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       color: colors.muted,
       ...v2Typography.body,
       padding: v2Spacing.lg,

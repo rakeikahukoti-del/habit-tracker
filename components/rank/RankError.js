@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
 export default function RankError({ message, onRetry }) {
@@ -33,14 +33,9 @@ function createStyles(colors) {
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: 10,
       padding: 28,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
     },
     loadingText: {
       color: colors.muted,

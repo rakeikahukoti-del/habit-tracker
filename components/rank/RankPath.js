@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getRankForLevel, rankMilestones } from "../../storage/gamificationStorage";
 import { getVisibleRank, getVisibleRankMilestones } from "../../utils/rankDisplay";
 
@@ -53,13 +53,8 @@ function createStyles(colors) {
   return StyleSheet.create({
     rankPath: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       paddingHorizontal: v2Spacing.lg,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
     },
     rankStep: {
       alignItems: "center",

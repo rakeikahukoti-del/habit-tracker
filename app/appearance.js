@@ -51,7 +51,9 @@ export default function AppearanceScreen() {
             key={option.value}
             label={option.label}
             onPress={() => selectTheme(option.value)}
-            previewColors={themes[option.value]}
+            previewColors={
+              option.value === "system" ? themes[resolvedTheme] : themes[option.value]
+            }
             selected={themePreference === option.value}
           />
         ))}

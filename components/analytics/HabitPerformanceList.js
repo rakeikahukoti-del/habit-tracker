@@ -94,9 +94,7 @@ function createStyles(colors) {
     },
     habitRow: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: v2Spacing.md,
       padding: v2Spacing.lg,
     },
@@ -121,7 +119,7 @@ function createStyles(colors) {
       color: colors.muted,
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
-      marginTop: 4,
+      marginTop: v2Spacing.xs,
     },
     habitTrack: {
       backgroundColor: colors.surface,

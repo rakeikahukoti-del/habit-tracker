@@ -15,7 +15,6 @@ import { useTheme } from "../context/ThemeContext";
 import {
   v2FontWeight,
   v2Radius,
-  v2Shadows,
   v2Spacing,
   v2Typography,
 } from "../src/design";
@@ -429,9 +428,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     errorBanner: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: v2Radius.medium,
-      borderWidth: 1,
       color: colors.text,
       marginBottom: v2Spacing.lg,
       padding: v2Spacing.md,
@@ -439,9 +436,7 @@ function createStyles(colors, { isSmallScreen }) {
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: v2Spacing.md,
       padding: v2Spacing.xl,
     },
@@ -452,9 +447,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     emptyCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.xl,
     },
     emptyTitle: {
@@ -470,12 +463,9 @@ function createStyles(colors, { isSmallScreen }) {
     },
     summaryCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.feature,
-      borderWidth: 1,
       marginBottom: v2Spacing.xl,
       padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
-      ...v2Shadows.low,
     },
     eyebrow: {
       color: colors.primary,
@@ -549,9 +539,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     metricCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexBasis: "47%",
       flexGrow: 1,
       minWidth: 136,
@@ -582,9 +570,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     reflectionCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     reflectionText: {
@@ -601,9 +587,7 @@ function createStyles(colors, { isSmallScreen }) {
     monthRow: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.md,
       minHeight: 70,
@@ -641,9 +625,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     milestoneCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.md,
       padding: v2Spacing.lg,

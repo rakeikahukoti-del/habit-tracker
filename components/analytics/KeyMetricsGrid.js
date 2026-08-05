@@ -85,9 +85,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     metricBlock: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
       minWidth: 0,

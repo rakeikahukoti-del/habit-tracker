@@ -77,9 +77,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     consistencyCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginBottom: v2Spacing.xl,
       padding: v2Spacing.lg,
     },

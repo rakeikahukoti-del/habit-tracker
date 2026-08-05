@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
 import { XP_PER_LEVEL } from "../../utils/gamification";
 import { PRESSED_CARD_STYLE } from "./pressedStyles";
 
@@ -44,7 +44,7 @@ function createStyles(colors) {
       borderColor: colors.accent,
       borderRadius: v2Radius.feature,
       borderWidth: 1.5,
-      marginBottom: 10,
+      marginBottom: v2Spacing.sm,
       paddingHorizontal: 16,
       paddingVertical: 14,
       ...v2Shadows.medium,

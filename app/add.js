@@ -182,7 +182,7 @@ function createStyles(colors) {
       justifyContent: "center",
       marginLeft: "auto",
       minHeight: v2Layout.minTapTarget,
-      paddingHorizontal: 16,
+      paddingHorizontal: v2Spacing.base,
     },
     cancelButtonText: {
       color: colors.text,
@@ -191,9 +191,7 @@ function createStyles(colors) {
     },
     message: {
       backgroundColor: colors.primarySoft,
-      borderColor: colors.border,
       borderRadius: v2Radius.medium,
-      borderWidth: 1,
       color: colors.text,
       ...v2Typography.label,
       fontWeight: v2FontWeight.medium,

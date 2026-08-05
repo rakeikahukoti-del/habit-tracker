@@ -69,7 +69,7 @@ function createStyles(colors, { isSmallScreen }) {
       color: colors.text,
       fontSize: v2Typography.sectionTitle.fontSize,
       fontWeight: v2FontWeight.bold,
-      marginTop: 4,
+      marginTop: v2Spacing.xs,
     },
     heroTrack: {
       backgroundColor: colors.surface,

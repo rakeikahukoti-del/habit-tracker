@@ -1,43 +1,10 @@
-import { v2LegacyDarkTheme } from "../src/design/legacyThemeAdapter";
-
-const shared = {
-  primary: "#64748B",
-  primaryDark: "#3C4048",
-  accent: "#3B82F6",
-  success: "#5F8B6F",
-  warning: "#C58A2B",
-  danger: "#B5484C",
-};
+import {
+  v2LegacyDarkTheme,
+  v2LegacyLightTheme,
+} from "../src/design/legacyThemeAdapter";
 
 export const themes = {
-  light: {
-    ...shared,
-    background: "#F4F4F2",
-    surface: "#FFFFFF",
-    card: "#FFFFFF",
-    text: "#1A1D22",
-    muted: "#64748B",
-    softText: "#87909C",
-    border: "#DADDE2",
-    habitCardBorder: "#D0D5DC",
-    habitCardCompletedBorder: "#64748B",
-    badgeBackground: "#ECEEF1",
-    badgeText: "#2A2D33",
-    primarySoft: "#E6E9EE",
-    accentSoft: "#E3ECF8",
-    successSoft: "#DFF2E8",
-    dangerSoft: "#F6E1E2",
-    input: "#FFFFFF",
-    inputBackground: "#F9FAFD",
-    dotEmpty: "#D8DDE8",
-    shadow: "#111827",
-    inverseText: "#FFFFFF",
-    heroMuted: "#CDD5EF",
-    heroSoftText: "#E4E9F7",
-    heroBadge: "rgba(255, 255, 255, 0.16)",
-    modalBackdrop: "rgba(15, 23, 42, 0.35)",
-    swatchBorder: "#FFFFFF",
-  },
+  light: v2LegacyLightTheme,
   dark: v2LegacyDarkTheme,
 };
 

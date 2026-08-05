@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { BadgeMedal, getBadgeTierAccent } from "../progression";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { badges } from "../../storage/gamificationStorage";
 import {
   getAchievementProgress,
@@ -318,17 +318,12 @@ function createStyles(colors, { isSmallScreen }) {
     },
     summaryMetric: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : 0,
       flexGrow: 1,
-      gap: 4,
+      gap: v2Spacing.xs,
       minHeight: 74,
       padding: v2Spacing.md,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.07,
     },
     summaryValue: {
       color: colors.text,
@@ -353,17 +348,12 @@ function createStyles(colors, { isSmallScreen }) {
     closestRow: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.md,
       minHeight: 66,
       paddingHorizontal: v2Spacing.md,
       paddingVertical: v2Spacing.sm,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.07,
     },
     closestMark: {
       alignItems: "center",
@@ -434,16 +424,11 @@ function createStyles(colors, { isSmallScreen }) {
     badgeTile: {
       alignItems: isSmallScreen ? "flex-start" : "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: isSmallScreen ? "column" : "row",
       gap: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
       minHeight: isSmallScreen ? 0 : 110,
       padding: isSmallScreen ? v2Spacing.md : v2Spacing.lg,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
     },
     badgeText: {
       flex: 1,

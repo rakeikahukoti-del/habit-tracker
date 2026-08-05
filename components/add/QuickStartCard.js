@@ -49,9 +49,7 @@ function createStyles(colors) {
   return StyleSheet.create({
     quickStartCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: v2Spacing.md,
       marginBottom: v2Spacing.xl,
       padding: v2Spacing.lg,

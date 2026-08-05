@@ -49,9 +49,7 @@ function createStyles(colors) {
   return StyleSheet.create({
     chart: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     chartBars: {
@@ -70,9 +68,7 @@ function createStyles(colors) {
     },
     chartTrack: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: v2Radius.small,
-      borderWidth: 1,
       flex: 1,
       justifyContent: "flex-end",
       overflow: "hidden",

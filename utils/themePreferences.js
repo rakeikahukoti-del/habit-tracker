@@ -1,6 +1,7 @@
 export const appearanceOptions = [
   { label: "Light", value: "light" },
   { label: "Dark", value: "dark" },
+  { label: "System", value: "system" },
 ];
 
 const lightFallbackThemeKeys = new Set(["bronze"]);
@@ -38,5 +39,7 @@ export function normalizeThemePreference(preference, systemScheme = "dark") {
 }
 
 export function isSupportedThemePreference(preference) {
-  return preference === "light" || preference === "dark";
+  return (
+    preference === "light" || preference === "dark" || preference === "system"
+  );
 }

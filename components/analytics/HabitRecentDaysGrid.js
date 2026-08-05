@@ -32,9 +32,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     historyGrid: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 7,
