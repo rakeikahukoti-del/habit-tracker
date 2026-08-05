@@ -13,7 +13,6 @@ import {
   v2FontWeight,
   v2Layout,
   v2Radius,
-  v2Shadows,
   v2Spacing,
   v2Typography,
 } from "../src/design";
@@ -167,18 +166,13 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
     },
     point: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.medium,
-      borderWidth: 1,
       color: colors.text,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
       lineHeight: v2Typography.body.lineHeight,
       overflow: "hidden",
       padding: v2Spacing.md,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.07,
     },
     button: {
       alignItems: "center",

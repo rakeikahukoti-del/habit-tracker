@@ -168,9 +168,7 @@ function createStyles(colors) {
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: 10,
       padding: 28,
     },
@@ -181,9 +179,7 @@ function createStyles(colors) {
     },
     insightText: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       color: colors.text,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,

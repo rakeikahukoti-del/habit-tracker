@@ -121,9 +121,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     buildingCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginBottom: v2Spacing.xl,
       padding: v2Spacing.xl,
     },

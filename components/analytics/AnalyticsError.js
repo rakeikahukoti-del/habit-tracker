@@ -32,9 +32,7 @@ function createStyles(colors) {
   return StyleSheet.create({
     emptyCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.xl,
     },
     emptyTitle: {

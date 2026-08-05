@@ -21,13 +21,7 @@ import {
   DEFAULT_HABIT_EMOJI,
   DEFAULT_HABIT_FREQUENCY,
 } from "../../constants/habitOptions";
-import {
-  v2FontWeight,
-  v2Radius,
-  v2Shadows,
-  v2Spacing,
-  v2Typography,
-} from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { parseReminderTime } from "../../notifications/habitNotifications";
 import {
@@ -555,14 +549,9 @@ function createStyles(colors, { isSmallScreen }) {
   },
   statsCard: {
     backgroundColor: colors.card,
-    borderColor: colors.border,
     borderRadius: v2Radius.large,
-    borderWidth: 1,
     marginBottom: 18,
     padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
-    ...v2Shadows.low,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.08,
   },
   statsHeader: {
     alignItems: "flex-start",
@@ -611,9 +600,7 @@ function createStyles(colors, { isSmallScreen }) {
   },
   recoveryCard: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
     borderRadius: v2Radius.large,
-    borderWidth: 1,
     gap: v2Spacing.sm,
     marginBottom: 18,
     padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
@@ -630,14 +617,9 @@ function createStyles(colors, { isSmallScreen }) {
   },
   weeklyCard: {
     backgroundColor: colors.card,
-    borderColor: colors.border,
     borderRadius: v2Radius.large,
-    borderWidth: 1,
     marginBottom: 18,
     padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
-    ...v2Shadows.low,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.08,
   },
   weeklyHeader: {
     alignItems: "flex-start",
@@ -727,8 +709,6 @@ function createStyles(colors, { isSmallScreen }) {
   deleteButton: {
     ...habitFormSharedStyles.actionButton,
     backgroundColor: colors.dangerSoft,
-    borderColor: colors.border,
-    borderWidth: 1,
   },
   deleteButtonText: {
     color: colors.danger,

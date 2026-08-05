@@ -449,13 +449,8 @@ function createStyles(colors, { isSmallScreen }) {
     },
     listCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       overflow: "visible",
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.07,
     },
     habitRowWrap: {
       borderTopColor: colors.border,

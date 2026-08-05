@@ -193,9 +193,9 @@ function createStyles(colors, { isSmallScreen }) {
     focusSection: {
       borderBottomColor: colors.border,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      gap: 10,
-      paddingBottom: 12,
-      paddingTop: 8,
+      gap: v2Spacing.sm,
+      paddingBottom: v2Spacing.md,
+      paddingTop: v2Spacing.md,
     },
     focusSectionHeader: {
       alignItems: "center",

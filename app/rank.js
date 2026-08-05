@@ -24,12 +24,7 @@ import {
   Section,
 } from "../components/rank";
 import { AppText } from "../components/ui";
-import {
-  v2FontWeight,
-  v2Radius,
-  v2Shadows,
-  v2Typography,
-} from "../src/design";
+import { v2FontWeight, v2Radius, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { useRankController } from "../hooks/useRankController";
@@ -177,14 +172,9 @@ function createStyles(colors) {
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: 10,
       padding: 28,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
     },
     loadingText: {
       color: colors.muted,

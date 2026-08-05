@@ -149,9 +149,7 @@ function createStyles(colors) {
   return StyleSheet.create({
     monthCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     monthHeader: {

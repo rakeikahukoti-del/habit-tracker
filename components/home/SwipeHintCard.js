@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { PRESSED_CARD_STYLE } from "./pressedStyles";
 
 export default function SwipeHintCard({ onDismiss }) {
@@ -44,29 +44,22 @@ function createStyles(colors) {
   return StyleSheet.create({
     swipeHint: {
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
+      backgroundColor: colors.surface,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexDirection: "row",
       gap: v2Spacing.md,
-      marginBottom: 8,
-      minHeight: 70,
+      marginBottom: v2Spacing.sm,
+      minHeight: 64,
       paddingHorizontal: 14,
-      paddingVertical: 12,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
+      paddingVertical: 10,
     },
     swipeHintIcon: {
       alignItems: "center",
       backgroundColor: colors.primarySoft,
-      borderColor: colors.border,
       borderRadius: v2Radius.medium,
-      borderWidth: 1,
-      height: 38,
+      height: 34,
       justifyContent: "center",
-      width: 38,
+      width: 34,
     },
     swipeHintText: {
       flex: 1,

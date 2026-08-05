@@ -263,9 +263,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     dashboardCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     dashboardHeaderRow: {
@@ -289,7 +287,7 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: isSmallScreen ? 28 : 32,
       fontWeight: v2FontWeight.bold,
       lineHeight: isSmallScreen ? 34 : 38,
-      marginTop: 4,
+      marginTop: v2Spacing.xs,
     },
     dashboardSubtitle: {
       color: colors.muted,
@@ -344,9 +342,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     dashboardInsightCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     dashboardInsightHeader: {
@@ -373,7 +369,7 @@ function createStyles(colors, { isSmallScreen }) {
       fontWeight: v2FontWeight.bold,
       overflow: "hidden",
       paddingHorizontal: 9,
-      paddingVertical: 4,
+      paddingVertical: v2Spacing.xs,
     },
     dashboardInsightBody: {
       color: colors.text,
@@ -388,9 +384,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     comparisonCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
       minWidth: 0,
@@ -427,7 +421,7 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.medium,
       lineHeight: v2Typography.label.lineHeight,
-      marginTop: 4,
+      marginTop: v2Spacing.xs,
     },
     rankingGrid: {
       flexDirection: "row",
@@ -436,9 +430,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     rankingCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       flexBasis: isSmallScreen ? "100%" : "47%",
       flexGrow: 1,
       gap: v2Spacing.sm,
@@ -489,9 +481,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     personalBestStrip: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     personalBestTitle: {
@@ -527,9 +517,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     dashboardEmptyText: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { PRESSED_CARD_STYLE } from "./pressedStyles";
 
 export default function CelebrationBanner({ celebration, onDismiss }) {
@@ -29,7 +29,7 @@ function createStyles(colors) {
     celebrationBanner: {
       backgroundColor: colors.accentSoft,
       borderRadius: v2Radius.medium,
-      marginBottom: 10,
+      marginBottom: v2Spacing.sm,
       paddingHorizontal: 14,
       paddingVertical: 12,
     },

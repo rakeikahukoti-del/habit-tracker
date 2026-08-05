@@ -1,4 +1,4 @@
-import { v2Colors } from "./colors";
+import { v2Colors, v2LightColors } from "./colors";
 
 export const v2LegacyDarkTheme = {
   accent: v2Colors.accentPrimary,
@@ -32,4 +32,38 @@ export const v2LegacyDarkTheme = {
   swatchBorder: v2Colors.borderDefault,
   text: v2Colors.textPrimary,
   warning: v2Colors.warning,
+};
+
+export const v2LegacyLightTheme = {
+  accent: v2LightColors.accentPrimary,
+  accentSoft: v2LightColors.surfacePressed,
+  background: v2LightColors.background,
+  badgeBackground: v2LightColors.surfaceElevated,
+  badgeText: v2LightColors.textPrimary,
+  border: v2LightColors.borderDefault,
+  card: v2LightColors.surface,
+  danger: v2LightColors.danger,
+  dangerSoft: "#F6E1E2",
+  dotEmpty: v2LightColors.borderStrong,
+  habitCardBorder: v2LightColors.borderDefault,
+  habitCardCompletedBorder: v2LightColors.accentPrimary,
+  heroBadge: "rgba(23, 23, 26, 0.06)",
+  heroMuted: v2LightColors.textSecondary,
+  heroSoftText: v2LightColors.textPrimary,
+  input: v2LightColors.surface,
+  inputBackground: v2LightColors.backgroundElevated,
+  inverseText: v2LightColors.accentContrast,
+  modalBackdrop: v2LightColors.overlay,
+  muted: v2LightColors.textSecondary,
+  primary: v2LightColors.accentPrimary,
+  primaryDark: v2LightColors.textSecondary,
+  primarySoft: v2LightColors.surfacePressed,
+  shadow: "#000000",
+  softText: v2LightColors.textMuted,
+  success: v2LightColors.success,
+  successSoft: "#DFF2E8",
+  surface: v2LightColors.backgroundElevated,
+  swatchBorder: v2LightColors.surface,
+  text: v2LightColors.textPrimary,
+  warning: v2LightColors.warning,
 };

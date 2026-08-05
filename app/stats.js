@@ -17,7 +17,7 @@ import {
   YearActivityCard,
 } from "../components/stats";
 import { AppText } from "../components/ui";
-import { v2FontWeight, v2Radius, v2Typography } from "../src/design";
+import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useStatsController } from "../hooks/useStatsController";
 
@@ -147,16 +147,14 @@ function createStyles(colors) {
       color: colors.danger,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.medium,
-      marginBottom: 12,
+      marginBottom: v2Spacing.md,
       paddingHorizontal: 14,
       paddingVertical: 10,
     },
     loadingCard: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: 10,
       padding: 28,
     },

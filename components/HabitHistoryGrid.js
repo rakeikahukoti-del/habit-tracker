@@ -195,9 +195,7 @@ function createStyles(colors, isSmallScreen) {
   return StyleSheet.create({
     card: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginBottom: v2Spacing.xl,
       padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
     },

@@ -43,7 +43,7 @@ function createStyles(colors, { isSmallScreen }) {
       backgroundColor: colors.modalBackdrop,
       flex: 1,
       justifyContent: "center",
-      padding: 20,
+      padding: v2Spacing.lg,
     },
     modalCard: {
       alignItems: "center",

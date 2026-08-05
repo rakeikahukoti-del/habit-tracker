@@ -71,9 +71,7 @@ function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
     reviewCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     reviewHeader: {
@@ -90,7 +88,7 @@ function createStyles(colors, { isSmallScreen }) {
       color: colors.muted,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
-      marginBottom: 4,
+      marginBottom: v2Spacing.xs,
     },
     reviewValue: {
       color: colors.text,

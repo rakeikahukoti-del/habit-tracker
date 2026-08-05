@@ -190,9 +190,7 @@ function createStyles(colors, { isSmallScreen }) {
     loadingState: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       gap: 10,
       marginTop: 24,
       padding: 28,
@@ -220,9 +218,7 @@ function createStyles(colors, { isSmallScreen }) {
     remainingEmptyState: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginTop: 8,
       padding: 18,
     },

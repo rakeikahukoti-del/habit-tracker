@@ -2792,15 +2792,15 @@ test("visible rank display hides legacy Diamond without changing stored logic", 
   );
 });
 
-test("appearance preferences only support Light and Dark with safe legacy migration", () => {
+test("appearance preferences support Light, Dark, and System with safe legacy migration", () => {
   assertJsonEqual(
     themePreferences.appearanceOptions.map((option) => option.value),
-    ["light", "dark"]
+    ["light", "dark", "system"]
   );
   assertJsonEqual(Object.keys(appColors.themes).sort(), ["dark", "light"]);
   assert.strictEqual(themePreferences.isSupportedThemePreference("light"), true);
   assert.strictEqual(themePreferences.isSupportedThemePreference("dark"), true);
-  assert.strictEqual(themePreferences.isSupportedThemePreference("system"), false);
+  assert.strictEqual(themePreferences.isSupportedThemePreference("system"), true);
   assert.strictEqual(themePreferences.normalizeThemePreference(null), "light");
   assert.strictEqual(themePreferences.normalizeThemePreference(""), "light");
   assert.strictEqual(themePreferences.normalizeThemePreference("system", "light"), "light");

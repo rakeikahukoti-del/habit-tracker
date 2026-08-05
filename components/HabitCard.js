@@ -581,9 +581,6 @@ function createStyles(colors, isCompact) {
       minHeight: isCompact ? 88 : 94,
       paddingHorizontal: isCompact ? v2Spacing.md : v2Spacing.lg,
       paddingVertical: isCompact ? 12 : 14,
-      ...v2Shadows.low,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.08,
       width: "100%",
     },
     cardLayer: {

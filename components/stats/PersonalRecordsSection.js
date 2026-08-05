@@ -51,9 +51,7 @@ function createStyles(colors) {
     },
     recordCard: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       padding: v2Spacing.lg,
     },
     recordHeader: {
@@ -93,9 +91,7 @@ function createStyles(colors) {
     },
     emptyInlineText: {
       backgroundColor: colors.card,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       lineHeight: v2Typography.body.lineHeight,
