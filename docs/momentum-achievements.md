@@ -80,7 +80,15 @@ Achievement icon metadata lives in `constants/achievements.js`.
 This map intentionally uses lightweight icon metadata only:
 
 - `iconName`
-- `accent`
+
+Color is not part of this map. Icon-only surfaces (e.g. closest-unlocks rows
+in `AchievementsSection`) pair `iconName` with
+`getBadgeTierAccent(badge.tier)` from `components/progression/BadgeMedal.js`
+so their color agrees with the tier ring on the full badge art. Badge art
+(`assets/achievements/*.png`) bakes in its own accent color per asset and is
+not a reliable source of tier color — `BadgeMedal`'s `tierStyles`, keyed off
+the badge's actual `tier` field in `utils/gamification.js`, is the single
+source of truth.
 
 It must not import:
 

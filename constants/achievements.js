@@ -1,31 +1,28 @@
+// Icon metadata only — glyph choice, not color. Color is tier-driven: callers
+// pair `iconName` with getBadgeTierAccent(badge.tier) from progression/BadgeMedal
+// so icon-only surfaces (e.g. closest-unlocks rows) agree with the full badge
+// art's tier ring instead of keeping a second, independent accent palette.
 export const ACHIEVEMENT_ICON_FALLBACK = {
-  accent: "#64748B",
   iconName: "trophy",
 };
 
 const GROUP_ICON_META = {
   "Daily volume": {
-    accent: "#7EA1B8",
     iconName: "check",
   },
   "Getting started": {
-    accent: "#A58E73",
     iconName: "star",
   },
   Progress: {
-    accent: "#8A7AC8",
     iconName: "progress",
   },
   Ranks: {
-    accent: "#C0A46D",
     iconName: "trophy",
   },
   "Total completions": {
-    accent: "#789F8A",
     iconName: "analytics",
   },
   Consistency: {
-    accent: "#B06B5E",
     iconName: "flame",
   },
 };
@@ -33,11 +30,9 @@ const GROUP_ICON_META = {
 export const ACHIEVEMENT_ICON_MAP = {
   "first-habit-created": GROUP_ICON_META["Getting started"],
   "first-completion": {
-    accent: "#789F8A",
     iconName: "check",
   },
   "first-perfect-day": {
-    accent: "#C0A46D",
     iconName: "star",
   },
   "three-day-streak": GROUP_ICON_META.Consistency,

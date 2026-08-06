@@ -1,14 +1,59 @@
-import { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useRef } from "react";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { BadgeMedal } from "../progression";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Typography } from "../../src/design";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import {
+  v2FontWeight,
+  v2Motion,
+  v2Radius,
+  v2Shadows,
+  v2Typography,
+} from "../../src/design";
 import { PRESSED_CARD_STYLE } from "./pressedStyles";
 
 export default function BadgeUnlockCard({ badge, onDismiss }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const reduceMotion = useReducedMotion();
+  const scaleAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0.72)).current;
+  const glowAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      scaleAnim.setValue(1);
+      glowAnim.setValue(1);
+      return;
+    }
+
+    scaleAnim.setValue(0.72);
+    glowAnim.setValue(0);
+
+    const animation = Animated.parallel([
+      Animated.spring(scaleAnim, {
+        damping: v2Motion.spring.damping,
+        mass: v2Motion.spring.mass,
+        stiffness: v2Motion.spring.stiffness,
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowAnim, {
+        duration: v2Motion.duration.emphasis,
+        toValue: 1,
+        useNativeDriver: false,
+      }),
+    ]);
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [badge?.id, glowAnim, reduceMotion, scaleAnim]);
+
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.5],
+  });
 
   return (
     <Pressable
@@ -20,7 +65,18 @@ export default function BadgeUnlockCard({ badge, onDismiss }) {
         pressed && PRESSED_CARD_STYLE,
       ]}
     >
-      <BadgeMedal badge={badge} earned large />
+      <Animated.View
+        style={[
+          styles.medalGlow,
+          {
+            shadowColor: colors.accent,
+            shadowOpacity: glowOpacity,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <BadgeMedal badge={badge} earned large />
+      </Animated.View>
       <View style={styles.badgeUnlockContent}>
         <AppText style={styles.badgeUnlockEyebrow}>Badge earned</AppText>
         <AppText style={styles.badgeUnlockTitle}>{badge.label}</AppText>
@@ -53,6 +109,12 @@ function createStyles(colors) {
       ...v2Shadows.medium,
       shadowColor: colors.accent,
       shadowOpacity: 0.18,
+    },
+    medalGlow: {
+      ...v2Shadows.floating,
+      alignItems: "center",
+      borderRadius: v2Radius.large,
+      justifyContent: "center",
     },
     badgeUnlockContent: {
       alignItems: "center",

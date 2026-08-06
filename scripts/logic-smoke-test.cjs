@@ -3162,7 +3162,12 @@ test("achievement icon metadata is complete and separated from rank assets", () 
     const meta = achievementConstants.getAchievementIconMeta(badge.id);
 
     assert.strictEqual(typeof meta.iconName, "string");
-    assert.strictEqual(typeof meta.accent, "string");
+    assert.strictEqual(
+      Object.prototype.hasOwnProperty.call(meta, "accent"),
+      false,
+      `${badge.id} icon metadata should not carry its own accent — color is ` +
+        "tier-driven via getBadgeTierAccent(badge.tier) in BadgeMedal.js"
+    );
     assert.strictEqual(
       Object.prototype.hasOwnProperty.call(meta, "assetPath"),
       false,
