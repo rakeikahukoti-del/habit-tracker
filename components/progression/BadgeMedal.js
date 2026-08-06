@@ -1,8 +1,14 @@
 import { Image, StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { getAchievementBadgeAsset } from "../../constants/assets";
 import { v2Radius } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 
+// Single source of truth for tier color. Badge art (assets/achievements/*.png)
+// bakes in its own accent color per asset and is not guaranteed to agree with
+// a badge's actual `tier` (see utils/gamification.js) — do not read color from
+// the art. `image` is inset within `wrap` so the art's own border never sits
+// flush against this ring.
 const tierStyles = {
   Bronze: {
     border: "#8A6548",
@@ -36,6 +42,9 @@ const tierStyles = {
   },
 };
 
+// Tiers that get a foil sheen overlay in addition to their tier.border ring.
+const MATERIAL_TIERS = new Set(["Gold", "Platinum", "Diamond", "Master"]);
+
 export default function BadgeMedal({
   badge,
   earned = false,
@@ -47,6 +56,7 @@ export default function BadgeMedal({
   const tier = tierStyles[badge?.tier] || tierStyles.Bronze;
   const size = large ? 112 : 64;
   const asset = getAchievementBadgeAsset(badge?.id);
+  const showSheen = earned && MATERIAL_TIERS.has(badge?.tier);
 
   return (
     <View
@@ -65,12 +75,23 @@ export default function BadgeMedal({
       ]}
     >
       {asset ? (
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          source={asset}
-          style={styles.image}
-        />
+        <View style={styles.artBox}>
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="contain"
+            source={asset}
+            style={styles.image}
+          />
+          {showSheen ? (
+            <LinearGradient
+              colors={[withAlpha(tier.symbol, 0.4), withAlpha(tier.symbol, 0)]}
+              end={{ x: 1, y: 1 }}
+              pointerEvents="none"
+              start={{ x: 0, y: 0 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+          ) : null}
+        </View>
       ) : (
         <View
           style={[
@@ -90,6 +111,15 @@ export function getBadgeTierAccent(tierName) {
   return tierStyles[tierName]?.border || tierStyles.Bronze.border;
 }
 
+function withAlpha(hex, alpha) {
+  const sanitized = hex.replace("#", "");
+  const r = parseInt(sanitized.substring(0, 2), 16);
+  const g = parseInt(sanitized.substring(2, 4), 16);
+  const b = parseInt(sanitized.substring(4, 6), 16);
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 const styles = StyleSheet.create({
   wrap: {
     alignItems: "center",
@@ -100,6 +130,12 @@ const styles = StyleSheet.create({
   },
   selected: {
     borderWidth: 2,
+  },
+  artBox: {
+    borderRadius: v2Radius.medium,
+    height: "90%",
+    overflow: "hidden",
+    width: "90%",
   },
   image: {
     height: "100%",

@@ -192,6 +192,7 @@ function SummaryMetric({ label, styles, value }) {
 
 function ClosestBadgeRow({ badge, onPress, progress, styles }) {
   const meta = getAchievementIconMeta(badge.id);
+  const accent = getBadgeTierAccent(badge.tier);
 
   return (
     <Pressable
@@ -206,11 +207,11 @@ function ClosestBadgeRow({ badge, onPress, progress, styles }) {
       <View
         style={[
           styles.closestMark,
-          { borderColor: meta.accent },
+          { borderColor: accent },
         ]}
       >
         <AppIcon
-          color={meta.accent}
+          color={accent}
           name={meta.iconName}
           size={20}
           strokeWidth={2}
