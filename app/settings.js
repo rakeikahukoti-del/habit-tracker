@@ -366,6 +366,19 @@ export default function SettingsScreen() {
         />
       </SettingsSection>
 
+      {/*
+        This owns its own Modal rather than using components/ui/ModalShell:
+        it's a keyboard-avoiding slide-up bottom sheet with a scrollable body
+        and a fixed footer action bar, for editing/pasting JSON backup text.
+        ModalShell is a centered fade-in dialog with no header/footer
+        structure or keyboard handling, used by the home reward modals and
+        rank detail modals. The two bottom sheets in this app (this one and
+        components/add/TemplateRoutinePicker.js) also differ from each other
+        (this one needs KeyboardAvoidingView + a footer action row; the
+        template picker needs a persistent title/close header instead), so
+        rather than force both into one shared bottom-sheet primitive for
+        only two single-use call sites, each keeps its own implementation.
+      */}
       <Modal
         animationType={reduceMotion ? "none" : "slide"}
         onRequestClose={() => setModalMode(null)}

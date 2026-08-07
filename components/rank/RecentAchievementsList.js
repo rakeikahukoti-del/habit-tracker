@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getRecentAchievementIconName } from "../../constants/achievements";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
 export default function RecentAchievementsList({ achievements, onSelectAchievement }) {
   const { colors } = useTheme();
@@ -36,7 +35,7 @@ function AchievementRow({ achievement, colors, onPress, styles }) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.achievementRow,
-        pressed && PRESSED_BUTTON_STYLE,
+        pressed && v2PressedStyles.button,
       ]}
     >
       <View style={styles.achievementMark}>

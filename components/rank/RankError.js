@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function RankError({ message, onRetry }) {
   const { colors } = useTheme();
@@ -19,7 +18,7 @@ export default function RankError({ message, onRetry }) {
         onPress={onRetry}
         style={({ pressed }) => [
           styles.retryButton,
-          pressed && PRESSED_BUTTON_STYLE,
+          pressed && v2PressedStyles.button,
         ]}
       >
         <AppText style={styles.retryButtonText}>Try again</AppText>

@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2Layout, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function QuickStartCard({ onOpenPicker }) {
   const { colors } = useTheme();
@@ -24,7 +23,7 @@ export default function QuickStartCard({ onOpenPicker }) {
           onPress={() => onOpenPicker("template")}
           style={({ pressed }) => [
             styles.secondaryButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.secondaryButtonText}>Use template</AppText>
@@ -35,7 +34,7 @@ export default function QuickStartCard({ onOpenPicker }) {
           onPress={() => onOpenPicker("routine")}
           style={({ pressed }) => [
             styles.secondaryButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.secondaryButtonText}>Add routine</AppText>

@@ -1,12 +1,10 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import RankModalShell from "./RankModalShell";
 import { BadgeMedal } from "../progression";
-import { AppText } from "../ui";
+import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getAchievementProgressLabel } from "../../utils/achievementProgress";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
 export default function BadgeDetailModal({
   badge,
@@ -29,7 +27,7 @@ export default function BadgeDetailModal({
   }
 
   return (
-    <RankModalShell
+    <ModalShell
       isSmallScreen={isSmallScreen}
       onClose={onClose}
       reduceMotion={reduceMotion}
@@ -72,13 +70,13 @@ export default function BadgeDetailModal({
           onPress={onClose}
           style={({ pressed }) => [
             styles.modalButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.modalButtonText}>Close</AppText>
         </Pressable>
       </ScrollView>
-    </RankModalShell>
+    </ModalShell>
   );
 }
 

@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_CARD_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function CelebrationBanner({ celebration, onDismiss }) {
   const { colors } = useTheme();
@@ -16,7 +15,7 @@ export default function CelebrationBanner({ celebration, onDismiss }) {
       onPress={onDismiss}
       style={({ pressed }) => [
         styles.celebrationBanner,
-        pressed && PRESSED_CARD_STYLE,
+        pressed && v2PressedStyles.card,
       ]}
     >
       <AppText style={styles.celebrationText}>{celebration}</AppText>

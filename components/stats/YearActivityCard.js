@@ -2,13 +2,12 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import {
   getActivityDayAccessibilityLabel,
   getHeatmapIntensity,
   getMonthLabel,
 } from "../../utils/activityHistory";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
 
 export default function YearActivityCard({
   availableYears,
@@ -44,7 +43,7 @@ export default function YearActivityCard({
                 style={({ pressed }) => [
                   styles.yearTab,
                   selected && styles.yearTabSelected,
-                  pressed && PRESSED_STATS_STYLE,
+                  pressed && v2PressedStyles.stats,
                 ]}
               >
                 <AppText
@@ -103,7 +102,7 @@ export default function YearActivityCard({
                           styles.heatmapCell,
                           styles[`heatmapCell_${intensity}`],
                           selected && styles.heatmapCellSelected,
-                          pressed && PRESSED_STATS_STYLE,
+                          pressed && v2PressedStyles.stats,
                         ]}
                       />
                     </View>

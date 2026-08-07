@@ -4,8 +4,7 @@ import { router } from "expo-router";
 import Section from "./Section";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
   const { colors } = useTheme();
@@ -185,7 +184,7 @@ function HabitRankingCard({ emptyText, habits, label, styles }) {
             onPress={() => router.push(`/analytics/${habit.id}`)}
             style={({ pressed }) => [
               styles.rankingRow,
-              pressed && PRESSED_STATS_STYLE,
+              pressed && v2PressedStyles.stats,
             ]}
           >
             <AppText style={styles.rankingIndex}>{index + 1}</AppText>

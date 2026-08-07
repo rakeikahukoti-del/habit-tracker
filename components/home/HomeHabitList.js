@@ -11,8 +11,7 @@ import EmptyState from "../EmptyState";
 import HabitCard from "../HabitCard";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function HomeHabitList({
   countLabel,
@@ -80,7 +79,7 @@ export default function HomeHabitList({
           onPress={onAddPress}
           style={({ pressed }) => [
             styles.inlineAddButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppIcon color={colors.text} name="plus" size={17} strokeWidth={2.2} />

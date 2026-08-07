@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { BadgeMedal, getBadgeTierAccent } from "../progression";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { badges } from "../../storage/gamificationStorage";
 import {
   getAchievementProgress,
@@ -11,7 +11,6 @@ import {
   getAchievementUnlockDate,
 } from "../../utils/achievementProgress";
 import { getAchievementIconMeta } from "../../constants/achievements";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
 export default function AchievementsSection({
   badgePreview,
@@ -76,7 +75,7 @@ export default function AchievementsSection({
               style={({ pressed }) => [
                 styles.sortButton,
                 selected && styles.sortButtonSelected,
-                pressed && PRESSED_BUTTON_STYLE,
+                pressed && v2PressedStyles.button,
               ]}
             >
               <AppIcon
@@ -143,7 +142,7 @@ export default function AchievementsSection({
           onPress={onToggleBadges}
           style={({ pressed }) => [
             styles.showButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.showButtonText}>
@@ -201,7 +200,7 @@ function ClosestBadgeRow({ badge, onPress, progress, styles }) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.closestRow,
-        pressed && PRESSED_BUTTON_STYLE,
+        pressed && v2PressedStyles.button,
       ]}
     >
       <View
@@ -247,7 +246,7 @@ function BadgeTile({ badge, earned, onPress, progress, styles, unlockedAt }) {
       style={({ pressed }) => [
         styles.badgeTile,
         earned && { borderColor: accent },
-        pressed && PRESSED_BUTTON_STYLE,
+        pressed && v2PressedStyles.button,
       ]}
     >
       <BadgeMedal badge={badge} earned={earned} />

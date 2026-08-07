@@ -7,11 +7,11 @@ import { useReducedMotion } from "../../hooks/useReducedMotion";
 import {
   v2FontWeight,
   v2Motion,
+  v2PressedStyles,
   v2Radius,
   v2Shadows,
   v2Typography,
 } from "../../src/design";
-import { PRESSED_CARD_STYLE } from "./pressedStyles";
 
 export default function BadgeUnlockCard({ badge, onDismiss }) {
   const { colors } = useTheme();
@@ -62,7 +62,7 @@ export default function BadgeUnlockCard({ badge, onDismiss }) {
       onPress={onDismiss}
       style={({ pressed }) => [
         styles.badgeUnlockPopup,
-        pressed && PRESSED_CARD_STYLE,
+        pressed && v2PressedStyles.card,
       ]}
     >
       <Animated.View

@@ -3,8 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function EmptyProgress() {
   const { colors } = useTheme();
@@ -23,7 +22,7 @@ export default function EmptyProgress() {
         onPress={() => router.push("/add")}
         style={({ pressed }) => [
           styles.emptyAction,
-          pressed && PRESSED_STATS_STYLE,
+          pressed && v2PressedStyles.stats,
         ]}
       >
         <AppIcon name="plus" color={colors.inverseText} size={16} />

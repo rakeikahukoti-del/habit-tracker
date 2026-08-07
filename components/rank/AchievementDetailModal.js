@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import RankModalShell from "./RankModalShell";
-import { AppIcon, AppText } from "../ui";
+import { AppIcon, AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getRecentAchievementIconName } from "../../constants/achievements";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
 export default function AchievementDetailModal({
   achievement,
@@ -25,7 +23,7 @@ export default function AchievementDetailModal({
   }
 
   return (
-    <RankModalShell
+    <ModalShell
       isSmallScreen={isSmallScreen}
       onClose={onClose}
       reduceMotion={reduceMotion}
@@ -66,13 +64,13 @@ export default function AchievementDetailModal({
           onPress={onClose}
           style={({ pressed }) => [
             styles.modalButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.modalButtonText}>Close</AppText>
         </Pressable>
       </ScrollView>
-    </RankModalShell>
+    </ModalShell>
   );
 }
 
