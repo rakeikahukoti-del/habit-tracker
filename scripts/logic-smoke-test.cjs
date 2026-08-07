@@ -4056,6 +4056,45 @@ test("app backup export includes versioned local data metadata", async () => {
   assert.strictEqual(validation.metadata.hasActivityHistory, true);
 });
 
+test("system theme preference round-trips through backup export and restore", async () => {
+  resetStorage();
+  await habitsStorage.importHabitsBackup(
+    JSON.stringify({
+      habits: [
+        {
+          id: "backup-habit",
+          name: "Backup Habit",
+          completedDates: [],
+          createdAt: "2026-02-01T00:00:00.000Z",
+          frequency: "Daily",
+        },
+      ],
+    })
+  );
+  asyncStorageStore["momentum:theme-preference"] = "system";
+
+  const exportedText = await appBackup.exportAppData();
+  const exported = JSON.parse(exportedText);
+
+  assert.strictEqual(exported.data.appearance.themePreference, "system");
+
+  const validation = appBackup.validateBackup(exportedText);
+
+  assert.strictEqual(validation.ok, true);
+  assertJsonEqual(validation.warnings, []);
+  assert.strictEqual(validation.data.appearance.themePreference, "system");
+
+  asyncStorageStore["momentum:theme-preference"] = "light";
+
+  const result = await appBackup.importAppData(exportedText);
+
+  assertJsonEqual(result.warnings, []);
+  assert.strictEqual(
+    asyncStorageStore["momentum:theme-preference"],
+    "system"
+  );
+});
+
 test("app backup import replaces data safely and rebuilds derived progress", async () => {
   resetStorage();
   await habitsStorage.importHabitsBackup(

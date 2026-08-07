@@ -6,7 +6,10 @@ import {
   calculateGamificationState,
   normalizeGamificationState,
 } from "../utils/gamification";
-import { normalizeThemePreference } from "../utils/themePreferences";
+import {
+  isSupportedThemePreference,
+  normalizeThemePreference,
+} from "../utils/themePreferences";
 import {
   defaultAppPreferences,
   getAppPreferences,
@@ -65,6 +68,20 @@ const RAW_KEYS = {
   themePreference: "momentum:theme-preference",
 };
 
+// Backup export/restore stores the user's raw preference (including
+// "system"), not the concrete light/dark scheme it currently resolves to.
+// normalizeThemePreference() resolves "system" using the *live* device
+// color scheme, which the backup path has no business doing — a backup
+// taken on a dark device shouldn't permanently bake in "dark". Supported
+// preference values pass through untouched; only unsupported/legacy
+// values (old per-habit theme keys, corrupted data) get normalized to a
+// safe fallback.
+function sanitizeBackupThemePreference(preference) {
+  return isSupportedThemePreference(preference)
+    ? preference
+    : normalizeThemePreference(preference);
+}
+
 export async function exportAppData() {
   const [habits, gamification, rawState, preferences] = await Promise.all([
     getHabits(),
@@ -76,7 +93,7 @@ export async function exportAppData() {
 
   const exportedData = {
     appearance: {
-      themePreference: normalizeThemePreference(rawState.themePreference),
+      themePreference: sanitizeBackupThemePreference(rawState.themePreference),
     },
     dailyPlan,
     flags: getBackupFlags(rawState),
@@ -372,7 +389,7 @@ function normalizeAppearance(appearance, warnings) {
   const rawTheme = isPlainObject(appearance)
     ? appearance.themePreference
     : appearance;
-  const normalizedTheme = normalizeThemePreference(rawTheme);
+  const normalizedTheme = sanitizeBackupThemePreference(rawTheme);
 
   if (rawTheme && rawTheme !== normalizedTheme) {
     warnings.push("Unsupported theme preference was normalized.");
@@ -695,7 +712,7 @@ function prepareImportCommit(data) {
       [RAW_KEYS.dailyPlan, JSON.stringify(dailyPlan)],
       [
         RAW_KEYS.themePreference,
-        normalizeThemePreference(data.appearance?.themePreference),
+        sanitizeBackupThemePreference(data.appearance?.themePreference),
       ],
       [
         RAW_KEYS.firstSwipeHintDismissed,
