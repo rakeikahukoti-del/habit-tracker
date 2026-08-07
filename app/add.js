@@ -10,6 +10,7 @@ import { AppText } from "../components/ui";
 import {
   v2FontWeight,
   v2Layout,
+  v2PressedStyles,
   v2Radius,
   v2Shadows,
   v2Spacing,
@@ -17,7 +18,6 @@ import {
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useAddHabitController } from "../hooks/useAddHabitController";
-import { PRESSED_BUTTON_STYLE } from "../components/home/pressedStyles";
 
 export default function AddHabitScreen() {
   const { colors } = useTheme();
@@ -76,7 +76,7 @@ export default function AddHabitScreen() {
           style={({ pressed }) => [
             styles.saveButton,
             saving && styles.saveButtonDisabled,
-            pressed && !saving && PRESSED_BUTTON_STYLE,
+            pressed && !saving && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.saveButtonText}>
@@ -99,7 +99,7 @@ export default function AddHabitScreen() {
           onPress={handleCancel}
           style={({ pressed }) => [
             styles.cancelButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.cancelButtonText}>Cancel</AppText>

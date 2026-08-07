@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function PeriodControl({ period, periods, setPeriod }) {
   const { colors } = useTheme();
@@ -24,7 +23,7 @@ export default function PeriodControl({ period, periods, setPeriod }) {
             style={({ pressed }) => [
               styles.periodItem,
               selected && styles.periodItemSelected,
-              pressed && PRESSED_STATS_STYLE,
+              pressed && v2PressedStyles.stats,
             ]}
           >
             <AppText

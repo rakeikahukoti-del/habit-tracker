@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
 import { XP_PER_LEVEL } from "../../utils/gamification";
-import { PRESSED_CARD_STYLE } from "./pressedStyles";
 
 export default function CompletionRewardCard({ reward, onDismiss }) {
   const { colors } = useTheme();
@@ -17,7 +16,7 @@ export default function CompletionRewardCard({ reward, onDismiss }) {
       onPress={onDismiss}
       style={({ pressed }) => [
         styles.completionPopup,
-        pressed && PRESSED_CARD_STYLE,
+        pressed && v2PressedStyles.card,
       ]}
     >
       <View style={styles.completionPopupTop}>

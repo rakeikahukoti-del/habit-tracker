@@ -4,7 +4,6 @@ export { default as BadgeDetailModal } from "./BadgeDetailModal";
 export { default as RankError } from "./RankError";
 export { default as RankHero } from "./RankHero";
 export { default as RankMedalsGrid } from "./RankMedalsGrid";
-export { default as RankModalShell } from "./RankModalShell";
 export { default as RankPath } from "./RankPath";
 export { default as RecentAchievementsList } from "./RecentAchievementsList";
 export { default as Section } from "./Section";

@@ -3,8 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function AnalyticsLinks() {
   const { colors } = useTheme();
@@ -18,7 +17,7 @@ export default function AnalyticsLinks() {
         onPress={() => router.push("/year-review")}
         style={({ pressed }) => [
           styles.analyticsLink,
-          pressed && PRESSED_STATS_STYLE,
+          pressed && v2PressedStyles.stats,
         ]}
       >
         <AppText style={styles.analyticsLinkText}>Year in Review</AppText>
@@ -35,7 +34,7 @@ export default function AnalyticsLinks() {
         onPress={() => router.push("/analytics")}
         style={({ pressed }) => [
           styles.analyticsLink,
-          pressed && PRESSED_STATS_STYLE,
+          pressed && v2PressedStyles.stats,
         ]}
       >
         <AppText style={styles.analyticsLinkText}>

@@ -1,20 +1,20 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import RewardModalShell from "./RewardModalShell";
-import { AppIcon, AppText } from "../ui";
+import { AppIcon, AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { PERFECT_DAY_BONUS_XP } from "../../utils/gamification";
-import { PRESSED_BUTTON_STYLE } from "./pressedStyles";
 
 export default function PerfectDayModal({ onClose, reduceMotion, visible }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <RewardModalShell
-      animationType={reduceMotion ? "none" : "fade"}
-      onRequestClose={onClose}
+    <ModalShell
+      maxWidth={360}
+      onClose={onClose}
+      padding={22}
+      reduceMotion={reduceMotion}
       visible={visible}
     >
       <ScrollView
@@ -43,13 +43,13 @@ export default function PerfectDayModal({ onClose, reduceMotion, visible }) {
           onPress={onClose}
           style={({ pressed }) => [
             styles.levelModalButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.levelModalButtonText}>Nice</AppText>
         </Pressable>
       </ScrollView>
-    </RewardModalShell>
+    </ModalShell>
   );
 }
 

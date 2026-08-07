@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_CARD_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function SwipeHintCard({ onDismiss }) {
   const { colors } = useTheme();
@@ -17,7 +16,7 @@ export default function SwipeHintCard({ onDismiss }) {
       onPress={onDismiss}
       style={({ pressed }) => [
         styles.swipeHint,
-        pressed && PRESSED_CARD_STYLE,
+        pressed && v2PressedStyles.card,
       ]}
     >
       <View style={styles.swipeHintIcon}>

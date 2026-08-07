@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import RewardModalShell from "./RewardModalShell";
 import { RankMedal } from "../progression";
-import { AppText } from "../ui";
+import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Typography } from "../../src/design";
 
 export default function LevelUpModal({
   levelUp,
@@ -17,9 +15,11 @@ export default function LevelUpModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <RewardModalShell
-      animationType={reduceMotion ? "none" : "fade"}
-      onRequestClose={onClose}
+    <ModalShell
+      maxWidth={360}
+      onClose={onClose}
+      padding={22}
+      reduceMotion={reduceMotion}
       visible={visible}
     >
       <ScrollView
@@ -47,13 +47,13 @@ export default function LevelUpModal({
           onPress={onClose}
           style={({ pressed }) => [
             styles.levelModalButton,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <AppText style={styles.levelModalButtonText}>Continue</AppText>
         </Pressable>
       </ScrollView>
-    </RewardModalShell>
+    </ModalShell>
   );
 }
 

@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function MonthlyActivityCard({
   monthSummary,
@@ -44,7 +43,7 @@ export default function MonthlyActivityCard({
           onPress={goToPreviousMonth}
           style={({ pressed }) => [
             styles.monthNavButton,
-            pressed && PRESSED_STATS_STYLE,
+            pressed && v2PressedStyles.stats,
           ]}
         >
           <AppIcon
@@ -74,7 +73,7 @@ export default function MonthlyActivityCard({
           style={({ pressed }) => [
             styles.monthNavButton,
             !canGoNext && styles.disabledButton,
-            pressed && canGoNext && PRESSED_STATS_STYLE,
+            pressed && canGoNext && v2PressedStyles.stats,
           ]}
         >
           <AppIcon

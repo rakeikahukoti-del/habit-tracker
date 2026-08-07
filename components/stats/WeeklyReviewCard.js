@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function WeeklyReviewCard({ expanded, isSmallScreen, onToggle, review }) {
   const { colors } = useTheme();
@@ -56,7 +55,7 @@ export default function WeeklyReviewCard({ expanded, isSmallScreen, onToggle, re
         onPress={onToggle}
         style={({ pressed }) => [
           styles.reviewToggle,
-          pressed && PRESSED_STATS_STYLE,
+          pressed && v2PressedStyles.stats,
         ]}
       >
         <AppText style={styles.reviewToggleText}>

@@ -4,9 +4,8 @@ import { router } from "expo-router";
 import ProgressDots from "../ProgressDots";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getHabitPerformanceAccessibilityLabel } from "../../utils/analyticsPresentation";
-import { PRESSED_STATS_STYLE } from "../home/pressedStyles";
 
 export default function HabitPerformanceList({ items }) {
   const { colors } = useTheme();
@@ -41,7 +40,7 @@ function HabitPerformanceRow({ item, styles }) {
       onPress={() => router.push(`/analytics/${item.habit.id}`)}
       style={({ pressed }) => [
         styles.habitRow,
-        pressed && PRESSED_STATS_STYLE,
+        pressed && v2PressedStyles.stats,
       ]}
     >
       <View style={styles.habitTopRow}>

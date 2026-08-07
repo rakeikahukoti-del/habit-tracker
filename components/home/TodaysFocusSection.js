@@ -3,8 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import HabitCard from "../HabitCard";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function TodaysFocusSection({
   availablePriorityHabits,
@@ -46,7 +45,7 @@ export default function TodaysFocusSection({
             onPress={onOpenFocusMode}
             style={({ pressed }) => [
               styles.focusStartButton,
-              pressed && PRESSED_BUTTON_STYLE,
+              pressed && v2PressedStyles.button,
             ]}
           >
             <AppIcon color={colors.inverseText} name="flame" size={15} />
@@ -80,7 +79,7 @@ export default function TodaysFocusSection({
                   style={({ pressed }) => [
                     styles.priorityControlButton,
                     index === 0 && styles.priorityControlDisabled,
-                    pressed && PRESSED_BUTTON_STYLE,
+                    pressed && v2PressedStyles.button,
                   ]}
                 >
                   <AppIcon
@@ -99,7 +98,7 @@ export default function TodaysFocusSection({
                     styles.priorityControlButton,
                     index === priorityHabits.length - 1 &&
                       styles.priorityControlDisabled,
-                    pressed && PRESSED_BUTTON_STYLE,
+                    pressed && v2PressedStyles.button,
                   ]}
                 >
                   <AppIcon
@@ -119,7 +118,7 @@ export default function TodaysFocusSection({
                   onPress={() => onRemovePriority(habit)}
                   style={({ pressed }) => [
                     styles.priorityRemoveButton,
-                    pressed && PRESSED_BUTTON_STYLE,
+                    pressed && v2PressedStyles.button,
                   ]}
                 >
                   <AppText style={styles.priorityRemoveText}>Remove</AppText>
@@ -139,7 +138,7 @@ export default function TodaysFocusSection({
                     onPress={() => onAddPriority(habit)}
                     style={({ pressed }) => [
                       styles.priorityChip,
-                      pressed && PRESSED_BUTTON_STYLE,
+                      pressed && v2PressedStyles.button,
                     ]}
                   >
                     <AppText style={styles.priorityChipEmoji}>
@@ -167,7 +166,7 @@ export default function TodaysFocusSection({
               onPress={() => onAddPriority(habit)}
               style={({ pressed }) => [
                 styles.priorityChip,
-                pressed && PRESSED_BUTTON_STYLE,
+                pressed && v2PressedStyles.button,
               ]}
             >
               <AppText style={styles.priorityChipEmoji}>

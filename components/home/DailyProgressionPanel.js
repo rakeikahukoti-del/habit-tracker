@@ -3,8 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { RankMedal } from "../progression";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function DailyProgressionPanel({
   completedTodayCount,
@@ -50,7 +49,7 @@ export default function DailyProgressionPanel({
           onPress={toggleProgressExpanded}
           style={({ pressed }) => [
             styles.progressHeader,
-            pressed && PRESSED_BUTTON_STYLE,
+            pressed && v2PressedStyles.button,
           ]}
         >
           <View style={styles.progressHeaderText}>

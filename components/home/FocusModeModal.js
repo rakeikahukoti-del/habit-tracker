@@ -1,10 +1,8 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import RewardModalShell from "./RewardModalShell";
-import { AppIcon, AppText } from "../ui";
+import { AppIcon, AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
-import { PRESSED_BUTTON_STYLE } from "./pressedStyles";
+import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function FocusModeModal({
   dailyPlanProgress,
@@ -21,9 +19,11 @@ export default function FocusModeModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <RewardModalShell
+    <ModalShell
       animationType="fade"
-      onRequestClose={onExit}
+      maxWidth={360}
+      onClose={onExit}
+      padding={22}
       visible={visible}
     >
       <ScrollView
@@ -77,7 +77,7 @@ export default function FocusModeModal({
                 style={({ pressed }) => [
                   styles.focusPrimaryButton,
                   focusBusy && styles.priorityControlDisabled,
-                  pressed && PRESSED_BUTTON_STYLE,
+                  pressed && v2PressedStyles.button,
                 ]}
               >
                 <AppText style={styles.focusPrimaryButtonText}>
@@ -90,7 +90,7 @@ export default function FocusModeModal({
                 onPress={onSkip}
                 style={({ pressed }) => [
                   styles.focusSecondaryButton,
-                  pressed && PRESSED_BUTTON_STYLE,
+                  pressed && v2PressedStyles.button,
                 ]}
               >
                 <AppText style={styles.focusSecondaryButtonText}>
@@ -105,14 +105,14 @@ export default function FocusModeModal({
             onPress={onExit}
             style={({ pressed }) => [
               styles.focusExitButton,
-              pressed && PRESSED_BUTTON_STYLE,
+              pressed && v2PressedStyles.button,
             ]}
           >
             <AppText style={styles.focusExitButtonText}>Exit</AppText>
           </Pressable>
         </View>
       </ScrollView>
-    </RewardModalShell>
+    </ModalShell>
   );
 }
 

@@ -13,6 +13,7 @@ import { useTheme } from "../../context/ThemeContext";
 import {
   v2FontWeight,
   v2Layout,
+  v2PressedStyles,
   v2Radius,
   v2Spacing,
   v2Typography,
@@ -22,8 +23,17 @@ import {
   findDuplicateHabitDraft,
   templateGroups,
 } from "../../utils/habitTemplates";
-import { PRESSED_BUTTON_STYLE } from "../home/pressedStyles";
 
+// This owns its own Modal rather than using components/ui/ModalShell: it's a
+// slide-up bottom sheet (square top corners, full width, built-in
+// title/subtitle/close header) instead of ModalShell's centered fade-in
+// dialog. That's a structural difference driven by the picker's content
+// (a search field + scrollable list needing a persistent header), not a
+// cosmetic one, so it's intentionally left as-is. See app/settings.js's
+// data import/export modal for the app's other bottom sheet, which differs
+// from this one too (keyboard-avoiding, footer action bar) and is likewise
+// left un-merged rather than forced into a shared primitive for only two
+// single-use call sites.
 export default function TemplateRoutinePicker({
   existingHabits,
   filteredTemplates,
@@ -84,7 +94,7 @@ export default function TemplateRoutinePicker({
               onPress={onClose}
               style={({ pressed }) => [
                 styles.iconButton,
-                pressed && PRESSED_BUTTON_STYLE,
+                pressed && v2PressedStyles.button,
               ]}
             >
               <AppText style={styles.closeButtonText}>Close</AppText>
@@ -157,7 +167,7 @@ function TemplatePickerContent({
             style={({ pressed }) => [
               styles.groupChip,
               selectedGroup === group && styles.groupChipSelected,
-              pressed && PRESSED_BUTTON_STYLE,
+              pressed && v2PressedStyles.button,
             ]}
           >
             <AppText
@@ -227,7 +237,7 @@ function RoutinePickerContent({
             style={({ pressed }) => [
               styles.groupChip,
               selectedRoutineId === routine.id && styles.groupChipSelected,
-              pressed && PRESSED_BUTTON_STYLE,
+              pressed && v2PressedStyles.button,
             ]}
           >
             <AppText
@@ -279,7 +289,7 @@ function RoutinePickerContent({
               style={({ pressed }) => [
                 styles.routineItem,
                 selected && styles.routineItemSelected,
-                pressed && PRESSED_BUTTON_STYLE,
+                pressed && v2PressedStyles.button,
               ]}
             >
               <View style={styles.routineCheck}>
@@ -320,7 +330,7 @@ function RoutinePickerContent({
           styles.createRoutineButton,
           (routineSaving || selectedRoutineDrafts.length === 0) &&
             styles.saveButtonDisabled,
-          pressed && !routineSaving && PRESSED_BUTTON_STYLE,
+          pressed && !routineSaving && v2PressedStyles.button,
         ]}
       >
         <AppText style={styles.createRoutineButtonText}>
@@ -344,7 +354,7 @@ function TemplateCard({ onPress, styles, template }) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.templateCard,
-        pressed && PRESSED_BUTTON_STYLE,
+        pressed && v2PressedStyles.button,
       ]}
     >
       <View style={styles.templateEmoji}>
