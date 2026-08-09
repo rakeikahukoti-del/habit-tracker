@@ -440,7 +440,12 @@ function HabitCard({
             </View>
           </Pressable>
 
-          <View style={styles.rightActions} pointerEvents="none">
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.rightActions}
+            pointerEvents="none"
+          >
             <View
               style={[
                 styles.completionDot,
@@ -450,10 +455,7 @@ function HabitCard({
                 },
               ]}
             />
-            <View
-              accessibilityLabel={`${currentStreak} day streak`}
-              style={styles.streakBadge}
-            >
+            <View style={styles.streakBadge}>
               <AppIcon
                 color={completedToday ? themeAccent : colors.muted}
                 name="flame"

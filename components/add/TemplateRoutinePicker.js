@@ -232,6 +232,7 @@ function RoutinePickerContent({
             accessibilityLabel={`${routine.name} routine`}
             accessibilityRole="button"
             accessibilityState={{ selected: selectedRoutineId === routine.id }}
+            hitSlop={4}
             key={routine.id}
             onPress={() => onRoutineChange(routine.id)}
             style={({ pressed }) => [

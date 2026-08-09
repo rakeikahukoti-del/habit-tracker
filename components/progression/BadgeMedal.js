@@ -42,6 +42,35 @@ const tierStyles = {
   },
 };
 
+// tier.border above is tuned against the near-black dark-theme card
+// (#1C1C1E). Two of those values don't survive the trip to the light
+// theme's white card, and one doesn't survive the trip to the dark card
+// well enough:
+//  - Silver/Platinum/Diamond (pale by design, for the dark card) drop to
+//    ~1.5-2.3:1 against white - under WCAG 1.4.11's 3:1 floor for
+//    meaningful graphical objects (this ring is how sighted/low-vision
+//    users tell tiers apart at a glance; screen reader users already get
+//    the tier from this component's accessibilityLabel below).
+//  - Master's border is only 2.13:1 against the dark card as authored.
+// Both fixes below darken/lighten along the same hue rather than picking a
+// new color, so the tier stays recognizably the same color family.
+const tierBorderLightOverrides = {
+  Silver: "#899098",
+  Platinum: "#80919A",
+  Diamond: "#5798A8",
+};
+const tierBorderDarkOverrides = {
+  Master: "#BC3F4D",
+};
+
+function getTierStyle(tierName, isDark) {
+  const base = tierStyles[tierName] || tierStyles.Bronze;
+  const overrides = isDark ? tierBorderDarkOverrides : tierBorderLightOverrides;
+  const border = overrides[tierName];
+
+  return border ? { ...base, border } : base;
+}
+
 // Tiers that get a foil sheen overlay in addition to their tier.border ring.
 const MATERIAL_TIERS = new Set(["Gold", "Platinum", "Diamond", "Master"]);
 
@@ -52,8 +81,8 @@ export default function BadgeMedal({
   selected = false,
   style,
 }) {
-  const { colors } = useTheme();
-  const tier = tierStyles[badge?.tier] || tierStyles.Bronze;
+  const { colors, isDark } = useTheme();
+  const tier = getTierStyle(badge?.tier, isDark);
   const size = large ? 112 : 64;
   const asset = getAchievementBadgeAsset(badge?.id);
   const showSheen = earned && MATERIAL_TIERS.has(badge?.tier);
@@ -107,8 +136,8 @@ export default function BadgeMedal({
   );
 }
 
-export function getBadgeTierAccent(tierName) {
-  return tierStyles[tierName]?.border || tierStyles.Bronze.border;
+export function getBadgeTierAccent(tierName, isDark) {
+  return getTierStyle(tierName, isDark).border;
 }
 
 function withAlpha(hex, alpha) {

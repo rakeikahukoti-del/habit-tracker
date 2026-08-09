@@ -38,6 +38,7 @@ export default function YearActivityCard({
                 accessibilityLabel={`${year} activity year`}
                 accessibilityRole="tab"
                 accessibilityState={{ selected }}
+                hitSlop={{ bottom: 4, top: 4 }}
                 key={year}
                 onPress={() => setSelectedYear(year)}
                 style={({ pressed }) => [

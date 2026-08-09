@@ -190,8 +190,9 @@ function SummaryMetric({ label, styles, value }) {
 }
 
 function ClosestBadgeRow({ badge, onPress, progress, styles }) {
+  const { isDark } = useTheme();
   const meta = getAchievementIconMeta(badge.id);
-  const accent = getBadgeTierAccent(badge.tier);
+  const accent = getBadgeTierAccent(badge.tier, isDark);
 
   return (
     <Pressable
@@ -234,7 +235,8 @@ function ClosestBadgeRow({ badge, onPress, progress, styles }) {
 }
 
 function BadgeTile({ badge, earned, onPress, progress, styles, unlockedAt }) {
-  const accent = getBadgeTierAccent(badge.tier);
+  const { isDark } = useTheme();
+  const accent = getBadgeTierAccent(badge.tier, isDark);
   const progressLabel = getAchievementProgressLabel(progress, earned);
 
   return (

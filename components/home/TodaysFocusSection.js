@@ -42,6 +42,7 @@ export default function TodaysFocusSection({
           <Pressable
             accessibilityLabel="Start focus mode"
             accessibilityRole="button"
+            hitSlop={4}
             onPress={onOpenFocusMode}
             style={({ pressed }) => [
               styles.focusStartButton,
@@ -134,6 +135,7 @@ export default function TodaysFocusSection({
                   <Pressable
                     accessibilityLabel={`Add ${habit.name} to today's focus`}
                     accessibilityRole="button"
+                    hitSlop={{ bottom: 4, top: 4 }}
                     key={habit.id}
                     onPress={() => onAddPriority(habit)}
                     style={({ pressed }) => [
@@ -162,6 +164,7 @@ export default function TodaysFocusSection({
             <Pressable
               accessibilityLabel={`Add ${habit.name} to today's focus`}
               accessibilityRole="button"
+              hitSlop={{ bottom: 4, top: 4 }}
               key={habit.id}
               onPress={() => onAddPriority(habit)}
               style={({ pressed }) => [
