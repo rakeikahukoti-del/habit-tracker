@@ -3639,6 +3639,79 @@ test("analytics remain deterministic with hundreds of habits and years of histor
   assert.ok(Number.isFinite(dashboard.consistency.overall.rate));
 });
 
+test("month activity summary falls back to first completion when createdAt is missing", () => {
+  // Regression guard for the getHabitActivityProfiles/getHabitCompletionCaches
+  // split in activityHistory.js's getMonthActivitySummary: a habit with no
+  // resolvable createdAt should still only count days on/after its first
+  // completion, and getMonthActivitySummary's month-summary path (which
+  // defaults an unresolvable start date to "today") should agree with the
+  // day-by-day path (which drops the habit entirely before its start) about
+  // when the habit was actually active.
+  const noCreatedAt = {
+    completedDates: ["2026-07-10", "2026-07-11", "2026-07-12"],
+    frequency: "Daily",
+    id: "no-created-at",
+    name: "No createdAt",
+  };
+  const summary = activityHistory.getMonthActivitySummary(
+    [noCreatedAt],
+    new Date(2026, 6, 1),
+    new Date(2026, 6, 15)
+  );
+
+  assert.strictEqual(summary.completedCount, 3, "all three completions count");
+  assert.strictEqual(
+    summary.possibleCount,
+    6,
+    "only Jul 10-15 (first completion through the Jul-15 'now' cutoff) are possible, not the whole month"
+  );
+  assert.strictEqual(summary.completionRate, 50);
+
+  const neverCompleted = {
+    completedDates: [],
+    frequency: "Daily",
+    id: "never",
+    name: "Never completed, no createdAt",
+  };
+  const emptySummary = activityHistory.getMonthActivitySummary(
+    [neverCompleted],
+    new Date(2026, 6, 1),
+    new Date(2026, 6, 15)
+  );
+
+  assert.strictEqual(
+    emptySummary.possibleCount,
+    0,
+    "a habit with neither createdAt nor any completion contributes no possible days"
+  );
+});
+
+test("insights consistency excludes days before a habit's first completion when createdAt is missing", () => {
+  // Regression guard for insightsDashboard.js's getHabitConsistencyCaches:
+  // the cached earliest-completion-date lookup must still be filtered
+  // per-day the same way the original uncached getCompletedDateKeys(habit,
+  // dateKey)[0] was - a query window that starts before a habit's first
+  // completion should not count those early days as possible.
+  const lateStarter = {
+    completedDates: ["2026-07-10", "2026-07-11", "2026-07-12"],
+    frequency: "Daily",
+    id: "late-starter",
+    name: "Late starter, no createdAt",
+  };
+  const score = insightsDashboard.getConsistencyScore([lateStarter], {
+    endDate: new Date(2026, 6, 15),
+    startDate: new Date(2026, 6, 1),
+  });
+
+  assert.strictEqual(score.completedCount, 3);
+  assert.strictEqual(
+    score.possibleCount,
+    6,
+    "only Jul 10-15 (first completion through the end of the query window) are possible; Jul 1-9 must not count"
+  );
+  assert.strictEqual(score.rate, 50);
+});
+
 test("daily plan normalization resets stale, duplicate, missing, and unscheduled habits", () => {
   const todayKey = "2026-07-13";
   const habits = [

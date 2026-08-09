@@ -75,9 +75,23 @@ export function getMonthActivitySummary(habits, visibleMonth, now = new Date()) 
     0
   );
   const today = startOfDay(now);
+  // Built once and reused for every day/month-summary computation below,
+  // instead of each call rebuilding its own per-habit Set from
+  // completedDates - see the perf-baseline report for why that mattered
+  // (this was the dominant cost in Year in Review, which calls this
+  // function 12x for a year's monthly breakdown; the old per-day
+  // getDayActivitySummary() call rebuilt the full profile cache on every
+  // one of ~365 days). Two caches, not one, because getHabitActivityProfiles
+  // silently drops any habit with no resolvable start date, while the
+  // month-summary path below has always defaulted that case to "starts
+  // today" instead - kept as separate helpers rather than unifying them
+  // so that edge-case behavior doesn't shift as a side effect of this
+  // performance fix.
+  const profiles = getHabitActivityProfiles(habits, now);
+  const completionCaches = getHabitCompletionCaches(habits, now);
   const days = getDateRange(monthStart, monthEnd)
     .filter((date) => date <= today)
-    .map((date) => getDayActivitySummary(habits, toDateKey(date), now));
+    .map((date) => getDayActivitySummaryFromProfiles(profiles, date, now));
   const scheduledDays = days.filter((day) => day.scheduledCount > 0);
   const completedCount = days.reduce(
     (sum, day) => sum + day.completedCount,
@@ -86,7 +100,12 @@ export function getMonthActivitySummary(habits, visibleMonth, now = new Date()) 
   const possibleCount = days.reduce((sum, day) => sum + day.scheduledCount, 0);
   const perfectDays = scheduledDays.filter((day) => day.isPerfectDay).length;
   const activeDays = days.filter((day) => day.completedCount > 0).length;
-  const habitSummaries = getHabitMonthSummaries(habits, monthStart, monthEnd, now);
+  const habitSummaries = getHabitMonthSummaries(
+    completionCaches,
+    monthStart,
+    monthEnd,
+    now
+  );
   const strongestHabit = habitSummaries
     .filter((habit) => habit.possibleCount > 0)
     .sort(
@@ -96,7 +115,7 @@ export function getMonthActivitySummary(habits, visibleMonth, now = new Date()) 
         first.name.localeCompare(second.name)
     )[0] || null;
   const mostImprovedHabit = getMostImprovedHabit(
-    habits,
+    completionCaches,
     monthStart,
     monthEnd,
     now
@@ -346,13 +365,30 @@ function getHabitActivityProfiles(habits, now) {
     .filter(Boolean);
 }
 
-function getHabitMonthSummaries(habits, monthStart, monthEnd, now) {
+// Same shape as getHabitActivityProfiles's entries, but every habit is kept
+// (startDate defaults to "today" instead of the habit being dropped) - the
+// behavior getHabitMonthSummaries has always had. Kept as a separate cache
+// rather than reusing getHabitActivityProfiles so that behavior didn't
+// shift as a side effect of caching it.
+function getHabitCompletionCaches(habits, now) {
   const today = startOfDay(now);
+  const todayKey = toDateKey(today);
 
   return getSafeHabits(habits).map((habit) => {
-    const completedDates = getSafeDateKeys(habit.completedDates, toDateKey(today));
-    const completedSet = new Set(completedDates);
-    const startDate = getHabitStartDate(habit, completedDates) || today;
+    const completedDates = getSafeDateKeys(habit.completedDates, todayKey);
+
+    return {
+      completedSet: new Set(completedDates),
+      habit,
+      startDate: getHabitStartDate(habit, completedDates) || today,
+    };
+  });
+}
+
+function getHabitMonthSummaries(completionCaches, monthStart, monthEnd, now) {
+  const today = startOfDay(now);
+
+  return completionCaches.map(({ completedSet, habit, startDate }) => {
     const days = getDateRange(monthStart, monthEnd).filter(
       (date) =>
         date <= today &&
@@ -377,7 +413,7 @@ function getHabitMonthSummaries(habits, monthStart, monthEnd, now) {
   });
 }
 
-function getMostImprovedHabit(habits, monthStart, monthEnd, now) {
+function getMostImprovedHabit(completionCaches, monthStart, monthEnd, now) {
   const previousMonthStart = new Date(
     monthStart.getFullYear(),
     monthStart.getMonth() - 1,
@@ -388,9 +424,14 @@ function getMostImprovedHabit(habits, monthStart, monthEnd, now) {
     monthStart.getMonth(),
     0
   );
-  const current = getHabitMonthSummaries(habits, monthStart, monthEnd, now);
+  const current = getHabitMonthSummaries(
+    completionCaches,
+    monthStart,
+    monthEnd,
+    now
+  );
   const previous = getHabitMonthSummaries(
-    habits,
+    completionCaches,
     previousMonthStart,
     previousMonthEnd,
     now

@@ -14,23 +14,30 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function getInsightsDashboard(habits, gamification = null, now = new Date()) {
   const safeHabits = getSafeHabits(habits);
+  // Built once and threaded through every consistency/comparison call
+  // below, instead of each one independently re-filtering, deduping, and
+  // sorting every habit's completedDates - see the perf-baseline report.
+  // Cutoff is `now`, the broadest date any of these calls ever needs: each
+  // call only ever looks up dateKeys <= its own (earlier-or-equal) endDate,
+  // so a cache built to `now` is a safe superset for all of them.
+  const caches = getHabitConsistencyCaches(safeHabits, now);
   const aggregates = getAnalyticsAggregates(safeHabits, gamification, now);
   const consistency = {
-    currentMonth: getMonthToDateConsistency(safeHabits, now),
-    currentWeek: getCurrentWeekConsistency(safeHabits, now),
-    last30Days: getConsistencyScoreForLastDays(safeHabits, 30, now),
-    last90Days: getConsistencyScoreForLastDays(safeHabits, 90, now),
+    currentMonth: getMonthToDateConsistency(safeHabits, now, caches),
+    currentWeek: getCurrentWeekConsistency(safeHabits, now, caches),
+    last30Days: getConsistencyScoreForLastDays(safeHabits, 30, now, caches),
+    last90Days: getConsistencyScoreForLastDays(safeHabits, 90, now, caches),
     overall: getConsistencyFromDaySummaries(aggregates.daySummaries),
-    previousMonth: getPreviousMonthToDateConsistency(safeHabits, now),
-    previousWeek: getPreviousWeekToDateConsistency(safeHabits, now),
+    previousMonth: getPreviousMonthToDateConsistency(safeHabits, now, caches),
+    previousWeek: getPreviousWeekToDateConsistency(safeHabits, now, caches),
   };
-  const weeklyComparison = getWeeklyComparison(safeHabits, now);
-  const monthlyComparison = getMonthlyComparison(safeHabits, now);
+  const weeklyComparison = getWeeklyComparison(safeHabits, now, caches);
+  const monthlyComparison = getMonthlyComparison(safeHabits, now, caches);
   const rollingTrend = getTrendComparison(safeHabits, {
     currentDays: 30,
     now,
     previousDays: 30,
-  });
+  }, caches);
   const habitRankings = getHabitRankings(safeHabits, now);
   const weekdayConsistency = getWeekdayConsistency(aggregates.daySummaries);
   const insightCards = getInsightCards({
@@ -67,14 +74,19 @@ export function getInsightsDashboard(habits, gamification = null, now = new Date
   };
 }
 
-export function getConsistencyScoreForLastDays(habits, numberOfDays, now = new Date()) {
+export function getConsistencyScoreForLastDays(
+  habits,
+  numberOfDays,
+  now = new Date(),
+  caches = null
+) {
   const today = startOfDay(now);
   const start = addDays(today, -(Math.max(1, numberOfDays) - 1));
 
-  return getConsistencyScore(habits, { endDate: today, startDate: start });
+  return getConsistencyScore(habits, { endDate: today, startDate: start }, caches);
 }
 
-export function getConsistencyScore(habits, { endDate, startDate }) {
+export function getConsistencyScore(habits, { endDate, startDate }, caches = null) {
   const safeHabits = getSafeHabits(habits);
   const start = startOfDay(startDate || new Date());
   const end = startOfDay(endDate || start);
@@ -83,9 +95,18 @@ export function getConsistencyScore(habits, { endDate, startDate }) {
     return createConsistencySummary(0, 0);
   }
 
+  // Caller-supplied caches are assumed to already correspond to `habits`
+  // (every call site in this file builds them from the same habits array
+  // it passes down) - only build fresh here for standalone/external calls
+  // that don't have one to share. `end`, not `now`, is a safe cutoff in
+  // that fallback case: this function never looks up a dateKey later than
+  // `end`, so a cache built to exactly that bound is still a correct
+  // (if narrower) equivalent of the eager per-day rebuild it replaces.
+  const safeCaches = caches || getHabitConsistencyCaches(safeHabits, end);
+
   return getConsistencyFromDaySummaries(
     getDateRangeDays(start, end).map((date) =>
-      getDayConsistencySummary(date, safeHabits)
+      getDayConsistencySummary(date, safeCaches)
     )
   );
 }
@@ -98,8 +119,10 @@ export function getTrendComparison(
     now = new Date(),
     previousDays = currentDays,
     threshold = SIGNIFICANT_TREND_POINTS,
-  } = {}
+  } = {},
+  caches = null
 ) {
+  const safeCaches = caches || getHabitConsistencyCaches(getSafeHabits(habits), now);
   const today = startOfDay(now);
   const currentStart = addDays(today, -(currentDays - 1));
   const previousEnd = addDays(currentStart, -1);
@@ -107,11 +130,11 @@ export function getTrendComparison(
   const current = getConsistencyScore(habits, {
     endDate: today,
     startDate: currentStart,
-  });
+  }, safeCaches);
   const previous = getConsistencyScore(habits, {
     endDate: previousEnd,
     startDate: previousStart,
-  });
+  }, safeCaches);
 
   return getComparisonResult(current, previous, {
     currentLabel: `Last ${currentDays} days`,
@@ -121,7 +144,8 @@ export function getTrendComparison(
   });
 }
 
-export function getWeeklyComparison(habits, now = new Date()) {
+export function getWeeklyComparison(habits, now = new Date(), caches = null) {
+  const safeCaches = caches || getHabitConsistencyCaches(getSafeHabits(habits), now);
   const today = startOfDay(now);
   const weekStart = getStartOfWeek(today);
   const elapsedDays = daysBetween(weekStart, today) + 1;
@@ -130,11 +154,11 @@ export function getWeeklyComparison(habits, now = new Date()) {
   const current = getConsistencyScore(habits, {
     endDate: today,
     startDate: weekStart,
-  });
+  }, safeCaches);
   const previous = getConsistencyScore(habits, {
     endDate: previousWeekEnd,
     startDate: previousWeekStart,
-  });
+  }, safeCaches);
 
   return getComparisonResult(current, previous, {
     currentLabel: "This week",
@@ -142,7 +166,8 @@ export function getWeeklyComparison(habits, now = new Date()) {
   });
 }
 
-export function getMonthlyComparison(habits, now = new Date()) {
+export function getMonthlyComparison(habits, now = new Date(), caches = null) {
+  const safeCaches = caches || getHabitConsistencyCaches(getSafeHabits(habits), now);
   const today = startOfDay(now);
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const elapsedDays = daysBetween(monthStart, today) + 1;
@@ -155,11 +180,11 @@ export function getMonthlyComparison(habits, now = new Date()) {
   const current = getConsistencyScore(habits, {
     endDate: today,
     startDate: monthStart,
-  });
+  }, safeCaches);
   const previous = getConsistencyScore(habits, {
     endDate: previousMonthEnd,
     startDate: previousMonthStart,
-  });
+  }, safeCaches);
 
   return getComparisonResult(current, previous, {
     currentLabel: "This month",
@@ -213,20 +238,24 @@ export function getHabitRankings(habits, now = new Date()) {
 
 export function getHabitStrength(habit, now = new Date(), index = 0) {
   const today = startOfDay(now);
-  const completedDates = getCompletedDateKeys(habit, toDateKey(today));
+  // One habit, so no cross-habit sharing needed with getHabitRankings'
+  // other calls - but still built once and reused for this function's own
+  // three consistency-scoring calls below, instead of each rebuilding it.
+  const caches = getHabitConsistencyCaches([habit], now);
+  const completedDates = caches[0]?.sortedCompletedKeys || [];
   const last30 = getConsistencyScore([habit], {
     endDate: today,
     startDate: addDays(today, -29),
-  });
+  }, caches);
   const last7 = getConsistencyScore([habit], {
     endDate: today,
     startDate: addDays(today, -6),
-  });
+  }, caches);
   const trend = getTrendComparison([habit], {
     currentDays: 7,
     now,
     previousDays: 7,
-  });
+  }, caches);
   const currentStreak = getCurrentStreak(completedDates, habit);
   const bestStreak = getBestStreak(completedDates, habit);
   const completionBonus = Math.min(12, completedDates.length);
@@ -428,16 +457,16 @@ function getDashboardSections({
   return sections;
 }
 
-function getMonthToDateConsistency(habits, now) {
+function getMonthToDateConsistency(habits, now, caches) {
   const today = startOfDay(now);
 
   return getConsistencyScore(habits, {
     endDate: today,
     startDate: new Date(today.getFullYear(), today.getMonth(), 1),
-  });
+  }, caches);
 }
 
-function getPreviousMonthToDateConsistency(habits, now) {
+function getPreviousMonthToDateConsistency(habits, now, caches) {
   const today = startOfDay(now);
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const elapsedDays = daysBetween(monthStart, today) + 1;
@@ -450,19 +479,19 @@ function getPreviousMonthToDateConsistency(habits, now) {
       Math.min(elapsedDays, previousMonthLastDay.getDate()) - 1
     ),
     startDate: previousMonthStart,
-  });
+  }, caches);
 }
 
-function getCurrentWeekConsistency(habits, now) {
+function getCurrentWeekConsistency(habits, now, caches) {
   const today = startOfDay(now);
 
   return getConsistencyScore(habits, {
     endDate: today,
     startDate: getStartOfWeek(today),
-  });
+  }, caches);
 }
 
-function getPreviousWeekToDateConsistency(habits, now) {
+function getPreviousWeekToDateConsistency(habits, now, caches) {
   const today = startOfDay(now);
   const weekStart = getStartOfWeek(today);
   const elapsedDays = daysBetween(weekStart, today) + 1;
@@ -471,7 +500,7 @@ function getPreviousWeekToDateConsistency(habits, now) {
   return getConsistencyScore(habits, {
     endDate: addDays(previousWeekStart, elapsedDays - 1),
     startDate: previousWeekStart,
-  });
+  }, caches);
 }
 
 function getComparisonResult(
@@ -580,20 +609,63 @@ function getConsistencyFromDaySummaries(daySummaries) {
   return createConsistencySummary(completedCount, possibleCount);
 }
 
-function getDayConsistencySummary(date, habits) {
+// Built once per getInsightsDashboard()/getHabitStrength() call (see call
+// sites above) and reused across every day this function gets asked
+// about, instead of each call re-filtering/deduping/sorting the habit's
+// full completedDates array (getCompletedDateKeys) - the actual
+// bottleneck this whole cache exists to remove; see the perf-baseline
+// report for the measurements.
+function getHabitConsistencyCaches(habits, now) {
+  const todayKey = toDateKey(startOfDay(now));
+
+  return getSafeHabits(habits).map((habit) => {
+    const sortedCompletedKeys = getCompletedDateKeys(habit, todayKey);
+
+    return {
+      completedSet: new Set(sortedCompletedKeys),
+      createdAt: parseStoredDate(habit?.createdAt),
+      earliestCompletionKey: sortedCompletedKeys[0] || null,
+      habit,
+      sortedCompletedKeys,
+    };
+  });
+}
+
+// Same result as the old getHabitStartDate(habit, fallbackDate), computed
+// from the cache in O(1) instead of re-deriving it: createdAt is fixed per
+// habit, and because sortedCompletedKeys is already sorted ascending, its
+// first element is the earliest completion regardless of which day is
+// being asked about - if that earliest key already satisfies this day's
+// <= cutoff, filtering the full array down to "completions on or before
+// today" (what the original re-filter did) could never produce an earlier
+// result.
+function getHabitStartDateFromCache(cache, fallbackDate, fallbackDateKey) {
+  if (cache.createdAt && cache.createdAt <= fallbackDate) {
+    return cache.createdAt;
+  }
+
+  if (cache.earliestCompletionKey && cache.earliestCompletionKey <= fallbackDateKey) {
+    return dateKeyToLocalDate(cache.earliestCompletionKey);
+  }
+
+  return startOfDay(fallbackDate);
+}
+
+function getDayConsistencySummary(date, caches) {
   const dateKey = toDateKey(date);
-  const scheduledHabits = habits.filter(
-    (habit) =>
-      getHabitStartDate(habit, date) <= date && isHabitScheduledOnDate(habit, dateKey)
+  const scheduledCaches = caches.filter(
+    (cache) =>
+      getHabitStartDateFromCache(cache, date, dateKey) <= date &&
+      isHabitScheduledOnDate(cache.habit, dateKey)
   );
-  const completedCount = scheduledHabits.filter((habit) =>
-    getCompletedDateKeys(habit, dateKey).includes(dateKey)
+  const completedCount = scheduledCaches.filter((cache) =>
+    cache.completedSet.has(dateKey)
   ).length;
 
   return {
     completedCount,
     dateKey,
-    possibleCount: scheduledHabits.length,
+    possibleCount: scheduledCaches.length,
   };
 }
 
@@ -643,18 +715,6 @@ function getCompletedDateKeys(habit, todayKey) {
       )
     )
   ).sort();
-}
-
-function getHabitStartDate(habit, fallbackDate) {
-  const parsed = parseStoredDate(habit?.createdAt);
-
-  if (parsed && parsed <= fallbackDate) {
-    return parsed;
-  }
-
-  const firstCompletion = getCompletedDateKeys(habit, toDateKey(fallbackDate))[0];
-
-  return firstCompletion ? dateKeyToLocalDate(firstCompletion) : startOfDay(fallbackDate);
 }
 
 function parseStoredDate(value) {

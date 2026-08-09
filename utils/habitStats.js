@@ -840,14 +840,26 @@ function getOldestRelevantDate(habits) {
     : null;
 }
 
-function getHabitStartDate(habit, completedDates = getCompletedDates(habit)) {
+// `completedDates` intentionally has no default *value* here - only a
+// default of "not provided". A default expression like
+// `completedDates = getCompletedDates(habit)` is evaluated eagerly by JS
+// on every call that omits the argument, regardless of whether the
+// function body ends up using it - and the common path below (a valid
+// createdAt) never does. getCompletedDates() re-filters, dedupes, and
+// sorts the habit's full completedDates array, so with that as an eager
+// default this function was paying an O(m log m) cost on every call from
+// every caller that didn't pass completedDates explicitly (isHabitScheduledOnDate
+// among them, itself called once per day per habit in every day-range
+// loop in the app) for a value that was then thrown away unread.
+function getHabitStartDate(habit, completedDates) {
   const createdAt = parseStoredDate(habit?.createdAt);
 
   if (createdAt) {
     return startOfDay(createdAt);
   }
 
-  const firstCompletion = completedDates[0];
+  const safeCompletedDates = completedDates || getCompletedDates(habit);
+  const firstCompletion = safeCompletedDates[0];
 
   return firstCompletion ? dateKeyToLocalDate(firstCompletion) : null;
 }
