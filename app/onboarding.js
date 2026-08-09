@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
 import {
   Animated,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import BrandLogo from "../components/BrandLogo";
 import { AppIcon, AppText, PressableScale } from "../components/ui";

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Platform,
-  SafeAreaView,
   StyleSheet,
   UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import ConfettiBurst from "../components/ConfettiBurst";

@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../BottomNav";
 import { useTheme } from "../../context/ThemeContext";
 import {
