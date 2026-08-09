@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import {
+  Animated,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -8,7 +9,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import BrandLogo from "../components/BrandLogo";
-import { AppText, PressableScale } from "../components/ui";
+import { AppIcon, AppText, PressableScale } from "../components/ui";
 import {
   v2FontWeight,
   v2Layout,
@@ -17,7 +18,16 @@ import {
   v2Typography,
 } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
+import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 import { completeOnboarding } from "../storage/appPreferences";
+
+const STAGGER_MS = 80;
+
+const points = [
+  { icon: "home", text: "Home keeps today focused." },
+  { icon: "progress", text: "Progress shows streaks, trends, and weekly context." },
+  { icon: "rank", text: "XP and ranks reward consistency without pressure." },
+];
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
@@ -28,6 +38,12 @@ export default function OnboardingScreen() {
   const [starting, setStarting] = useState(false);
   const startingRef = useRef(false);
   const styles = createStyles(colors, { isSmallScreen, isTablet });
+
+  // Staggered fade/slide-in: brand -> title -> points, skipped entirely
+  // under reduced motion (see useEntranceAnimation).
+  const brandEntrance = useEntranceAnimation([], { delay: 0 });
+  const titleEntrance = useEntranceAnimation([], { delay: STAGGER_MS });
+  const pointsEntrance = useEntranceAnimation([], { delay: STAGGER_MS * 2 });
 
   async function handleStart() {
     if (startingRef.current) {
@@ -55,33 +71,35 @@ export default function OnboardingScreen() {
         showsVerticalScrollIndicator={false}
       >
       <View style={styles.container}>
-        <View style={styles.brand}>
+        <Animated.View style={[styles.brand, brandEntrance.style]}>
           <BrandLogo
             decorative
             size={isSmallScreen ? 76 : 88}
           />
           <AppText style={styles.wordmark}>MOMENTUM</AppText>
-        </View>
-        <AppText style={styles.eyebrow}>Start simple</AppText>
-        <AppText style={styles.title}>
-          Build better habits one day at a time.
-        </AppText>
-        <AppText style={styles.subtitle}>
-          Create habits, complete what is scheduled, and review the progress you
-          build over time.
-        </AppText>
+        </Animated.View>
 
-        <View style={styles.points}>
-          <AppText style={styles.point}>
-            Home keeps today focused.
+        <Animated.View style={titleEntrance.style}>
+          <AppText style={styles.eyebrow}>Start simple</AppText>
+          <AppText style={styles.title}>
+            Build better habits one day at a time.
           </AppText>
-          <AppText style={styles.point}>
-            Progress shows streaks, trends, and weekly context.
+          <AppText style={styles.subtitle}>
+            Create habits, complete what is scheduled, and review the progress you
+            build over time.
           </AppText>
-          <AppText style={styles.point}>
-            XP and ranks reward consistency without pressure.
-          </AppText>
-        </View>
+        </Animated.View>
+
+        <Animated.View style={[styles.points, pointsEntrance.style]}>
+          {points.map((point) => (
+            <View key={point.icon} style={styles.point}>
+              <View style={styles.pointIcon}>
+                <AppIcon color={colors.primary} name={point.icon} size={16} strokeWidth={2} />
+              </View>
+              <AppText style={styles.pointText}>{point.text}</AppText>
+            </View>
+          ))}
+        </Animated.View>
 
         {error ? (
           <AppText accessibilityRole="alert" style={styles.error}>
@@ -165,14 +183,29 @@ function createStyles(colors, { isSmallScreen, isTablet }) {
       marginTop: v2Spacing.xl,
     },
     point: {
+      alignItems: "center",
       backgroundColor: colors.card,
       borderRadius: v2Radius.medium,
+      flexDirection: "row",
+      gap: v2Spacing.md,
+      overflow: "hidden",
+      padding: v2Spacing.md,
+    },
+    pointIcon: {
+      alignItems: "center",
+      backgroundColor: colors.accentSoft,
+      borderRadius: v2Radius.pill,
+      flexShrink: 0,
+      height: 32,
+      justifyContent: "center",
+      width: 32,
+    },
+    pointText: {
       color: colors.text,
+      flex: 1,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
       lineHeight: v2Typography.body.lineHeight,
-      overflow: "hidden",
-      padding: v2Spacing.md,
     },
     button: {
       alignItems: "center",

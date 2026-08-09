@@ -1,17 +1,24 @@
 import { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
+import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function EmptyProgress() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const entrance = useEntranceAnimation();
 
   return (
-    <View style={styles.emptyCard}>
-      <AppText style={styles.emptyTitle}>Not enough data yet</AppText>
+    <Animated.View style={[styles.emptyCard, entrance.style]}>
+      <View style={styles.emptyIconCircle}>
+        <AppIcon color={colors.primary} name="progress" size={22} strokeWidth={2} />
+      </View>
+      <AppText style={styles.emptyTitle}>
+        Not enough data yet — a few completions will fill this in
+      </AppText>
       <AppText style={styles.emptyText}>
         Create one habit and complete it for a few days to start seeing your
         consistency.
@@ -28,7 +35,7 @@ export default function EmptyProgress() {
         <AppIcon name="plus" color={colors.inverseText} size={16} />
         <AppText style={styles.emptyActionText}>Add habit</AppText>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -38,6 +45,17 @@ function createStyles(colors) {
       backgroundColor: colors.card,
       borderRadius: v2Radius.large,
       padding: v2Spacing.xl,
+    },
+    emptyIconCircle: {
+      alignItems: "center",
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      height: 56,
+      justifyContent: "center",
+      marginBottom: v2Spacing.md,
+      width: 56,
     },
     emptyTitle: {
       color: colors.text,

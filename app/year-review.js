@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   StyleSheet,
   useWindowDimensions,
@@ -12,6 +13,7 @@ import AnalyticsScreen, {
 } from "../components/analytics/AnalyticsScreen";
 import { AppIcon, AppText, BackIcon, IconButton } from "../components/ui";
 import { useTheme } from "../context/ThemeContext";
+import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 import {
   v2FontWeight,
   v2Radius,
@@ -123,13 +125,11 @@ export default function YearReviewScreen() {
       ) : null}
 
       {!loading && !review.hasData ? (
-        <View accessible accessibilityLabel="No yearly habit history yet." style={styles.emptyCard}>
-          <AppText style={styles.emptyTitle}>No review yet</AppText>
-          <AppText style={styles.emptyText}>
-            Complete habits during {selectedYear} and Momentum will build a
-            yearly summary from your saved history.
-          </AppText>
-        </View>
+        <YearReviewEmptyState
+          colors={colors}
+          selectedYear={selectedYear}
+          styles={styles}
+        />
       ) : null}
 
       {!loading && review.hasData ? (
@@ -153,6 +153,29 @@ export default function YearReviewScreen() {
         </>
       ) : null}
     </AnalyticsScreen>
+  );
+}
+
+function YearReviewEmptyState({ colors, selectedYear, styles }) {
+  const entrance = useEntranceAnimation();
+
+  return (
+    <Animated.View
+      accessible
+      accessibilityLabel="No yearly habit history yet."
+      style={[styles.emptyCard, entrance.style]}
+    >
+      <View style={styles.emptyIconCircle}>
+        <AppIcon color={colors.primary} name="flame" size={22} strokeWidth={2} />
+      </View>
+      <AppText style={styles.emptyTitle}>
+        No review yet — this fills in as you complete habits
+      </AppText>
+      <AppText style={styles.emptyText}>
+        Complete habits during {selectedYear} and Momentum will build a
+        yearly summary from your saved history.
+      </AppText>
+    </Animated.View>
   );
 }
 
@@ -449,6 +472,17 @@ function createStyles(colors, { isSmallScreen }) {
       backgroundColor: colors.card,
       borderRadius: v2Radius.large,
       padding: v2Spacing.xl,
+    },
+    emptyIconCircle: {
+      alignItems: "center",
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      height: 56,
+      justifyContent: "center",
+      marginBottom: v2Spacing.md,
+      width: 56,
     },
     emptyTitle: {
       color: colors.text,

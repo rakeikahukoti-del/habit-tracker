@@ -1,35 +1,39 @@
 import { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
+import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function TrendUnlockBanner({ onDismiss }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const entrance = useEntranceAnimation();
 
   return (
-    <Pressable
-      accessibilityLabel="First trend unlocked. Analytics can now show useful patterns."
-      accessibilityRole="button"
-      accessibilityHint="Double tap to dismiss this message."
-      onPress={onDismiss}
-      style={({ pressed }) => [
-        styles.unlockBanner,
-        pressed && v2PressedStyles.stats,
-      ]}
-    >
-      <View style={styles.unlockIcon}>
-        <AppIcon name="analytics" color={colors.primary} size={18} />
-      </View>
-      <View style={styles.unlockText}>
-        <AppText style={styles.unlockTitle}>First trend unlocked</AppText>
-        <AppText style={styles.unlockMessage}>
-          Momentum can now show patterns from your habit history.
-        </AppText>
-      </View>
-      <AppText style={styles.unlockDismiss}>Got it</AppText>
-    </Pressable>
+    <Animated.View style={entrance.style}>
+      <Pressable
+        accessibilityLabel="First trend unlocked. Analytics can now show useful patterns."
+        accessibilityRole="button"
+        accessibilityHint="Double tap to dismiss this message."
+        onPress={onDismiss}
+        style={({ pressed }) => [
+          styles.unlockBanner,
+          pressed && v2PressedStyles.stats,
+        ]}
+      >
+        <View style={styles.unlockIcon}>
+          <AppIcon name="analytics" color={colors.primary} size={18} />
+        </View>
+        <View style={styles.unlockText}>
+          <AppText style={styles.unlockTitle}>First trend unlocked</AppText>
+          <AppText style={styles.unlockMessage}>
+            Momentum can now show patterns from your habit history.
+          </AppText>
+        </View>
+        <AppText style={styles.unlockDismiss}>Got it</AppText>
+      </Pressable>
+    </Animated.View>
   );
 }
 
