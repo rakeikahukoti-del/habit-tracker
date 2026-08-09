@@ -1,12 +1,25 @@
 import { useMemo } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { AppIcon, AppText } from "../ui";
+import AppIcon from "./AppIcon";
+import AppText from "./AppText";
 import { useTheme } from "../../context/ThemeContext";
 import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
-export default function EmptyProgress() {
+// Shared "not enough data yet" card - was duplicated byte-for-byte (down to
+// the layout, animation, and pressed-state) between Progress's EmptyProgress
+// and Analytics' EmptyAnalytics, differing only in icon, copy, and the
+// accessibility label on the CTA. Same rationale as the Phase 4 ModalShell
+// merge: genuinely identical structure, not just superficially similar.
+export default function EmptyDataCard({
+  ctaAccessibilityLabel,
+  ctaLabel,
+  ctaRoute,
+  icon,
+  message,
+  title,
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const entrance = useEntranceAnimation();
@@ -14,26 +27,21 @@ export default function EmptyProgress() {
   return (
     <Animated.View style={[styles.emptyCard, entrance.style]}>
       <View style={styles.emptyIconCircle}>
-        <AppIcon color={colors.primary} name="progress" size={22} strokeWidth={2} />
+        <AppIcon color={colors.primary} name={icon} size={22} strokeWidth={2} />
       </View>
-      <AppText style={styles.emptyTitle}>
-        Not enough data yet — a few completions will fill this in
-      </AppText>
-      <AppText style={styles.emptyText}>
-        Create one habit and complete it for a few days to start seeing your
-        consistency.
-      </AppText>
+      <AppText style={styles.emptyTitle}>{title}</AppText>
+      <AppText style={styles.emptyText}>{message}</AppText>
       <Pressable
-        accessibilityLabel="Create a habit from Progress"
+        accessibilityLabel={ctaAccessibilityLabel}
         accessibilityRole="button"
-        onPress={() => router.push("/add")}
+        onPress={() => router.push(ctaRoute)}
         style={({ pressed }) => [
           styles.emptyAction,
           pressed && v2PressedStyles.stats,
         ]}
       >
-        <AppIcon name="plus" color={colors.inverseText} size={16} />
-        <AppText style={styles.emptyActionText}>Add habit</AppText>
+        <AppIcon color={colors.inverseText} name="plus" size={16} />
+        <AppText style={styles.emptyActionText}>{ctaLabel}</AppText>
       </Pressable>
     </Animated.View>
   );
