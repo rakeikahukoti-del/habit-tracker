@@ -1,19 +1,23 @@
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { Animated, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
 import { AppIcon, AppText, PrimaryButton } from "./ui";
 import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
+import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 
 export default function EmptyState() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const styles = createStyles(colors, width < 380);
+  const entrance = useEntranceAnimation();
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, entrance.style]}>
       <MomentumWolfMark decorative size={72} style={styles.mark} />
-      <AppText style={styles.title}>No habits yet</AppText>
+      <AppText style={styles.title}>
+        No habits yet — your first one starts today
+      </AppText>
       <AppText style={styles.message}>
         Add one small habit. Swipe it complete today, then watch your streak
         and progress build.
@@ -45,7 +49,7 @@ export default function EmptyState() {
           Create first habit
         </PrimaryButton>
       </Link>
-    </View>
+    </Animated.View>
   );
 }
 

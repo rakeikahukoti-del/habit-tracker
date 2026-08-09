@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +11,7 @@ import {
 import { habitFormSharedStyles } from "../HabitFormScreen";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
+import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
 import {
   v2FontWeight,
   v2Layout,
@@ -196,10 +198,26 @@ function TemplatePickerContent({
             />
           ))
         ) : (
-          <AppText style={styles.emptyPickerText}>No matching templates.</AppText>
+          <NoMatchingTemplates styles={styles} />
         )}
       </ScrollView>
     </>
+  );
+}
+
+function NoMatchingTemplates({ styles }) {
+  const { colors } = useTheme();
+  const entrance = useEntranceAnimation();
+
+  return (
+    <Animated.View style={[styles.emptyPickerState, entrance.style]}>
+      <View style={styles.emptyIconCircle}>
+        <AppIcon color={colors.primary} name="check" size={20} strokeWidth={2} />
+      </View>
+      <AppText style={styles.emptyPickerText}>
+        No matching templates — try a different search term.
+      </AppText>
+    </Animated.View>
   );
 }
 
@@ -312,7 +330,7 @@ function RoutinePickerContent({
         })}
 
         {selectedRoutineDrafts.length === 0 ? (
-          <AppText style={styles.emptyPickerText}>
+          <AppText style={styles.selectionHintText}>
             Select at least one habit.
           </AppText>
         ) : null}
@@ -583,7 +601,29 @@ function createStyles(colors) {
     checkColor: {
       color: colors.primary,
     },
+    emptyPickerState: {
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: v2Radius.large,
+      padding: v2Spacing.lg,
+    },
+    emptyIconCircle: {
+      alignItems: "center",
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      height: 56,
+      justifyContent: "center",
+      marginBottom: v2Spacing.md,
+      width: 56,
+    },
     emptyPickerText: {
+      color: colors.muted,
+      ...v2Typography.body,
+      textAlign: "center",
+    },
+    selectionHintText: {
       backgroundColor: colors.card,
       borderRadius: v2Radius.large,
       color: colors.muted,

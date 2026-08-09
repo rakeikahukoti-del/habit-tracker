@@ -34,6 +34,7 @@ import {
 } from "../storage/habitsStorage";
 import { withAlpha } from "../utils/colorUtils";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 
 const ROW_DRAG_HEIGHT = 82;
 const AUTO_SCROLL_EDGE_DISTANCE = 116;
@@ -286,12 +287,7 @@ export default function ReorderHabitsScreen() {
         {loading ? (
           <AppText style={styles.emptyText}>Loading habits...</AppText>
         ) : habits.length === 0 ? (
-          <View style={styles.emptyState}>
-            <AppText style={styles.emptyTitle}>No habits yet</AppText>
-            <AppText style={styles.emptyText}>
-              Create a habit first, then set its order here.
-            </AppText>
-          </View>
+          <ReorderEmptyState colors={colors} styles={styles} />
         ) : (
           habits.map((habit, index) => (
             <HabitOrderRow
@@ -313,6 +309,24 @@ export default function ReorderHabitsScreen() {
         )}
       </View>
     </SettingsScreen>
+  );
+}
+
+function ReorderEmptyState({ colors, styles }) {
+  const entrance = useEntranceAnimation();
+
+  return (
+    <Animated.View style={[styles.emptyState, entrance.style]}>
+      <View style={styles.emptyIconCircle}>
+        <AppIcon color={colors.primary} name="drag" size={22} strokeWidth={2} />
+      </View>
+      <AppText style={styles.emptyTitle}>
+        No habits yet — nothing to reorder
+      </AppText>
+      <AppText style={styles.emptyText}>
+        Create a habit first, then set its order here.
+      </AppText>
+    </Animated.View>
   );
 }
 
@@ -527,6 +541,17 @@ function createStyles(colors, { isSmallScreen }) {
     emptyState: {
       alignItems: "center",
       padding: v2Spacing.xxl,
+    },
+    emptyIconCircle: {
+      alignItems: "center",
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      height: 56,
+      justifyContent: "center",
+      marginBottom: v2Spacing.md,
+      width: 56,
     },
     emptyTitle: {
       color: colors.text,

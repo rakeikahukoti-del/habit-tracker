@@ -30,7 +30,7 @@ export default function PerfectDayModal({ onClose, reduceMotion, visible }) {
           />
         </View>
         <AppText style={styles.levelModalEyebrow}>Perfect day</AppText>
-        <AppText style={styles.levelModalTitle}>All habits complete</AppText>
+        <AppText style={styles.levelModalTitle}>Every habit, done.</AppText>
         <AppText style={styles.levelModalMessage}>
           You cleared every habit today and earned the perfect day bonus.
         </AppText>
