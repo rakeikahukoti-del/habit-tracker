@@ -321,7 +321,7 @@ function ReorderEmptyState({ colors, styles }) {
         <AppIcon color={colors.primary} name="drag" size={22} strokeWidth={2} />
       </View>
       <AppText style={styles.emptyTitle}>
-        No habits yet — nothing to reorder
+        No habits yet — add one to start reordering
       </AppText>
       <AppText style={styles.emptyText}>
         Create a habit first, then set its order here.
