@@ -56,8 +56,10 @@ git diff --check
 npx expo export
 ```
 
-The project uses a deterministic Node smoke-test suite. No lint or static-type
-script is currently configured.
+`npm test` runs a deterministic Node logic smoke-test suite
+(`npm run test:logic`) followed by a Jest/`@testing-library/react-native`
+component-interaction suite (`npm run test:rtl`, `__tests__/`). No lint or
+static-type script is currently configured.
 
 ## Repository Layout
 

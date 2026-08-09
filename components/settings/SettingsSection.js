@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../BottomNav";
 import { AppIcon, BackIcon, IconButton, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";

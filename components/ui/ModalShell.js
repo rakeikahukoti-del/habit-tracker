@@ -50,6 +50,7 @@ export default function ModalShell({
         accessible={false}
         onPress={onClose}
         style={styles.modalBackdrop}
+        testID="modal-backdrop"
       >
         <Pressable
           // Swallows the tap so pressing the card itself doesn't bubble to
@@ -60,6 +61,7 @@ export default function ModalShell({
           onAccessibilityEscape={onClose}
           onPress={() => {}}
           style={styles.modalCard}
+          testID="modal-card"
         >
           {children}
         </Pressable>
