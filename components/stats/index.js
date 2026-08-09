@@ -1,5 +1,4 @@
 export { default as AnalyticsLinks } from "./AnalyticsLinks";
-export { default as EmptyProgress } from "./EmptyProgress";
 export { default as HeroMetric } from "./HeroMetric";
 export { default as LongTermProgressSection } from "./LongTermProgressSection";
 export { default as MonthlyActivityCard } from "./MonthlyActivityCard";

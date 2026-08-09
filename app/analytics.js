@@ -7,7 +7,6 @@ import AnalyticsScaffold, {
 import {
   AnalyticsError,
   DataBuildingAnalytics,
-  EmptyAnalytics,
   HabitPerformanceList,
   InsightsDashboardSection,
   KeyMetricsGrid,
@@ -17,7 +16,7 @@ import {
   TrendUnlockBanner,
 } from "../components/analytics";
 import { PeriodControl } from "../components/stats";
-import { AppText, BackIcon, IconButton } from "../components/ui";
+import { AppText, BackIcon, EmptyDataCard, IconButton } from "../components/ui";
 import {
   v2FontWeight,
   v2Radius,
@@ -87,7 +86,14 @@ export default function AnalyticsScreen() {
         ) : null}
 
         {!loading && !error && analytics.habitCount === 0 ? (
-          <EmptyAnalytics />
+          <EmptyDataCard
+            ctaAccessibilityLabel="Create a habit from Analytics"
+            ctaLabel="Add habit"
+            ctaRoute="/add"
+            icon="analytics"
+            message="Add your first habit, then complete it for a few days to unlock trends and insights."
+            title="No habits to analyse — add one to start spotting trends"
+          />
         ) : null}
 
         {!loading && !error && readiness.isBuilding ? (

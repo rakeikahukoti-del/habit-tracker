@@ -5,7 +5,6 @@ import AnalyticsScreen, {
 } from "../components/analytics/AnalyticsScreen";
 import {
   AnalyticsLinks,
-  EmptyProgress,
   HeroMetric,
   LongTermProgressSection,
   MonthlyActivityCard,
@@ -16,7 +15,7 @@ import {
   WeeklyVisual,
   YearActivityCard,
 } from "../components/stats";
-import { AppText } from "../components/ui";
+import { AppText, EmptyDataCard } from "../components/ui";
 import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useStatsController } from "../hooks/useStatsController";
@@ -74,7 +73,16 @@ export default function StatsScreen() {
         </View>
       ) : null}
 
-      {!loading && progress.habitCount === 0 ? <EmptyProgress /> : null}
+      {!loading && progress.habitCount === 0 ? (
+        <EmptyDataCard
+          ctaAccessibilityLabel="Create a habit from Progress"
+          ctaLabel="Add habit"
+          ctaRoute="/add"
+          icon="progress"
+          message="Create one habit and complete it for a few days to start seeing your consistency."
+          title="Not enough data yet — a few completions will fill this in"
+        />
+      ) : null}
 
       {!loading && progress.habitCount > 0 ? (
         <>

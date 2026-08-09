@@ -1,6 +1,5 @@
 export { default as AnalyticsError } from "./AnalyticsError";
 export { default as DataBuildingAnalytics } from "./DataBuildingAnalytics";
-export { default as EmptyAnalytics } from "./EmptyAnalytics";
 export { default as HabitAnalyticsHeader } from "./HabitAnalyticsHeader";
 export { default as HabitConsistencyCard } from "./HabitConsistencyCard";
 export { default as HabitHeroSection } from "./HabitHeroSection";
