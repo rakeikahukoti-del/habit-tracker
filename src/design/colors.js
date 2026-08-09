@@ -41,14 +41,23 @@ export const v2LightColors = {
 
   textPrimary: "#17171A",
   textSecondary: "#4B4B4F",
-  textMuted: "#7A7A7E",
+  // Darkened from #7A7A7E: at the original value, text set in this color
+  // (bottom nav labels, calendar day numbers, progress-dot labels) read at
+  // 3.96:1 against the light background - below WCAG AA's 4.5:1 for normal
+  // text. #707074 clears 4.5:1 against both background and card.
+  textMuted: "#707074",
   textDisabled: "#B2B2B5",
 
   accentPrimary: "#17171A",
   accentContrast: "#FFFFFF",
 
-  success: "#5F8B6F",
-  warning: "#C58A2B",
+  // success/warning are also used as text color (e.g. backup-import preview
+  // status copy in app/settings.js), where the original values read at
+  // 3.88:1 / 2.98:1 against light backgrounds - below WCAG AA's 4.5:1.
+  // Darkened along the same hue to clear 4.5:1; still well above the 3:1
+  // floor everywhere else they're used as a border/accent color.
+  success: "#537960",
+  warning: "#936720",
   danger: "#B5484C",
   informational: "#64748B",
   focus: "#8B5CF6",

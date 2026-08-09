@@ -52,6 +52,7 @@ export default function WeeklyReviewCard({ expanded, isSmallScreen, onToggle, re
         }
         accessibilityRole="button"
         accessibilityState={{ expanded }}
+        hitSlop={{ bottom: 4, top: 4 }}
         onPress={onToggle}
         style={({ pressed }) => [
           styles.reviewToggle,

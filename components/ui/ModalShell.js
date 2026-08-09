@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Modal, StyleSheet, View } from "react-native";
+import { Modal, Pressable, StyleSheet } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { v2Radius, v2Shadows, v2Spacing } from "../../src/design";
 
@@ -40,15 +40,30 @@ export default function ModalShell({
       onRequestClose={onClose}
       visible={visible}
     >
-      <View style={styles.modalBackdrop}>
-        <View
+      {/* accessible={false} on both Pressables below: Pressable defaults to
+          accessible=true (unlike View), which would collapse the whole
+          backdrop - or the whole card - into a single opaque, unlabeled
+          accessibility node and hide every button/text inside from
+          individual screen-reader focus. Forcing it off here preserves the
+          original per-child navigation. */}
+      <Pressable
+        accessible={false}
+        onPress={onClose}
+        style={styles.modalBackdrop}
+      >
+        <Pressable
+          // Swallows the tap so pressing the card itself doesn't bubble to
+          // the backdrop's onPress={onClose} above.
+          accessible={false}
           accessibilityViewIsModal
           importantForAccessibility="yes"
+          onAccessibilityEscape={onClose}
+          onPress={() => {}}
           style={styles.modalCard}
         >
           {children}
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

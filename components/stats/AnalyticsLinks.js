@@ -14,6 +14,7 @@ export default function AnalyticsLinks() {
       <Pressable
         accessibilityLabel="Open Year in Review"
         accessibilityRole="button"
+        hitSlop={4}
         onPress={() => router.push("/year-review")}
         style={({ pressed }) => [
           styles.analyticsLink,
@@ -31,6 +32,7 @@ export default function AnalyticsLinks() {
       <Pressable
         accessibilityLabel="Open analytics"
         accessibilityRole="button"
+        hitSlop={4}
         onPress={() => router.push("/analytics")}
         style={({ pressed }) => [
           styles.analyticsLink,
