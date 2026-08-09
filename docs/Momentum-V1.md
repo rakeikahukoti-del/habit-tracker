@@ -230,13 +230,20 @@ notification behavior remain part of ongoing maintenance QA.
 
 ## Testing
 
-`npm test` runs deterministic logic coverage for dates, schedules, analytics,
-gamification, preferences, notification reconciliation, backup safety, widget
-models/actions, planning, templates, routines, and storage recovery.
+`npm test` runs both suites in sequence:
+
+- `npm run test:logic` - deterministic logic coverage for dates, schedules,
+  analytics, gamification, preferences, notification reconciliation, backup
+  safety, widget models/actions, planning, templates, routines, and storage
+  recovery (`scripts/logic-smoke-test.cjs`).
+- `npm run test:rtl` - component/interaction coverage (Jest + `jest-expo` +
+  `@testing-library/react-native`) under `__tests__/`, covering modal
+  dismiss behavior, accessibility actions, theme switching, and form/list
+  interactions. No visual-regression or snapshot coverage by design (see
+  `__tests__/` for the rationale).
 
 `npx expo export` verifies that iOS and Android bundles and static assets compile.
-There is currently no configured lint, formatter, TypeScript, or UI automation
-toolchain.
+There is currently no configured lint, formatter, or TypeScript toolchain.
 
 ## Known Limitations
 
