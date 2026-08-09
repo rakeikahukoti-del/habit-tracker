@@ -215,7 +215,7 @@ function NoMatchingTemplates({ styles }) {
         <AppIcon color={colors.primary} name="check" size={20} strokeWidth={2} />
       </View>
       <AppText style={styles.emptyPickerText}>
-        No matching templates — try a different search term.
+        No matching templates — try a different search term
       </AppText>
     </Animated.View>
   );
