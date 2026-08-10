@@ -13,8 +13,7 @@ import HabitFormScreen, {
   habitFormSharedStyles,
 } from "../../components/HabitFormScreen";
 import HabitHistoryGrid from "../../components/HabitHistoryGrid";
-import ProgressDots from "../../components/ProgressDots";
-import { AppText, BackIcon, IconButton } from "../../components/ui";
+import { AppIcon, AppText, BackIcon, IconButton } from "../../components/ui";
 import {
   DEFAULT_HABIT_CATEGORY,
   DEFAULT_HABIT_COLOR,
@@ -30,14 +29,7 @@ import {
   normalizeHabit,
   updateHabit,
 } from "../../storage/habitsStorage";
-import {
-  getBestStreak,
-  getCurrentStreak,
-  getWeeklyProgress,
-  wasCompletedToday,
-} from "../../utils/habitStats";
-import { getHabitRecoveryContext } from "../../utils/returnExperience";
-import { getHabitWeeklyPattern } from "../../utils/weeklyReview";
+import { getCurrentStreak, wasCompletedToday } from "../../utils/habitStats";
 
 export default function HabitDetailsScreen() {
   const { colors } = useTheme();
@@ -291,10 +283,6 @@ export default function HabitDetailsScreen() {
   }
 
   const currentStreak = getCurrentStreak(habit.completedDates, habit);
-  const bestStreak = getBestStreak(habit.completedDates, habit);
-  const weeklyProgress = getWeeklyProgress(habit);
-  const weeklyPattern = getHabitWeeklyPattern(habit);
-  const recoveryContext = getHabitRecoveryContext(habit);
   const completedToday = wasCompletedToday(habit);
   const icon = emoji || habit.emoji || DEFAULT_HABIT_EMOJI;
 
@@ -361,7 +349,11 @@ export default function HabitDetailsScreen() {
       }
     >
 
-          <View style={styles.statsCard}>
+          <View
+            accessibilityLabel={`Today: ${completedToday ? "complete" : "open"}. Current streak ${currentStreak} days.`}
+            accessible
+            style={styles.statsCard}
+          >
             <View style={styles.statsHeader}>
               <View>
                 <AppText style={styles.cardLabel}>Today</AppText>
@@ -369,48 +361,30 @@ export default function HabitDetailsScreen() {
                   {completedToday ? "Complete" : "Open"}
                 </AppText>
               </View>
-              <ProgressDots days={weeklyProgress} compact />
-            </View>
-
-            <View style={styles.statsGrid}>
-              <StatBlock label="Current streak" value={currentStreak} styles={styles} />
-              <StatBlock label="Best streak" value={bestStreak} styles={styles} />
-              <StatBlock
-                label="Total completions"
-                value={habit.completedDates.length}
-                styles={styles}
-              />
+              <View style={styles.streakBlock}>
+                <AppText style={styles.streakValue}>{currentStreak}</AppText>
+                <AppText style={styles.cardLabel}>Current streak</AppText>
+              </View>
             </View>
           </View>
 
-          <View
-            accessibilityLabel={`Habit context. Last completed ${recoveryContext.lastCompletedLabel}. ${recoveryContext.nextScheduledLabel}. Your best streak remains ${bestStreak} days.`}
-            accessible
-            style={styles.recoveryCard}
+          {/* Full stat breakdown (best streak, totals, this week, trend)
+              lives on the per-habit Analytics screen - this is just enough
+              to decide whether today needs attention before editing. See
+              Phase 7 survey, thread 3. */}
+          <Pressable
+            accessibilityLabel="Open deeper habit analytics"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={() => router.push(`/analytics/${habit.id}`)}
+            style={({ pressed }) => [
+              styles.analyticsLink,
+              pressed && styles.buttonPressed,
+            ]}
           >
-            <WeeklyRow
-              label="Last completed"
-              styles={styles}
-              value={recoveryContext.lastCompletedLabel}
-            />
-            <WeeklyRow
-              label="Next scheduled"
-              styles={styles}
-              value={recoveryContext.nextScheduledLabel}
-            />
-            {currentStreak === 0 && bestStreak > 0 ? (
-              <AppText style={styles.recoveryNote}>
-                Complete the next scheduled day to begin a new current streak.
-                Your best streak remains recorded.
-              </AppText>
-            ) : null}
-          </View>
-
-          <HabitWeeklySummary
-            habitId={habit.id}
-            pattern={weeklyPattern}
-            styles={styles}
-          />
+            <AppText style={styles.analyticsLinkText}>View full analytics</AppText>
+            <AppIcon color={colors.primary} name="chevron-right" size={16} strokeWidth={2} />
+          </Pressable>
 
           <HabitHistoryGrid habit={habit} onToggleDate={handleToggleHistoryDay} />
 
@@ -452,70 +426,6 @@ export default function HabitDetailsScreen() {
             />
           </View>
     </HabitFormScreen>
-  );
-}
-
-function StatBlock({ label, value, styles }) {
-  return (
-    <View style={styles.statBlock}>
-      <AppText style={styles.statValue}>{value}</AppText>
-      <AppText style={styles.statLabel}>{label}</AppText>
-    </View>
-  );
-}
-
-function HabitWeeklySummary({ habitId, pattern, styles }) {
-  return (
-    <View style={styles.weeklyCard}>
-      <View
-        accessibilityLabel={`This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${pattern.comparison.label}.`}
-        accessible
-        style={styles.weeklyHeader}
-      >
-        <View style={styles.weeklyMain}>
-          <AppText style={styles.cardLabel}>This week</AppText>
-          <AppText style={styles.weeklyValue}>{pattern.summaryLabel}</AppText>
-          <AppText style={styles.weeklyCaption}>scheduled completed</AppText>
-        </View>
-        <View style={styles.weeklyRatePill}>
-          <AppText style={styles.weeklyRateText}>{pattern.completionRateLabel}</AppText>
-        </View>
-      </View>
-
-      <View style={styles.weeklyRows}>
-        <WeeklyRow
-          label="Compared with last week"
-          styles={styles}
-          value={
-            pattern.comparison.available
-              ? pattern.comparison.label
-              : "Needs more data"
-          }
-        />
-      </View>
-
-      <Pressable
-        accessibilityLabel="Open deeper habit analytics"
-        accessibilityRole="button"
-        hitSlop={6}
-        onPress={() => router.push(`/analytics/${habitId}`)}
-        style={({ pressed }) => [
-          styles.analyticsButton,
-          pressed && styles.buttonPressed,
-        ]}
-      >
-        <AppText style={styles.analyticsButtonText}>View analytics</AppText>
-      </Pressable>
-    </View>
-  );
-}
-
-function WeeklyRow({ label, styles, value }) {
-  return (
-    <View style={styles.weeklyRow}>
-      <AppText style={styles.weeklyRowLabel}>{label}</AppText>
-      <AppText style={styles.weeklyRowValue}>{value}</AppText>
-    </View>
   );
 }
 
@@ -568,132 +478,25 @@ function createStyles(colors, { isSmallScreen }) {
     fontSize: v2Typography.sectionTitle.fontSize,
     fontWeight: v2FontWeight.bold,
   },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+  streakBlock: {
+    alignItems: "flex-end",
   },
-  statBlock: {
-    backgroundColor: colors.inputBackground,
-    borderColor: colors.border,
-    borderRadius: v2Radius.medium,
-    borderWidth: 1,
-    flexBasis: isSmallScreen ? "100%" : "30%",
-    flexGrow: 1,
-    padding: v2CompactSpacing.md,
-  },
-  statValue: {
+  streakValue: {
     color: colors.text,
-    fontSize: 22,
+    fontSize: v2Typography.sectionTitle.fontSize,
     fontWeight: v2FontWeight.bold,
-  },
-  statLabel: {
-    color: colors.muted,
-    fontSize: v2Typography.caption.fontSize,
-    fontWeight: v2FontWeight.medium,
-    marginTop: 4,
-  },
-  recoveryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: v2Radius.large,
-    gap: v2Spacing.sm,
-    marginBottom: 18,
-    padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
-  },
-  recoveryNote: {
-    borderTopColor: colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    color: colors.muted,
-    fontSize: v2Typography.label.fontSize,
-    fontWeight: v2FontWeight.medium,
-    lineHeight: v2Typography.label.lineHeight,
-    marginTop: v2Spacing.xs,
-    paddingTop: v2Spacing.md,
-  },
-  weeklyCard: {
-    backgroundColor: colors.card,
-    borderRadius: v2Radius.large,
-    marginBottom: 18,
-    padding: isSmallScreen ? v2Spacing.lg : v2Spacing.xl,
-  },
-  weeklyHeader: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: v2Spacing.md,
-    justifyContent: "space-between",
-  },
-  weeklyMain: {
-    flex: 1,
-    minWidth: 0,
-  },
-  weeklyValue: {
-    color: colors.text,
-    fontSize: isSmallScreen ? 28 : 32,
-    fontWeight: v2FontWeight.bold,
-    lineHeight: isSmallScreen ? 34 : 38,
-  },
-  weeklyCaption: {
-    color: colors.muted,
-    fontSize: v2Typography.label.fontSize,
-    fontWeight: v2FontWeight.medium,
-    marginTop: 2,
-  },
-  weeklyRatePill: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: v2Radius.pill,
-    borderWidth: 1,
-    flexShrink: 0,
-    minHeight: 36,
-    justifyContent: "center",
-    paddingHorizontal: v2Spacing.md,
-  },
-  weeklyRateText: {
-    color: colors.text,
-    fontSize: v2Typography.label.fontSize,
-    fontWeight: v2FontWeight.bold,
-  },
-  weeklyRows: {
-    borderTopColor: colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: v2Spacing.sm,
-    marginTop: v2Spacing.lg,
-    paddingTop: v2Spacing.md,
-  },
-  weeklyRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: v2Spacing.xs,
-    justifyContent: "space-between",
-  },
-  weeklyRowLabel: {
-    color: colors.muted,
-    flex: 1,
-    fontSize: v2Typography.label.fontSize,
-    fontWeight: v2FontWeight.medium,
-    minWidth: 130,
-  },
-  weeklyRowValue: {
-    color: colors.text,
-    flex: 1,
-    fontSize: v2Typography.label.fontSize,
-    fontWeight: v2FontWeight.bold,
-    lineHeight: 18,
-    minWidth: 130,
     textAlign: "right",
   },
-  analyticsButton: {
+  analyticsLink: {
     alignItems: "center",
     alignSelf: "flex-start",
-    borderColor: colors.border,
-    borderRadius: v2Radius.pill,
-    borderWidth: 1,
-    justifyContent: "center",
-    marginTop: v2Spacing.lg,
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 18,
     minHeight: 40,
-    paddingHorizontal: v2Spacing.lg,
+    paddingVertical: v2CompactSpacing.sm,
   },
-  analyticsButtonText: {
+  analyticsLinkText: {
     color: colors.primary,
     fontSize: v2Typography.label.fontSize,
     fontWeight: v2FontWeight.bold,

@@ -15,11 +15,7 @@ import {
 } from "../utils/achievementProgress";
 import { sortBadgesByTier } from "../utils/gamification";
 import { getNextRankMilestone } from "../utils/progressionMilestones";
-import {
-  getNextVisibleRankMilestone,
-  getVisibleRank,
-  getVisibleRankMilestones,
-} from "../utils/rankDisplay";
+import { getNextVisibleRankMilestone, getVisibleRank } from "../utils/rankDisplay";
 
 export function useRankController() {
   const [gamification, setGamification] = useState(null);
@@ -79,10 +75,6 @@ export function useRankController() {
     [levelInfo.level]
   );
   const rank = useMemo(() => getVisibleRank(calculatedRank), [calculatedRank]);
-  const visibleRankMilestones = useMemo(
-    () => getVisibleRankMilestones(rankMilestones),
-    []
-  );
   const nextRank = useMemo(
     () => getNextVisibleRankMilestone(levelInfo, rankMilestones),
     [levelInfo]
@@ -157,6 +149,5 @@ export function useRankController() {
     setShowAllBadges,
     showAllBadges,
     sortedBadges,
-    visibleRankMilestones,
   };
 }
