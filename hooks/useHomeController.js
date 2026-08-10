@@ -476,6 +476,14 @@ export function useHomeController() {
     },
     [priorityHabits, visibleHabits]
   );
+  // Pinned (priority) habits first, in the user's chosen focus order, then
+  // everything else - the single list Home renders. Since remainingHabits
+  // already excludes priority ids, this is a plain concatenation with no
+  // dedup needed.
+  const mergedHomeHabits = useMemo(
+    () => [...priorityHabits, ...remainingHabits],
+    [priorityHabits, remainingHabits]
+  );
   const availablePriorityHabits = useMemo(
     () => getAvailablePriorityHabits({ habits, plan: dailyPlan }),
     [dailyPlan, habits]
@@ -510,6 +518,7 @@ export function useHomeController() {
     homeSummary,
     levelUp,
     loading,
+    mergedHomeHabits,
     movePriorityForToday,
     nextPriorityHabit,
     perfectDay,

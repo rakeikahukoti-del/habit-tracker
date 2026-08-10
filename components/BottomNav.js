@@ -27,8 +27,8 @@ export default function BottomNav() {
   const navigationTimeoutRef = useRef(null);
   const pendingHrefRef = useRef(null);
   const styles = useMemo(
-    () => createStyles(colors, insets.bottom),
-    [colors, insets.bottom]
+    () => createStyles(colors, insets),
+    [colors, insets]
   );
 
   useEffect(() => {
@@ -126,8 +126,17 @@ function isActiveRoute(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function createStyles(colors, bottomInset) {
-  const bottomPadding = Math.max(10, bottomInset);
+function createStyles(colors, insets) {
+  const bottomPadding = Math.max(10, insets.bottom);
+  // In landscape on notched iPhones, the home-indicator safe area moves to
+  // the side (left or right, depending on landscape-left vs
+  // landscape-right) instead of the bottom - insets.left/right pick that up
+  // so the outer two nav items don't sit under it. Portrait leaves both at
+  // 0, so this is a no-op there.
+  const horizontalPadding = {
+    paddingLeft: Math.max(8, insets.left),
+    paddingRight: Math.max(8, insets.right),
+  };
 
   return StyleSheet.create({
     wrapper: {
@@ -135,7 +144,7 @@ function createStyles(colors, bottomInset) {
       borderTopColor: colors.border,
       borderTopWidth: StyleSheet.hairlineWidth,
       paddingBottom: bottomPadding,
-      paddingHorizontal: 8,
+      ...horizontalPadding,
       paddingTop: 6,
       width: "100%",
       zIndex: 50,

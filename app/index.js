@@ -22,7 +22,7 @@ import {
   PerfectDayModal,
   ReturnExperienceCard,
   SwipeHintCard,
-  TodaysFocusSection,
+  TodaysFocusStatus,
 } from "../components/home";
 import { AppText } from "../components/ui";
 import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../src/design";
@@ -63,6 +63,7 @@ export default function HomeScreen() {
     homeSummary,
     levelUp,
     loading,
+    mergedHomeHabits,
     movePriorityForToday,
     nextPriorityHabit,
     perfectDay,
@@ -74,7 +75,6 @@ export default function HomeScreen() {
     dismissBadgeUnlock,
     dismissReturnMessage,
     returnExperience,
-    remainingHabits,
     removePriorityForToday,
     setCelebration,
     setCompletionReward,
@@ -83,7 +83,6 @@ export default function HomeScreen() {
     setDailyPlanMessage,
     swipeHintVisible,
     toggleProgressExpanded,
-    visibleHabits,
   } = useHomeController();
   const reduceMotion = useReducedMotion();
   const [focusModeVisible, setFocusModeVisible] = useState(false);
@@ -110,7 +109,6 @@ export default function HomeScreen() {
     todayXp,
     weeklyContext,
   } = homeSummary;
-  const homeListHabits = priorityHabits.length > 0 ? remainingHabits : visibleHabits;
   const focusHabit = useMemo(
     () =>
       getNextPriorityHabit({
@@ -124,12 +122,6 @@ export default function HomeScreen() {
   const focusStreak = focusHabit
     ? getCurrentStreak(focusHabit.completedDates, focusHabit)
     : 0;
-  const habitListTitle =
-    priorityHabits.length > 0 ? "More for Today" : "Today's Habits";
-  const habitListMessage =
-    priorityHabits.length > 0
-      ? "Focus habits stay pinned above."
-      : habitsSectionMessage;
 
   const handleOpenFocusMode = useCallback(() => {
     setSkippedFocusIds([]);
@@ -192,91 +184,71 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ConfettiBurst trigger={confettiKey} />
       <View style={styles.container}>
-        <HomeHeader isSmallScreen={isSmallScreen} />
-
-        <DailyProgressionPanel
-          completedTodayCount={completedTodayCount}
-          completionLabel={completionLabel}
-          completionPercentage={completionPercentage}
-          isSmallScreen={isSmallScreen}
-          levelInfo={levelInfo}
-          longestCurrentStreak={longestCurrentStreak}
-          motivation={motivation}
-          nextAction={nextAction}
-          progressExpanded={progressExpanded}
-          rank={rank}
-          remainingTodayCount={remainingTodayCount}
-          scheduledTodayCount={scheduledTodayCount}
-          showProgressCard={preferences.showProgressCard}
-          showXpRankOnHome={preferences.showXpRankOnHome}
-          todayCountLabel={todayCountLabel}
-          todayXp={todayXp}
-          toggleProgressExpanded={toggleProgressExpanded}
-          weeklyContext={weeklyContext}
-        />
-
-        {activeRewardType === "celebration" ? (
-          <CelebrationBanner
-            celebration={celebration}
-            onDismiss={() => setCelebration("")}
-          />
-        ) : null}
-
-        {activeRewardType === "completion" && completionReward ? (
-          <CompletionRewardCard
-            reward={completionReward}
-            onDismiss={() => setCompletionReward(null)}
-          />
-        ) : null}
-
-        {activeRewardType === "badge" && badgeUnlock ? (
-          <BadgeUnlockCard badge={badgeUnlock} onDismiss={dismissBadgeUnlock} />
-        ) : null}
-
-        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
-
-        {returnExperience?.shouldShow ? (
-          <ReturnExperienceCard
-            message={returnExperience.message}
-            onDismiss={dismissReturnMessage}
-          />
-        ) : null}
-
-        {swipeHintVisible ? (
-          <SwipeHintCard onDismiss={dismissSwipeHint} />
-        ) : null}
-
-        <TodaysFocusSection
+        <HomeHabitList
           availablePriorityHabits={availablePriorityHabits}
-          dailyPlanMessage={dailyPlanMessage}
-          dailyPlanProgress={dailyPlanProgress}
+          countLabel={todayCountLabel}
+          data={mergedHomeHabits}
           enableLongPressReorder={preferences.enableLongPressReorder}
           enableSwipeToComplete={preferences.enableSwipeToComplete}
-          habits={habits}
           isSmallScreen={isSmallScreen}
+          ListHeaderComponent={
+            <>
+              <HomeHeader isSmallScreen={isSmallScreen} />
+
+              <DailyProgressionPanel
+                completedTodayCount={completedTodayCount}
+                completionLabel={completionLabel}
+                completionPercentage={completionPercentage}
+                isSmallScreen={isSmallScreen}
+                levelInfo={levelInfo}
+                longestCurrentStreak={longestCurrentStreak}
+                motivation={motivation}
+                nextAction={nextAction}
+                progressExpanded={progressExpanded}
+                rank={rank}
+                remainingTodayCount={remainingTodayCount}
+                scheduledTodayCount={scheduledTodayCount}
+                showProgressCard={preferences.showProgressCard}
+                showXpRankOnHome={preferences.showXpRankOnHome}
+                todayCountLabel={todayCountLabel}
+                todayXp={todayXp}
+                toggleProgressExpanded={toggleProgressExpanded}
+                weeklyContext={weeklyContext}
+              />
+
+              {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
+
+              {returnExperience?.shouldShow ? (
+                <ReturnExperienceCard
+                  message={returnExperience.message}
+                  onDismiss={dismissReturnMessage}
+                />
+              ) : null}
+
+              {swipeHintVisible ? (
+                <SwipeHintCard onDismiss={dismissSwipeHint} />
+              ) : null}
+
+              <TodaysFocusStatus
+                dailyPlanMessage={dailyPlanMessage}
+                dailyPlanProgress={dailyPlanProgress}
+                hasPriorityHabits={priorityHabits.length > 0}
+                onOpenFocusMode={handleOpenFocusMode}
+              />
+            </>
+          }
+          loading={loading}
+          onAddPress={() => router.push("/add")}
           onAddPriority={handleAddPriority}
           onMovePriority={movePriorityForToday}
-          onOpenFocusMode={handleOpenFocusMode}
+          onRefresh={handleRefresh}
           onReorderPress={handleReorderPress}
           onRemovePriority={handleRemovePriority}
           onToggleComplete={handleToggleComplete}
           priorityHabits={priorityHabits}
-        />
-
-        <HomeHabitList
-          countLabel={todayCountLabel}
-          data={homeListHabits}
-          enableLongPressReorder={preferences.enableLongPressReorder}
-          enableSwipeToComplete={preferences.enableSwipeToComplete}
-          isSmallScreen={isSmallScreen}
-          loading={loading}
-          onAddPress={() => router.push("/add")}
-          onRefresh={handleRefresh}
-          onReorderPress={handleReorderPress}
-          onToggleComplete={handleToggleComplete}
           refreshing={refreshing}
-          subtitle={habitListMessage}
-          title={habitListTitle}
+          subtitle={habitsSectionMessage}
+          title="Today's Habits"
           totalHabitsCount={habits.length}
         />
       </View>
@@ -305,6 +277,25 @@ export default function HomeScreen() {
         reduceMotion={reduceMotion}
         visible={activeRewardType === "perfect-day"}
       />
+
+      <CompletionRewardCard
+        onClose={() => setCompletionReward(null)}
+        reward={completionReward}
+        visible={activeRewardType === "completion"}
+      />
+
+      <BadgeUnlockCard
+        badge={badgeUnlock}
+        onClose={dismissBadgeUnlock}
+        visible={activeRewardType === "badge"}
+      />
+
+      <CelebrationBanner
+        celebration={celebration}
+        onClose={() => setCelebration("")}
+        visible={activeRewardType === "celebration"}
+      />
+
       <BottomNav />
     </SafeAreaView>
   );

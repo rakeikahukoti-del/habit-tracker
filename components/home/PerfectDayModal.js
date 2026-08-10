@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
@@ -17,10 +17,7 @@ export default function PerfectDayModal({ onClose, reduceMotion, visible }) {
       reduceMotion={reduceMotion}
       visible={visible}
     >
-      <ScrollView
-        contentContainerStyle={styles.levelModalScrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.levelModalScrollContent}>
         <View style={styles.modalIconCircle}>
           <AppIcon
             color={colors.accent}
@@ -48,7 +45,7 @@ export default function PerfectDayModal({ onClose, reduceMotion, visible }) {
         >
           <AppText style={styles.levelModalButtonText}>Nice</AppText>
         </Pressable>
-      </ScrollView>
+      </View>
     </ModalShell>
   );
 }
