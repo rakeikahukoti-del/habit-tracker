@@ -1,6 +1,97 @@
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
+import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { v2Colors, v2Radius } from "../../src/design";
+
+// Nav-tab icons only. Converted from the hand-rolled View geometry below to
+// react-native-svg path data as part of the Phase 7 nav icon redraw -
+// approved via the "Nav Icon Redraw Proposal" survey artifact, anchored on
+// a previously-drafted (stashed, never merged) fix for Progress/Analytics.
+// Geometry is a 24x24 grid, matching the proposal's verified-at-23px specs.
+const SVG_ICON_DEFS = {
+  home: {
+    strokes: ["M4 12 L12 5 L20 12 M6 10.5 V20 H18 V10.5"],
+  },
+  progress: {
+    // Trend line + a solid corner-join arrowhead (not two separate thin
+    // wing strokes, per the survey's finding that those went faint at 23px).
+    strokes: ["M4 16 L9.5 9.5 L14 13.5 L20 6", "M14.5 6 H20 V11.5"],
+  },
+  analytics: {
+    // Bars + baseline, carried through unchanged from the stashed concept.
+    strokes: ["M4 20 H20"],
+    fills: ["M6 13 h3.4 v7 h-3.4 Z", "M10.3 9 h3.4 v11 h-3.4 Z", "M14.6 5 h3.4 v15 h-3.4 Z"],
+  },
+  rank: {
+    strokes: [
+      "M8 5 H16 V11 C16 14.3 13.5 17 12 17 C10.5 17 8 14.3 8 11 Z",
+      "M8 6.5 C5.5 6.5 5 8.5 6.5 10.5 C7.2 11.4 8 11.6 8 11.6",
+      "M16 6.5 C18.5 6.5 19 8.5 17.5 10.5 C16.8 11.4 16 11.6 16 11.6",
+      "M12 17 V19.5",
+      "M8.5 20.5 H15.5",
+    ],
+  },
+  settings: {
+    circles: [{ cx: 12, cy: 12, r: 4 }],
+    // Teeth overlap the ring (inner edge at radius 2.5, well inside the
+    // ring; outer edge at radius 6) rather than sitting flush against its
+    // outer edge - a gap there is what made an earlier draft read as a
+    // sunburst instead of a gear at 23px.
+    teeth: [0, 45, 90, 135, 180, 225, 270, 315],
+  },
+};
+SVG_ICON_DEFS.trophy = SVG_ICON_DEFS.rank;
+
+function renderSvgIcon(name, { color, size, strokeWidth }) {
+  const def = SVG_ICON_DEFS[name];
+  // Stroke width is an absolute pixel value in this component's contract
+  // (unlike position/size, which scale with `size`) - compensate for the
+  // viewBox scaling so the rendered stroke matches strokeWidth exactly at
+  // any size, same contract the View-based icons below already have.
+  const svgStrokeWidth = (strokeWidth * 24) / size;
+
+  return (
+    <Svg height={size} viewBox="0 0 24 24" width={size}>
+      {(def.strokes || []).map((d) => (
+        <Path
+          d={d}
+          fill="none"
+          key={d}
+          stroke={color}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={svgStrokeWidth}
+        />
+      ))}
+      {(def.fills || []).map((d) => (
+        <Path d={d} fill={color} key={d} />
+      ))}
+      {(def.circles || []).map((c) => (
+        <Circle
+          cx={c.cx}
+          cy={c.cy}
+          fill="none"
+          key={`${c.cx}-${c.cy}-${c.r}`}
+          r={c.r}
+          stroke={color}
+          strokeWidth={svgStrokeWidth}
+        />
+      ))}
+      {(def.teeth || []).map((angle) => (
+        <Rect
+          fill={color}
+          height={3.5}
+          key={angle}
+          rx={1}
+          transform={`rotate(${angle} 12 12)`}
+          width={2}
+          x={11}
+          y={6}
+        />
+      ))}
+    </Svg>
+  );
+}
 
 export default function AppIcon({
   color = v2Colors.textPrimary,
@@ -21,63 +112,14 @@ export default function AppIcon({
       pointerEvents="none"
       style={[styles.icon, style]}
     >
-      {renderIcon(name, styles)}
+      {SVG_ICON_DEFS[name]
+        ? renderSvgIcon(name, { color, size, strokeWidth })
+        : renderIcon(name, styles)}
     </View>
   );
 }
 
 function renderIcon(name, styles) {
-  if (name === "home") {
-    return (
-      <>
-        <View style={[styles.line, styles.homeRoofLeft]} />
-        <View style={[styles.line, styles.homeRoofRight]} />
-        <View style={[styles.outline, styles.homeBody]} />
-      </>
-    );
-  }
-
-  if (name === "progress" || name === "analytics") {
-    return (
-      <View style={styles.barGroup}>
-        {[0.45, 0.72, 1].map((scale, index) => (
-          <View
-            key={`${name}-${scale}`}
-            style={[
-              styles.fill,
-              styles.bar,
-              {
-                height: `${scale * 78}%`,
-                opacity: name === "analytics" && index === 1 ? 0.68 : 1,
-              },
-            ]}
-          />
-        ))}
-      </View>
-    );
-  }
-
-  if (name === "rank" || name === "trophy") {
-    return (
-      <>
-        <View style={[styles.outline, styles.trophyCup]} />
-        <View style={[styles.fill, styles.trophyStem]} />
-        <View style={[styles.fill, styles.trophyBase]} />
-      </>
-    );
-  }
-
-  if (name === "settings") {
-    return (
-      <>
-        <View style={[styles.outline, styles.gearOuter]} />
-        <View style={[styles.fill, styles.gearInner]} />
-        <View style={[styles.line, styles.gearTickA]} />
-        <View style={[styles.line, styles.gearTickB]} />
-      </>
-    );
-  }
-
   if (name === "plus") {
     return (
       <>
@@ -217,90 +259,6 @@ function createStyles(color, size, strokeWidth) {
       borderColor: color,
       borderWidth: strokeWidth,
       position: "absolute",
-    },
-    homeRoofLeft: {
-      left: 4 * unit,
-      top: 8 * unit,
-      transform: [{ rotate: "-42deg" }],
-      width: 10 * unit,
-    },
-    homeRoofRight: {
-      right: 4 * unit,
-      top: 8 * unit,
-      transform: [{ rotate: "42deg" }],
-      width: 10 * unit,
-    },
-    homeBody: {
-      borderTopWidth: 0,
-      bottom: 3 * unit,
-      height: 11 * unit,
-      left: 6 * unit,
-      width: 12 * unit,
-    },
-    barGroup: {
-      alignItems: "flex-end",
-      bottom: 3 * unit,
-      flexDirection: "row",
-      gap: 3 * unit,
-      height: 18 * unit,
-      left: 3 * unit,
-      position: "absolute",
-      width: 18 * unit,
-    },
-    bar: {
-      borderRadius: 2 * unit,
-      bottom: 0,
-      flex: 1,
-      position: "relative",
-    },
-    trophyCup: {
-      borderBottomLeftRadius: 8 * unit,
-      borderBottomRightRadius: 8 * unit,
-      borderTopLeftRadius: 3 * unit,
-      borderTopRightRadius: 3 * unit,
-      height: 10 * unit,
-      left: 5 * unit,
-      top: 4 * unit,
-      width: 14 * unit,
-    },
-    trophyStem: {
-      borderRadius: lineRadius,
-      height: 6 * unit,
-      left: 11 * unit,
-      top: 14 * unit,
-      width: strokeWidth,
-    },
-    trophyBase: {
-      borderRadius: lineRadius,
-      bottom: 3 * unit,
-      height: strokeWidth,
-      left: 7 * unit,
-      width: 10 * unit,
-    },
-    gearOuter: {
-      borderRadius: 999,
-      height: 16 * unit,
-      left: 4 * unit,
-      top: 4 * unit,
-      width: 16 * unit,
-    },
-    gearInner: {
-      borderRadius: 999,
-      height: 5 * unit,
-      left: 9.5 * unit,
-      top: 9.5 * unit,
-      width: 5 * unit,
-    },
-    gearTickA: {
-      left: 2 * unit,
-      top: 11 * unit,
-      width: 20 * unit,
-    },
-    gearTickB: {
-      left: 2 * unit,
-      top: 11 * unit,
-      transform: [{ rotate: "90deg" }],
-      width: 20 * unit,
     },
     plusVertical: {
       height: 16 * unit,
