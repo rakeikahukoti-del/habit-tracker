@@ -18,6 +18,7 @@ import {
 import { PeriodControl } from "../components/stats";
 import { AppText, BackIcon, EmptyDataCard, IconButton } from "../components/ui";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Radius,
   v2Spacing,
@@ -37,7 +38,7 @@ const PERIODS = [
 export default function AnalyticsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     analytics,

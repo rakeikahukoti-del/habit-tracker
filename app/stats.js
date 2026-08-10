@@ -16,7 +16,7 @@ import {
   YearActivityCard,
 } from "../components/stats";
 import { AppText, EmptyDataCard } from "../components/ui";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
+import { v2Breakpoints, v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useStatsController } from "../hooks/useStatsController";
 
@@ -30,7 +30,7 @@ const PERIODS = [
 export default function StatsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     availableYears,

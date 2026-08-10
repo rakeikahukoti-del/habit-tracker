@@ -21,7 +21,7 @@ import {
   DEFAULT_HABIT_EMOJI,
   DEFAULT_HABIT_FREQUENCY,
 } from "../../constants/habitOptions";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2Breakpoints, v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { parseReminderTime } from "../../notifications/habitNotifications";
 import {
@@ -42,7 +42,7 @@ import { getHabitWeeklyPattern } from "../../utils/weeklyReview";
 export default function HabitDetailsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
     [colors, isSmallScreen]

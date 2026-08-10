@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import BrandLogo from "../components/BrandLogo";
 import { AppIcon, AppText, PressableScale } from "../components/ui";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Layout,
   v2Radius,
@@ -32,8 +33,8 @@ const points = [
 export default function OnboardingScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
+  const isTablet = width >= v2Breakpoints.tabletMinWidth;
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(false);
   const startingRef = useRef(false);

@@ -2,14 +2,14 @@ import { Animated, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Link } from "expo-router";
 import { MomentumWolfMark } from "./brand";
 import { AppIcon, AppText, PrimaryButton } from "./ui";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
+import { v2Breakpoints, v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 
 export default function EmptyState() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const styles = createStyles(colors, width < 380);
+  const styles = createStyles(colors, width < v2Breakpoints.smallScreenMaxWidth);
   const entrance = useEntranceAnimation();
 
   return (

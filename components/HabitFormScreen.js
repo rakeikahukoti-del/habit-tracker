@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import {
+  v2Breakpoints,
   v2Layout,
   v2FontWeight,
   v2Radius,
@@ -26,8 +27,8 @@ export default function HabitFormScreen({
 }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
+  const isTablet = width >= v2Breakpoints.tabletMinWidth;
   const styles = createStyles(colors, { isSmallScreen, isTablet });
 
   return (

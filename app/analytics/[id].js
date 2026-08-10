@@ -15,14 +15,14 @@ import {
 } from "../../components/analytics";
 import ProgressDots from "../../components/ProgressDots";
 import { AppText, BackIcon, IconButton } from "../../components/ui";
-import { v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2Breakpoints, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { useHabitAnalyticsController } from "../../hooks/useHabitAnalyticsController";
 
 export default function IndividualAnalyticsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     analytics,
