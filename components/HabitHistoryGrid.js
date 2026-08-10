@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Radius,
   v2Spacing,
@@ -23,7 +24,7 @@ const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 export default function HabitHistoryGrid({ habit, onToggleDate }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(
     () => createStyles(colors, isSmallScreen),
     [colors, isSmallScreen]

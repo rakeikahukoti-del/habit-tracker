@@ -15,6 +15,7 @@ import { AppIcon, AppText, BackIcon, IconButton } from "../components/ui";
 import { useTheme } from "../context/ThemeContext";
 import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Radius,
   v2Spacing,
@@ -28,7 +29,7 @@ import { getYearInReview } from "../utils/yearInReview";
 export default function YearReviewScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
     [colors, isSmallScreen]

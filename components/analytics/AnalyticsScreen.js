@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../BottomNav";
 import { useTheme } from "../../context/ThemeContext";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Layout,
   v2Spacing,
@@ -23,8 +24,8 @@ export default function AnalyticsScreen({
 }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
+  const isTablet = width >= v2Breakpoints.tabletMinWidth;
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen, isTablet, maxWidth }),
     [colors, isSmallScreen, isTablet, maxWidth]

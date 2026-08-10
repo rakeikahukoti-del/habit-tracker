@@ -12,6 +12,7 @@ import { AppIcon, AppText } from "./ui";
 import ProgressDots from "./ProgressDots";
 import {
   v2ActionColors,
+  v2Breakpoints,
   v2FontWeight,
   v2Radius,
   v2Shadows,
@@ -50,7 +51,7 @@ function HabitCard({
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const { width } = useWindowDimensions();
-  const isCompact = width < 380;
+  const isCompact = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(
     () => createStyles(colors, isCompact),
     [colors, isCompact]

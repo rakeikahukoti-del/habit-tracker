@@ -25,7 +25,7 @@ import {
   TodaysFocusSection,
 } from "../components/home";
 import { AppText } from "../components/ui";
-import { v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../src/design";
+import { v2Breakpoints, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useHomeController } from "../hooks/useHomeController";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -39,8 +39,8 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  const isTablet = width >= 768;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
+  const isTablet = width >= v2Breakpoints.tabletMinWidth;
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen, isTablet }),
     [colors, isSmallScreen, isTablet]

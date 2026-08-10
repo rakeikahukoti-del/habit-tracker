@@ -20,6 +20,7 @@ import {
   DEFAULT_HABIT_EMOJI,
 } from "../constants/habitOptions";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Radius,
   v2Shadows,
@@ -49,7 +50,7 @@ export default function ReorderHabitsScreen() {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const { height, width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
     [colors, isSmallScreen]

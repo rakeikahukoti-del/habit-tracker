@@ -24,7 +24,7 @@ import {
   Section,
 } from "../components/rank";
 import { AppText } from "../components/ui";
-import { v2FontWeight, v2Radius, v2Typography } from "../src/design";
+import { v2Breakpoints, v2FontWeight, v2Radius, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { useRankController } from "../hooks/useRankController";
@@ -37,7 +37,7 @@ export default function RankScreen() {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     achievementSummary,

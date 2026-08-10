@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import {
+  v2Breakpoints,
   v2FontWeight,
   v2Layout,
   v2Radius,
@@ -45,7 +46,7 @@ export default function HabitFormFields({
 }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const styles = useMemo(
     () => createStyles(colors, isSmallScreen),
     [colors, isSmallScreen]
