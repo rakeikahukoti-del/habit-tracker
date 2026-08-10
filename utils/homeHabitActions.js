@@ -47,31 +47,23 @@ export function getHomeSummary(habits, gamification) {
     completionLabel:
       scheduledTodayCount === 0 ? "No habits today" : `${completionPercentage}%`,
     completionPercentage,
-    habitsSectionMessage: getTodayHabitsMessage({
-      completedTodayCount,
-      habitCount: safeHabits.length,
-      remainingTodayCount,
-      scheduledTodayCount,
-    }),
     levelInfo,
     longestCurrentStreak,
-    motivation: getProgressMessage({
-      completedTodayCount,
-      habitCount: safeHabits.length,
-      longestCurrentStreak,
-      remainingTodayCount,
-      scheduledTodayCount,
-    }),
-    nextAction: getNextHomeAction({
-      completedTodayCount,
-      habitCount: safeHabits.length,
-      longestCurrentStreak,
-      remainingTodayCount,
-      scheduledTodayCount,
-    }),
     rank: getVisibleRank(getRankForLevel(levelInfo.level)),
     remainingTodayCount,
     scheduledTodayCount,
+    // Single source of truth for "what should I do right now" - previously
+    // three sibling functions (getNextHomeAction/getProgressMessage/
+    // getTodayHabitsMessage) generated near-duplicate sentences for the
+    // same state, and the UI showed more than one of them at once. See
+    // Phase 7 survey, thread 2.
+    statusMessage: getHomeStatusMessage({
+      completedTodayCount,
+      habitCount: safeHabits.length,
+      longestCurrentStreak,
+      remainingTodayCount,
+      scheduledTodayCount,
+    }),
     todayCountLabel: getTodayCountLabel({
       completedTodayCount,
       habitCount: safeHabits.length,
@@ -209,66 +201,14 @@ export function shouldShowConfetti(messages, preferences) {
   );
 }
 
-export function getProgressMessage({
-  completedTodayCount,
-  habitCount,
-  longestCurrentStreak,
-  remainingTodayCount,
-  scheduledTodayCount,
-}) {
-  if (habitCount === 0) {
-    return "Add one habit to start today with momentum.";
-  }
-
-  if (scheduledTodayCount === 0) {
-    return "Nothing is scheduled today.";
-  }
-
-  if (remainingTodayCount === 0) {
-    return "Today is complete.";
-  }
-
-  if (completedTodayCount === 0) {
-    return longestCurrentStreak > 0
-      ? "Complete one habit to keep progress moving."
-      : "Choose one habit to begin today.";
-  }
-
-  if (remainingTodayCount === 1) {
-    return "One habit remains today.";
-  }
-
-  return "Keep going with the next scheduled habit.";
-}
-
-export function getTodayHabitsMessage({
-  completedTodayCount,
-  habitCount,
-  remainingTodayCount,
-  scheduledTodayCount,
-}) {
-  if (habitCount === 0) {
-    return "Add a habit to begin.";
-  }
-
-  if (scheduledTodayCount === 0) {
-    return "No habits scheduled today.";
-  }
-
-  if (completedTodayCount === 0) {
-    return "Start strong today.";
-  }
-
-  if (remainingTodayCount === 0) {
-    return "Today is complete.";
-  }
-
-  return remainingTodayCount === 1
-    ? "One habit left."
-    : `${remainingTodayCount} habits left.`;
-}
-
-export function getNextHomeAction({
+// Single source of truth for Home's "what should I do right now" message -
+// used for both the collapsed compact hint and the expanded "Next" card
+// body, which are two display states of the same message slot, not two
+// different facts. (Formerly getNextHomeAction; getProgressMessage and
+// getTodayHabitsMessage generated separate, near-duplicate sentences for
+// the same state and were retired in favor of this one - see Phase 7
+// survey, thread 2.)
+export function getHomeStatusMessage({
   completedTodayCount,
   habitCount,
   longestCurrentStreak,

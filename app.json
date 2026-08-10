@@ -6,7 +6,8 @@
     "orientation": "default",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "scheme": "habittracker",
     "userInterfaceStyle": "dark",

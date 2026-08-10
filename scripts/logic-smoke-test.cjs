@@ -1635,7 +1635,7 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
   assert.strictEqual(summary.completedTodayCount, 0);
   assert.strictEqual(summary.completionLabel, "No habits today");
   assert.strictEqual(summary.levelInfo.level, 40);
-  assert.strictEqual(summary.nextAction, "Add your first habit");
+  assert.strictEqual(summary.statusMessage, "Add your first habit");
   assert.strictEqual(summary.todayCountLabel, "No habits yet");
 
   const todayKey = habitStats.getTodayKey();
@@ -1657,8 +1657,7 @@ test("home summary and reward queue helpers handle empty and duplicate data safe
   assert.strictEqual(scheduledSummary.scheduledTodayCount, 2);
   assert.strictEqual(scheduledSummary.remainingTodayCount, 1);
   assert.strictEqual(scheduledSummary.completionLabel, "50%");
-  assert.strictEqual(scheduledSummary.habitsSectionMessage, "One habit left.");
-  assert.strictEqual(scheduledSummary.nextAction, "Complete the final habit");
+  assert.strictEqual(scheduledSummary.statusMessage, "Complete the final habit");
   assert.strictEqual(scheduledSummary.todayCountLabel, "1/2 today");
 
   const rewards = homeHabitActions.getQueuedRewardsFromMessages(
@@ -2578,9 +2577,7 @@ test("first-day completion state stays restrained and accurate", () => {
 
   assert.strictEqual(summary.completedTodayCount, 1);
   assert.strictEqual(summary.remainingTodayCount, 0);
-  assert.strictEqual(summary.habitsSectionMessage, "Today is complete.");
-  assert.strictEqual(summary.motivation, "Today is complete.");
-  assert.strictEqual(summary.nextAction, "Today is complete");
+  assert.strictEqual(summary.statusMessage, "Today is complete");
   assert.strictEqual(summary.todayXp, 35);
 });
 

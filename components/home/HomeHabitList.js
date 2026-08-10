@@ -39,7 +39,6 @@ export default function HomeHabitList({
   onToggleComplete,
   priorityHabits,
   refreshing,
-  subtitle,
   title,
   totalHabitsCount,
 }) {
@@ -146,9 +145,10 @@ export default function HomeHabitList({
             <View style={styles.listHeaderText}>
               <View style={styles.listTitleRow}>
                 <AppText style={styles.listTitle}>{title}</AppText>
-                <AppText style={styles.doneBadgeText}>{countLabel}</AppText>
+                {totalHabitsCount > 0 ? (
+                  <AppText style={styles.doneBadgeText}>{countLabel}</AppText>
+                ) : null}
               </View>
-              <AppText style={styles.listSubtitle}>{subtitle}</AppText>
             </View>
             <Pressable
               accessibilityLabel="Add a new habit"
@@ -228,13 +228,6 @@ function createStyles(colors, { isSmallScreen }) {
       color: colors.text,
       fontSize: isSmallScreen ? v2Typography.cardTitle.fontSize : v2Typography.sectionTitle.fontSize,
       fontWeight: v2FontWeight.bold,
-    },
-    listSubtitle: {
-      color: colors.muted,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.medium,
-      lineHeight: 18,
-      marginTop: 4,
     },
     doneBadgeText: {
       color: colors.muted,

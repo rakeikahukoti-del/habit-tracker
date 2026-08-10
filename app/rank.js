@@ -18,7 +18,6 @@ import {
   BadgeDetailModal,
   RankError,
   RankHero,
-  RankMedalsGrid,
   RankPath,
   RecentAchievementsList,
   Section,
@@ -62,7 +61,6 @@ export default function RankScreen() {
     setSelectedBadge,
     setShowAllBadges,
     showAllBadges,
-    visibleRankMilestones,
   } = useRankController();
 
   function toggleBadges() {
@@ -123,14 +121,6 @@ export default function RankScreen() {
 
             <Section title="Rank path">
               <RankPath currentLevel={levelInfo.level} />
-            </Section>
-
-            <Section title="Rank medals">
-              <RankMedalsGrid
-                currentLevel={levelInfo.level}
-                isSmallScreen={isSmallScreen}
-                milestones={visibleRankMilestones}
-              />
             </Section>
 
             <Section

@@ -9,17 +9,17 @@ export default function DailyProgressionPanel({
   completedTodayCount,
   completionLabel,
   completionPercentage,
+  habitCount,
   isSmallScreen,
   levelInfo,
   longestCurrentStreak,
-  motivation,
-  nextAction,
   progressExpanded,
   rank,
   remainingTodayCount,
   scheduledTodayCount,
   showProgressCard,
   showXpRankOnHome,
+  statusMessage,
   todayCountLabel,
   todayXp,
   toggleProgressExpanded,
@@ -31,7 +31,11 @@ export default function DailyProgressionPanel({
     [colors, isSmallScreen]
   );
 
-  if (!showProgressCard) {
+  // With zero habits there's no progress to summarize - Level/XP/streak are
+  // all at their defaults, and this panel's only substantive copy would
+  // just repeat what EmptyState already says in full. See Phase 7 survey,
+  // thread 2 ("five separate renderings of 'you have no habits'").
+  if (!showProgressCard || habitCount === 0) {
     return null;
   }
 
@@ -41,8 +45,8 @@ export default function DailyProgressionPanel({
         <Pressable
           accessibilityLabel={
             progressExpanded
-              ? `Collapse daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${nextAction}.`
-              : `Expand daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${nextAction}.`
+              ? `Collapse daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${statusMessage}.`
+              : `Expand daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${statusMessage}.`
           }
           accessibilityRole="button"
           accessibilityState={{ expanded: Boolean(progressExpanded) }}
@@ -57,7 +61,7 @@ export default function DailyProgressionPanel({
             <AppText style={styles.progressValue}>{completionLabel}</AppText>
             {!progressExpanded ? (
               <AppText style={styles.progressCompactHint} numberOfLines={2}>
-                {nextAction}
+                {statusMessage}
               </AppText>
             ) : null}
           </View>
@@ -134,7 +138,7 @@ export default function DailyProgressionPanel({
       {progressExpanded ? (
         <View style={styles.focusNote}>
           <AppText style={styles.focusNoteLabel}>Next</AppText>
-          <AppText style={styles.focusNoteText}>{motivation}</AppText>
+          <AppText style={styles.focusNoteText}>{statusMessage}</AppText>
           <AppText style={styles.weeklyContextText}>{weeklyContext}</AppText>
         </View>
       ) : null}
