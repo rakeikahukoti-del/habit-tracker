@@ -3,7 +3,7 @@ import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
-import { v2FontWeight, v2Motion, v2PressedStyles, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2Motion, v2PressedStyles, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
 import { XP_PER_LEVEL } from "../../utils/gamification";
 
 export default function CompletionRewardCard({ reward, onDismiss }) {
@@ -104,7 +104,7 @@ function createStyles(colors) {
       borderWidth: 1.5,
       marginBottom: v2Spacing.sm,
       paddingHorizontal: 16,
-      paddingVertical: 14,
+      paddingVertical: v2CompactSpacing.md,
       ...v2Shadows.medium,
       shadowColor: colors.accent,
       shadowOpacity: 0.16,

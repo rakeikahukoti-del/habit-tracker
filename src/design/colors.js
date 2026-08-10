@@ -20,7 +20,6 @@ export const v2Colors = {
   success: "#8EA79A",
   warning: "#D1A557",
   danger: "#C97070",
-  informational: "#64748B",
   focus: "#8B5CF6",
   disabled: "#5E5E62",
 
@@ -59,7 +58,6 @@ export const v2LightColors = {
   success: "#537960",
   warning: "#936720",
   danger: "#B5484C",
-  informational: "#64748B",
   focus: "#8B5CF6",
   disabled: "#B2B2B5",
 
@@ -74,15 +72,6 @@ export const v2ActionColors = {
   undo: "#85494D",
   undoIcon: v2Colors.accentContrast,
   undoText: v2Colors.textPrimary,
-};
-
-export const v2BadgeColors = {
-  common: "#555555",
-  rare: "#A7ACB2",
-  epic: "#A98A52",
-  legendary: "#C2A86B",
-  mythic: "#D8D8D8",
-  locked: "#303030",
 };
 
 export const v2StateColors = {

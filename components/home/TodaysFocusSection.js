@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import HabitCard from "../HabitCard";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function TodaysFocusSection({
   availablePriorityHabits,
@@ -232,7 +232,7 @@ function createStyles(colors, { isSmallScreen }) {
       justifyContent: "center",
       minHeight: 42,
       minWidth: 92,
-      paddingHorizontal: 14,
+      paddingHorizontal: v2CompactSpacing.md,
     },
     focusStartText: {
       color: colors.inverseText,

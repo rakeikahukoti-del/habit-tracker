@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import {
   v2Breakpoints,
+  v2CompactSpacing,
   v2FontWeight,
   v2Layout,
   v2Radius,
@@ -256,7 +257,7 @@ function createStyles(colors, isSmallScreen) {
       ...v2Typography.body,
       minHeight: 52,
       paddingHorizontal: v2Spacing.lg,
-      paddingVertical: 14,
+      paddingVertical: v2CompactSpacing.md,
     },
     emojiRow: {
       flexDirection: "row",
@@ -288,7 +289,7 @@ function createStyles(colors, isSmallScreen) {
       borderWidth: 1,
       minHeight: v2Layout.minTapTarget,
       paddingHorizontal: v2Spacing.md,
-      paddingVertical: 10,
+      paddingVertical: v2CompactSpacing.sm,
     },
     optionSelected: {
       backgroundColor: colors.surface,

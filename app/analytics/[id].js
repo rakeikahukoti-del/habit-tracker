@@ -15,7 +15,7 @@ import {
 } from "../../components/analytics";
 import ProgressDots from "../../components/ProgressDots";
 import { AppText, BackIcon, IconButton } from "../../components/ui";
-import { v2Breakpoints, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { useHabitAnalyticsController } from "../../hooks/useHabitAnalyticsController";
 
@@ -193,8 +193,8 @@ function createStyles(colors) {
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.medium,
       marginBottom: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: v2CompactSpacing.md,
+      paddingVertical: v2CompactSpacing.sm,
     },
     emptyCard: {
       backgroundColor: colors.card,

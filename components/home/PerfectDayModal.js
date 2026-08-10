@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppIcon, AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { PERFECT_DAY_BONUS_XP } from "../../utils/gamification";
 
 export default function PerfectDayModal({ onClose, reduceMotion, visible }) {
@@ -98,7 +98,7 @@ function createStyles(colors) {
       marginTop: 14,
       overflow: "hidden",
       paddingHorizontal: 12,
-      paddingVertical: 10,
+      paddingVertical: v2CompactSpacing.sm,
       textAlign: "center",
     },
     levelModalButton: {

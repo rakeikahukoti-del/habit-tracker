@@ -21,7 +21,7 @@ import {
   DEFAULT_HABIT_EMOJI,
   DEFAULT_HABIT_FREQUENCY,
 } from "../../constants/habitOptions";
-import { v2Breakpoints, v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { parseReminderTime } from "../../notifications/habitNotifications";
 import {
@@ -585,7 +585,7 @@ function createStyles(colors, { isSmallScreen }) {
     borderWidth: 1,
     flexBasis: isSmallScreen ? "100%" : "30%",
     flexGrow: 1,
-    padding: 14,
+    padding: v2CompactSpacing.md,
   },
   statValue: {
     color: colors.text,

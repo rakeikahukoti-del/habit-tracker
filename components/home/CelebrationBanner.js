@@ -3,7 +3,7 @@ import { Animated, Pressable, StyleSheet } from "react-native";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function CelebrationBanner({ celebration, onDismiss }) {
   const { colors } = useTheme();
@@ -33,7 +33,7 @@ function createStyles(colors) {
       backgroundColor: colors.accentSoft,
       borderRadius: v2Radius.medium,
       marginBottom: v2Spacing.sm,
-      paddingHorizontal: 14,
+      paddingHorizontal: v2CompactSpacing.md,
       paddingVertical: 12,
     },
     celebrationText: {
