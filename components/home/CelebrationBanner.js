@@ -1,21 +1,35 @@
 import { useMemo } from "react";
-import { Animated, Pressable, StyleSheet } from "react-native";
-import { AppText } from "../ui";
+import { Pressable, StyleSheet } from "react-native";
+import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
-import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { v2FontWeight, v2PressedStyles, v2Typography } from "../../src/design";
 
-export default function CelebrationBanner({ celebration, onDismiss }) {
+// Promoted from an inline banner to a ModalShell overlay - see
+// CompletionRewardCard.js for the full rationale. Drops its own
+// useEntranceAnimation fade/slide since ModalShell's own fade transition
+// now covers entrance.
+export default function CelebrationBanner({ celebration, onClose, visible }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const entrance = useEntranceAnimation([celebration]);
+  const reduceMotion = useReducedMotion();
+
+  if (!celebration) {
+    return null;
+  }
 
   return (
-    <Animated.View style={entrance.style}>
+    <ModalShell
+      maxWidth={360}
+      onClose={onClose}
+      padding={22}
+      reduceMotion={reduceMotion}
+      visible={visible}
+    >
       <Pressable
         accessibilityLabel="Dismiss celebration message"
         accessibilityRole="button"
-        onPress={onDismiss}
+        onPress={onClose}
         style={({ pressed }) => [
           styles.celebrationBanner,
           pressed && v2PressedStyles.card,
@@ -23,24 +37,21 @@ export default function CelebrationBanner({ celebration, onDismiss }) {
       >
         <AppText style={styles.celebrationText}>{celebration}</AppText>
       </Pressable>
-    </Animated.View>
+    </ModalShell>
   );
 }
 
 function createStyles(colors) {
   return StyleSheet.create({
     celebrationBanner: {
-      backgroundColor: colors.accentSoft,
-      borderRadius: v2Radius.medium,
-      marginBottom: v2Spacing.sm,
-      paddingHorizontal: v2CompactSpacing.md,
-      paddingVertical: 12,
+      alignItems: "center",
     },
     celebrationText: {
       color: colors.text,
-      fontSize: v2Typography.label.fontSize,
+      fontSize: v2Typography.sectionTitle.fontSize,
       fontWeight: v2FontWeight.bold,
-      lineHeight: 18,
+      lineHeight: 23,
+      textAlign: "center",
     },
   });
 }

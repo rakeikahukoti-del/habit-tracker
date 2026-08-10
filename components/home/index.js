@@ -9,4 +9,4 @@ export { default as LevelUpModal } from "./LevelUpModal";
 export { default as PerfectDayModal } from "./PerfectDayModal";
 export { default as ReturnExperienceCard } from "./ReturnExperienceCard";
 export { default as SwipeHintCard } from "./SwipeHintCard";
-export { default as TodaysFocusSection } from "./TodaysFocusSection";
+export { default as TodaysFocusStatus } from "./TodaysFocusStatus";

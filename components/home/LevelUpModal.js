@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { RankMedal } from "../progression";
 import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
@@ -22,10 +22,7 @@ export default function LevelUpModal({
       reduceMotion={reduceMotion}
       visible={visible}
     >
-      <ScrollView
-        contentContainerStyle={styles.levelModalScrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.levelModalScrollContent}>
         <RankMedal rank={levelUp?.rank} size="large" />
         <AppText style={styles.levelModalEyebrow}>Level up</AppText>
         <AppText style={styles.levelModalTitle}>Level {levelUp?.level}</AppText>
@@ -52,7 +49,7 @@ export default function LevelUpModal({
         >
           <AppText style={styles.levelModalButtonText}>Continue</AppText>
         </Pressable>
-      </ScrollView>
+      </View>
     </ModalShell>
   );
 }

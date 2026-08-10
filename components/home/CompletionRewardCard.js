@@ -1,12 +1,22 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "../ui";
+import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
-import { v2CompactSpacing, v2FontWeight, v2Motion, v2PressedStyles, v2Radius, v2Shadows, v2Spacing, v2Typography } from "../../src/design";
+import { v2FontWeight, v2Motion, v2PressedStyles, v2Radius, v2Typography } from "../../src/design";
 import { XP_PER_LEVEL } from "../../utils/gamification";
 
-export default function CompletionRewardCard({ reward, onDismiss }) {
+// Promoted from an inline banner to a ModalShell overlay (Phase 6 Home
+// restructure) alongside BadgeUnlockCard/CelebrationBanner, so all 5 states
+// in the activeRewardType priority queue share one presentation and none
+// can scroll out of view now that Home is a single scrollable list - this
+// one especially, since it fires on every completion (not just milestones)
+// and previously could render off-screen above a scrolled position with no
+// way for the user to see it before it auto-dismissed. The card's own
+// accent-tinted border/shadow is dropped in favor of ModalShell's shared
+// neutral chrome - a real, visible styling change made in exchange for all
+// 5 reward states now looking and behaving identically.
+export default function CompletionRewardCard({ onClose, reward, visible }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
@@ -14,12 +24,15 @@ export default function CompletionRewardCard({ reward, onDismiss }) {
   // reward moment in the app (every completion, not just milestones), so it
   // gets the same entrance treatment rather than popping in instantly.
   const scaleAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0.72)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    if (!visible) {
+      return undefined;
+    }
+
     if (reduceMotion) {
       scaleAnim.setValue(1);
-      return;
+      return undefined;
     }
 
     scaleAnim.setValue(0.72);
@@ -35,79 +48,53 @@ export default function CompletionRewardCard({ reward, onDismiss }) {
     animation.start();
 
     return () => animation.stop();
-  }, [reduceMotion, reward.habitName, reward.streak, reward.xpEarned, scaleAnim]);
+  }, [reduceMotion, reward?.habitName, reward?.streak, reward?.xpEarned, scaleAnim, visible]);
 
-  function handleDismiss() {
-    if (reduceMotion) {
-      onDismiss();
-      return;
-    }
-
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        duration: v2Motion.duration.fast,
-        toValue: 0.9,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        duration: v2Motion.duration.fast,
-        toValue: 0,
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
-      if (finished) {
-        onDismiss();
-      }
-    });
+  if (!reward) {
+    return null;
   }
 
   return (
-    <Animated.View
-      style={{
-        opacity: opacityAnim,
-        transform: [{ scale: scaleAnim }],
-      }}
+    <ModalShell
+      maxWidth={360}
+      onClose={onClose}
+      padding={22}
+      reduceMotion={reduceMotion}
+      visible={visible}
     >
-      <Pressable
-        accessibilityLabel={`${reward.habitName} completed. ${reward.xpEarned} XP earned. ${reward.streak} day streak. Double tap to dismiss.`}
-        accessibilityRole="button"
-        onPress={handleDismiss}
-        style={({ pressed }) => [
-          styles.completionPopup,
-          pressed && v2PressedStyles.card,
-        ]}
-      >
-        <View style={styles.completionPopupTop}>
-          <AppText style={styles.completionPopupEyebrow}>Completed</AppText>
-          <AppText style={styles.completionPopupXp}>
-            +{reward.xpEarned} XP
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Pressable
+          accessibilityLabel={`${reward.habitName} completed. ${reward.xpEarned} XP earned. ${reward.streak} day streak. Double tap to dismiss.`}
+          accessibilityRole="button"
+          onPress={onClose}
+          style={({ pressed }) => [
+            styles.completionPopup,
+            pressed && v2PressedStyles.card,
+          ]}
+        >
+          <View style={styles.completionPopupTop}>
+            <AppText style={styles.completionPopupEyebrow}>Completed</AppText>
+            <AppText style={styles.completionPopupXp}>
+              +{reward.xpEarned} XP
+            </AppText>
+          </View>
+          <AppText style={styles.completionPopupTitle} numberOfLines={2}>
+            {reward.habitName}
           </AppText>
-        </View>
-        <AppText style={styles.completionPopupTitle} numberOfLines={2}>
-          {reward.habitName}
-        </AppText>
-        <AppText style={styles.completionPopupMeta}>
-          {reward.streak} day streak • {reward.rank} •{" "}
-          {reward.rankProgress}/{XP_PER_LEVEL} XP
-        </AppText>
-      </Pressable>
-    </Animated.View>
+          <AppText style={styles.completionPopupMeta}>
+            {reward.streak} day streak • {reward.rank} •{" "}
+            {reward.rankProgress}/{XP_PER_LEVEL} XP
+          </AppText>
+        </Pressable>
+      </Animated.View>
+    </ModalShell>
   );
 }
 
 function createStyles(colors) {
   return StyleSheet.create({
     completionPopup: {
-      backgroundColor: colors.card,
-      borderColor: colors.accent,
-      borderRadius: v2Radius.feature,
-      borderWidth: 1.5,
-      marginBottom: v2Spacing.sm,
-      paddingHorizontal: 16,
-      paddingVertical: v2CompactSpacing.md,
-      ...v2Shadows.medium,
-      shadowColor: colors.accent,
-      shadowOpacity: 0.16,
+      borderRadius: v2Radius.medium,
     },
     completionPopupTop: {
       alignItems: "center",

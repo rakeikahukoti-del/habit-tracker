@@ -11,19 +11,33 @@ import EmptyState from "../EmptyState";
 import HabitCard from "../HabitCard";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
+import { DAILY_PLAN_LIMIT } from "../../utils/dailyPlanning";
 import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
+// Renders the whole "your habits for today" surface as one scrollable
+// FlatList - pinned (Today's Focus) habits sort to the top via `data`'s
+// order (see useHomeController's mergedHomeHabits), each marked with the
+// star icon on HabitCard rather than a separate static section above this
+// list. See docs/momentum-* and the Phase 6 Home decluttering proposal for
+// why: a static block whose height scaled with pin count was the actual
+// density problem, not this list.
 export default function HomeHabitList({
+  availablePriorityHabits,
   countLabel,
   data,
   enableLongPressReorder,
   enableSwipeToComplete,
   isSmallScreen,
+  ListHeaderComponent,
   loading,
   onAddPress,
+  onAddPriority,
+  onMovePriority,
   onRefresh,
   onReorderPress,
+  onRemovePriority,
   onToggleComplete,
+  priorityHabits,
   refreshing,
   subtitle,
   title,
@@ -34,24 +48,80 @@ export default function HomeHabitList({
     () => createStyles(colors, { isSmallScreen }),
     [colors, isSmallScreen]
   );
+  const priorityIndexById = useMemo(() => {
+    const map = new Map();
+
+    priorityHabits.forEach((habit, index) => map.set(habit.id, index));
+
+    return map;
+  }, [priorityHabits]);
+  const availablePriorityIds = useMemo(
+    () => new Set(availablePriorityHabits.map((habit) => habit.id)),
+    [availablePriorityHabits]
+  );
+
+  const handleTogglePin = useCallback(
+    (habit) => {
+      if (priorityIndexById.has(habit.id)) {
+        onRemovePriority(habit);
+        return;
+      }
+
+      onAddPriority(habit);
+    },
+    [onAddPriority, onRemovePriority, priorityIndexById]
+  );
+  // Stable references, not curried per-item in renderHabitItem, so
+  // HabitCard's memo() actually prevents re-rendering every card in the
+  // list whenever one card's pin state changes.
+  const handleMoveUp = useCallback(
+    (habit) => onMovePriority(habit, "up"),
+    [onMovePriority]
+  );
+  const handleMoveDown = useCallback(
+    (habit) => onMovePriority(habit, "down"),
+    [onMovePriority]
+  );
 
   const renderHabitItem = useCallback(
-    ({ item }) => (
-      <View style={styles.listItem}>
-        <HabitCard
-          habit={item}
-          enableLongPressReorder={enableLongPressReorder}
-          enableSwipeToComplete={enableSwipeToComplete}
-          onReorderPress={onReorderPress}
-          onToggleComplete={onToggleComplete}
-        />
-      </View>
-    ),
+    ({ item }) => {
+      const pinIndex = priorityIndexById.get(item.id);
+      const isPinned = pinIndex !== undefined;
+
+      return (
+        <View style={styles.listItem}>
+          <HabitCard
+            habit={item}
+            canMoveDown={isPinned && pinIndex < priorityHabits.length - 1}
+            canMoveUp={isPinned && pinIndex > 0}
+            canPin={
+              !isPinned &&
+              availablePriorityIds.has(item.id) &&
+              priorityHabits.length < DAILY_PLAN_LIMIT
+            }
+            enableLongPressReorder={enableLongPressReorder}
+            enableSwipeToComplete={enableSwipeToComplete}
+            isPinned={isPinned}
+            onMoveDown={handleMoveDown}
+            onMoveUp={handleMoveUp}
+            onReorderPress={onReorderPress}
+            onToggleComplete={onToggleComplete}
+            onTogglePin={handleTogglePin}
+          />
+        </View>
+      );
+    },
     [
+      availablePriorityIds,
       enableLongPressReorder,
       enableSwipeToComplete,
+      handleMoveDown,
+      handleMoveUp,
+      handleTogglePin,
       onReorderPress,
       onToggleComplete,
+      priorityHabits.length,
+      priorityIndexById,
       styles.listItem,
     ]
   );
@@ -61,75 +131,79 @@ export default function HomeHabitList({
   );
 
   return (
-    <>
-      <View style={styles.listHeader}>
-        <View style={styles.listHeaderText}>
-          <View style={styles.listTitleRow}>
-            <AppText style={styles.listTitle}>{title}</AppText>
-            <AppText style={styles.doneBadgeText}>
-              {countLabel}
+    <FlatList
+      style={styles.list}
+      data={data}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={[
+        styles.listContent,
+        data.length === 0 && styles.emptyListContent,
+      ]}
+      ListHeaderComponent={
+        <>
+          {ListHeaderComponent}
+          <View style={styles.listHeader}>
+            <View style={styles.listHeaderText}>
+              <View style={styles.listTitleRow}>
+                <AppText style={styles.listTitle}>{title}</AppText>
+                <AppText style={styles.doneBadgeText}>{countLabel}</AppText>
+              </View>
+              <AppText style={styles.listSubtitle}>{subtitle}</AppText>
+            </View>
+            <Pressable
+              accessibilityLabel="Add a new habit"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={onAddPress}
+              style={({ pressed }) => [
+                styles.inlineAddButton,
+                pressed && v2PressedStyles.button,
+              ]}
+            >
+              <AppIcon color={colors.text} name="plus" size={17} strokeWidth={2.2} />
+              <AppText style={styles.inlineAddText}>Add</AppText>
+            </Pressable>
+          </View>
+        </>
+      }
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      ListEmptyComponent={
+        loading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator color={colors.primary} />
+            <AppText style={styles.loadingText}>Loading habits...</AppText>
+          </View>
+        ) : totalHabitsCount === 0 ? (
+          <EmptyState />
+        ) : (
+          <View style={styles.remainingEmptyState}>
+            <AppText style={styles.remainingEmptyTitle}>
+              Your focus list is set
+            </AppText>
+            <AppText style={styles.remainingEmptyText}>
+              Everything else is clear for today.
             </AppText>
           </View>
-          <AppText style={styles.listSubtitle}>{subtitle}</AppText>
-        </View>
-        <Pressable
-          accessibilityLabel="Add a new habit"
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={onAddPress}
-          style={({ pressed }) => [
-            styles.inlineAddButton,
-            pressed && v2PressedStyles.button,
-          ]}
-        >
-          <AppIcon color={colors.text} name="plus" size={17} strokeWidth={2.2} />
-          <AppText style={styles.inlineAddText}>Add</AppText>
-        </Pressable>
-      </View>
-
-      <FlatList
-        style={styles.list}
-        data={data}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContent,
-          data.length === 0 && styles.emptyListContent,
-        ]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.loadingState}>
-              <ActivityIndicator color={colors.primary} />
-              <AppText style={styles.loadingText}>Loading habits...</AppText>
-            </View>
-          ) : totalHabitsCount === 0 ? (
-            <EmptyState />
-          ) : (
-            <View style={styles.remainingEmptyState}>
-              <AppText style={styles.remainingEmptyTitle}>
-                Your focus list is set
-              </AppText>
-              <AppText style={styles.remainingEmptyText}>
-                Everything else is clear for today.
-              </AppText>
-            </View>
-          )
-        }
-        renderItem={renderHabitItem}
-        initialNumToRender={8}
-        ItemSeparatorComponent={renderSeparator}
-        maxToRenderPerBatch={8}
-        showsVerticalScrollIndicator={false}
-        windowSize={7}
-      />
-    </>
+        )
+      }
+      renderItem={renderHabitItem}
+      initialNumToRender={8}
+      ItemSeparatorComponent={renderSeparator}
+      maxToRenderPerBatch={8}
+      showsVerticalScrollIndicator={false}
+      windowSize={7}
+    />
   );
 }
 
 function createStyles(colors, { isSmallScreen }) {
   return StyleSheet.create({
+    list: {
+      flex: 1,
+      width: "100%",
+    },
     listHeader: {
       alignItems: "flex-start",
       flexDirection: "row",
@@ -202,9 +276,6 @@ function createStyles(colors, { isSmallScreen }) {
     listContent: {
       paddingBottom: 32,
       paddingTop: 6,
-      width: "100%",
-    },
-    list: {
       width: "100%",
     },
     listItem: {

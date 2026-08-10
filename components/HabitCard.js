@@ -14,6 +14,7 @@ import {
   v2ActionColors,
   v2Breakpoints,
   v2FontWeight,
+  v2PressedStyles,
   v2Radius,
   v2Shadows,
   v2Spacing,
@@ -42,11 +43,18 @@ const SWIPE_THRESHOLD = 30;
 const SWIPE_LIMIT = 112;
 
 function HabitCard({
+  canMoveDown = false,
+  canMoveUp = false,
+  canPin = false,
   enableLongPressReorder = true,
   enableSwipeToComplete = true,
   habit,
+  isPinned = false,
+  onMoveDown,
+  onMoveUp,
   onReorderPress,
   onToggleComplete,
+  onTogglePin,
 }) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
@@ -421,14 +429,39 @@ function HabitCard({
               </View>
 
               <View style={styles.titleGroup}>
-                <AppText
-                  color={colors.text}
-                  numberOfLines={2}
-                  style={styles.name}
-                  variant="cardTitle"
-                >
-                  {habit.name}
-                </AppText>
+                <View style={styles.nameRow}>
+                  {isPinned || canPin ? (
+                    <Pressable
+                      accessibilityLabel={
+                        isPinned
+                          ? `Unpin ${habit.name} from today's focus`
+                          : `Pin ${habit.name} to today's focus`
+                      }
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => onTogglePin?.(habit)}
+                      style={({ pressed }) => [
+                        styles.pinButton,
+                        pressed && v2PressedStyles.button,
+                      ]}
+                    >
+                      <AppIcon
+                        color={isPinned ? colors.primary : colors.softText}
+                        name="star"
+                        size={15}
+                        strokeWidth={2}
+                      />
+                    </Pressable>
+                  ) : null}
+                  <AppText
+                    color={colors.text}
+                    numberOfLines={2}
+                    style={styles.name}
+                    variant="cardTitle"
+                  >
+                    {habit.name}
+                  </AppText>
+                </View>
                 <AppText
                   color={colors.muted}
                   numberOfLines={1}
@@ -473,6 +506,50 @@ function HabitCard({
             </View>
           </View>
         </View>
+
+        {isPinned ? (
+          <View style={styles.pinControlsRow}>
+            <AppText style={styles.pinControlsLabel}>Today's Focus</AppText>
+            <View style={styles.pinControlsButtons}>
+              <Pressable
+                accessibilityLabel={`Move ${habit.name} up in today's focus`}
+                accessibilityRole="button"
+                disabled={!canMoveUp}
+                hitSlop={8}
+                onPress={() => onMoveUp?.(habit)}
+                style={({ pressed }) => [
+                  styles.pinControlButton,
+                  !canMoveUp && styles.pinControlButtonDisabled,
+                  pressed && v2PressedStyles.button,
+                ]}
+              >
+                <AppIcon
+                  color={canMoveUp ? colors.text : colors.softText}
+                  name="chevron-up"
+                  size={15}
+                />
+              </Pressable>
+              <Pressable
+                accessibilityLabel={`Move ${habit.name} down in today's focus`}
+                accessibilityRole="button"
+                disabled={!canMoveDown}
+                hitSlop={8}
+                onPress={() => onMoveDown?.(habit)}
+                style={({ pressed }) => [
+                  styles.pinControlButton,
+                  !canMoveDown && styles.pinControlButtonDisabled,
+                  pressed && v2PressedStyles.button,
+                ]}
+              >
+                <AppIcon
+                  color={canMoveDown ? colors.text : colors.softText}
+                  name="chevron-down"
+                  size={15}
+                />
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.weekRow}>
           <ProgressDots days={weeklyProgress} compact />
@@ -640,7 +717,18 @@ function createStyles(colors, isCompact) {
       flexShrink: 1,
       minWidth: 0,
     },
+    nameRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+    },
+    pinButton: {
+      alignItems: "center",
+      flexShrink: 0,
+      justifyContent: "center",
+    },
     name: {
+      flexShrink: 1,
       fontSize: isCompact ? 15 : v2Typography.cardTitle.fontSize,
       fontWeight: v2FontWeight.semibold,
       letterSpacing: 0,
@@ -649,6 +737,35 @@ function createStyles(colors, isCompact) {
       marginTop: 3,
       lineHeight: v2Typography.caption.lineHeight,
       minWidth: 0,
+    },
+    pinControlsRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 10,
+    },
+    pinControlsLabel: {
+      color: colors.softText,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+      letterSpacing: 0.2,
+      textTransform: "uppercase",
+    },
+    pinControlsButtons: {
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+    },
+    pinControlButton: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: v2Radius.small,
+      borderWidth: 1,
+      height: 28,
+      justifyContent: "center",
+      width: 28,
+    },
+    pinControlButtonDisabled: {
+      opacity: 0.4,
     },
     rightActions: {
       alignItems: "center",

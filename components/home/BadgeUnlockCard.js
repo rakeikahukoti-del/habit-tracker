@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { BadgeMedal } from "../progression";
-import { AppText } from "../ui";
+import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import {
@@ -10,11 +10,15 @@ import {
   v2Motion,
   v2PressedStyles,
   v2Radius,
-  v2Shadows,
   v2Typography,
 } from "../../src/design";
 
-export default function BadgeUnlockCard({ badge, onDismiss }) {
+// Promoted from an inline banner to a ModalShell overlay - see
+// CompletionRewardCard.js for the full rationale (all 5 activeRewardType
+// states now share one presentation). The medal's own glow effect is kept;
+// the outer card's bespoke border/shadow is dropped in favor of ModalShell's
+// shared chrome.
+export default function BadgeUnlockCard({ badge, onClose, visible }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
@@ -22,10 +26,14 @@ export default function BadgeUnlockCard({ badge, onDismiss }) {
   const glowAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
 
   useEffect(() => {
+    if (!visible) {
+      return undefined;
+    }
+
     if (reduceMotion) {
       scaleAnim.setValue(1);
       glowAnim.setValue(1);
-      return;
+      return undefined;
     }
 
     scaleAnim.setValue(0.72);
@@ -49,49 +57,59 @@ export default function BadgeUnlockCard({ badge, onDismiss }) {
     animation.start();
 
     return () => animation.stop();
-  }, [badge?.id, glowAnim, reduceMotion, scaleAnim]);
+  }, [badge?.id, glowAnim, reduceMotion, scaleAnim, visible]);
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 0.5],
   });
 
+  if (!badge) {
+    return null;
+  }
+
   return (
-    <Pressable
-      accessibilityLabel={`${badge.label} achievement unlocked. ${badge.description}. Double tap to dismiss.`}
-      accessibilityRole="button"
-      onPress={onDismiss}
-      style={({ pressed }) => [
-        styles.badgeUnlockPopup,
-        pressed && v2PressedStyles.card,
-      ]}
+    <ModalShell
+      maxWidth={360}
+      onClose={onClose}
+      padding={22}
+      reduceMotion={reduceMotion}
+      visible={visible}
     >
-      <Animated.View
-        style={[
-          styles.medalGlow,
-          {
-            shadowColor: colors.accent,
-            shadowOpacity: glowOpacity,
-            transform: [{ scale: scaleAnim }],
-          },
+      <Pressable
+        accessibilityLabel={`${badge.label} achievement unlocked. ${badge.description}. Double tap to dismiss.`}
+        accessibilityRole="button"
+        onPress={onClose}
+        style={({ pressed }) => [
+          styles.badgeUnlockPopup,
+          pressed && v2PressedStyles.card,
         ]}
       >
-        <BadgeMedal badge={badge} earned large />
-      </Animated.View>
-      <View style={styles.badgeUnlockContent}>
-        <AppText style={styles.badgeUnlockEyebrow}>Badge earned</AppText>
-        <AppText style={styles.badgeUnlockTitle}>{badge.label}</AppText>
-        <AppText style={styles.badgeUnlockDescription}>
-          {badge.description}
-        </AppText>
-        <View style={styles.badgeUnlockFooter}>
-          <AppText style={styles.badgeUnlockTier}>{badge.tier}</AppText>
-          <AppText style={styles.badgeUnlockRarity}>
-            {badge.rarity}
+        <Animated.View
+          style={[
+            styles.medalGlow,
+            {
+              shadowColor: colors.accent,
+              shadowOpacity: glowOpacity,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <BadgeMedal badge={badge} earned large />
+        </Animated.View>
+        <View style={styles.badgeUnlockContent}>
+          <AppText style={styles.badgeUnlockEyebrow}>Badge earned</AppText>
+          <AppText style={styles.badgeUnlockTitle}>{badge.label}</AppText>
+          <AppText style={styles.badgeUnlockDescription}>
+            {badge.description}
           </AppText>
+          <View style={styles.badgeUnlockFooter}>
+            <AppText style={styles.badgeUnlockTier}>{badge.tier}</AppText>
+            <AppText style={styles.badgeUnlockRarity}>{badge.rarity}</AppText>
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </ModalShell>
   );
 }
 
@@ -99,20 +117,9 @@ function createStyles(colors) {
   return StyleSheet.create({
     badgeUnlockPopup: {
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderColor: colors.accent,
-      borderRadius: v2Radius.feature,
-      borderWidth: 1.5,
       gap: v2CompactSpacing.md,
-      marginBottom: v2CompactSpacing.sm,
-      paddingHorizontal: v2CompactSpacing.lg,
-      paddingVertical: 20,
-      ...v2Shadows.medium,
-      shadowColor: colors.accent,
-      shadowOpacity: 0.18,
     },
     medalGlow: {
-      ...v2Shadows.floating,
       alignItems: "center",
       borderRadius: v2Radius.large,
       justifyContent: "center",

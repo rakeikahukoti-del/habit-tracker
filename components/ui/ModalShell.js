@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Modal, Pressable, StyleSheet } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { v2Radius, v2Shadows, v2Spacing } from "../../src/design";
 
@@ -63,7 +63,21 @@ export default function ModalShell({
           style={styles.modalCard}
           testID="modal-card"
         >
-          {children}
+          {/* Separate inner view for overflow:hidden - it needs to clip the
+              scrolled content to the rounded corners, but living on the
+              outer (shadowed) view would clip the drop shadow too, since
+              iOS renders shadows outside the view's own bounds. */}
+          <View style={styles.modalCardClip}>
+            {/* Content scrolls internally rather than clipping - matters
+                most in landscape, where maxHeight's 82% of a much shorter
+                viewport can be less room than a modal's content needs. */}
+            <ScrollView
+              contentContainerStyle={styles.modalCardContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {children}
+            </ScrollView>
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -87,11 +101,18 @@ function createStyles(colors, { maxWidth, padding }) {
       borderWidth: 1,
       maxHeight: "82%",
       maxWidth,
-      padding,
       ...v2Shadows.floating,
       shadowColor: colors.shadow,
       shadowOpacity: 0.18,
       width: "100%",
+    },
+    modalCardClip: {
+      borderRadius: v2Radius.large,
+      overflow: "hidden",
+    },
+    modalCardContent: {
+      alignItems: "stretch",
+      padding,
     },
   });
 }
