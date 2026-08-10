@@ -468,7 +468,7 @@ function HabitWeeklySummary({ habitId, pattern, styles }) {
   return (
     <View style={styles.weeklyCard}>
       <View
-        accessibilityLabel={`This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${pattern.comparison.label}. ${pattern.nextScheduled.label}.`}
+        accessibilityLabel={`This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${pattern.comparison.label}.`}
         accessible
         style={styles.weeklyHeader}
       >
@@ -491,11 +491,6 @@ function HabitWeeklySummary({ habitId, pattern, styles }) {
               ? pattern.comparison.label
               : "Needs more data"
           }
-        />
-        <WeeklyRow
-          label="Next scheduled"
-          styles={styles}
-          value={pattern.nextScheduled.label}
         />
       </View>
 
