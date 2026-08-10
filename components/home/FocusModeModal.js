@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppIcon, AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function FocusModeModal({
   dailyPlanProgress,
@@ -162,7 +162,7 @@ function createStyles(colors) {
       flexDirection: "row",
       gap: v2Spacing.md,
       marginTop: 16,
-      padding: 14,
+      padding: v2CompactSpacing.md,
     },
     focusHabitEmoji: {
       color: colors.text,

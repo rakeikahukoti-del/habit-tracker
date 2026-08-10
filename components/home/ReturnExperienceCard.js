@@ -3,7 +3,7 @@ import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useEntranceAnimation } from "../../hooks/useEntranceAnimation";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function ReturnExperienceCard({ message, onDismiss }) {
   const { colors } = useTheme();
@@ -50,8 +50,8 @@ function createStyles(colors) {
       gap: v2Spacing.md,
       marginBottom: v2Spacing.sm,
       minHeight: 64,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: v2CompactSpacing.md,
+      paddingVertical: v2CompactSpacing.sm,
     },
     returnIcon: {
       alignItems: "center",

@@ -11,7 +11,7 @@ import EmptyState from "../EmptyState";
 import HabitCard from "../HabitCard";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function HomeHabitList({
   countLabel,
@@ -136,7 +136,7 @@ function createStyles(colors, { isSmallScreen }) {
       gap: 12,
       justifyContent: "space-between",
       paddingBottom: 8,
-      paddingTop: 10,
+      paddingTop: v2CompactSpacing.sm,
       width: "100%",
     },
     listHeaderText: {
@@ -179,7 +179,7 @@ function createStyles(colors, { isSmallScreen }) {
       marginTop: 1,
       minHeight: 44,
       minWidth: 76,
-      paddingHorizontal: 14,
+      paddingHorizontal: v2CompactSpacing.md,
     },
     inlineAddText: {
       color: colors.text,
@@ -219,7 +219,7 @@ function createStyles(colors, { isSmallScreen }) {
       backgroundColor: colors.surface,
       borderRadius: v2Radius.large,
       marginTop: 8,
-      padding: 18,
+      padding: v2CompactSpacing.lg,
     },
     remainingEmptyTitle: {
       color: colors.text,

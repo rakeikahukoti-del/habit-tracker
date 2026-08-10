@@ -5,6 +5,7 @@ import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import {
+  v2CompactSpacing,
   v2FontWeight,
   v2Motion,
   v2PressedStyles,
@@ -102,9 +103,9 @@ function createStyles(colors) {
       borderColor: colors.accent,
       borderRadius: v2Radius.feature,
       borderWidth: 1.5,
-      gap: 14,
-      marginBottom: 10,
-      paddingHorizontal: 18,
+      gap: v2CompactSpacing.md,
+      marginBottom: v2CompactSpacing.sm,
+      paddingHorizontal: v2CompactSpacing.lg,
       paddingVertical: 20,
       ...v2Shadows.medium,
       shadowColor: colors.accent,
@@ -137,7 +138,7 @@ function createStyles(colors) {
       fontSize: 12,
       fontWeight: v2FontWeight.bold,
       overflow: "hidden",
-      paddingHorizontal: 10,
+      paddingHorizontal: v2CompactSpacing.sm,
       paddingVertical: 5,
       textTransform: "uppercase",
     },
@@ -171,7 +172,7 @@ function createStyles(colors) {
       fontSize: 12,
       fontWeight: v2FontWeight.bold,
       overflow: "hidden",
-      paddingHorizontal: 10,
+      paddingHorizontal: v2CompactSpacing.sm,
       paddingVertical: 5,
     },
   });

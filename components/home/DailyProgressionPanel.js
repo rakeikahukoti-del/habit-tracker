@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { RankMedal } from "../progression";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
 export default function DailyProgressionPanel({
   completedTodayCount,
@@ -199,7 +199,7 @@ function createStyles(colors, { isSmallScreen }) {
       borderWidth: 1,
       minHeight: 34,
       justifyContent: "center",
-      paddingHorizontal: 10,
+      paddingHorizontal: v2CompactSpacing.sm,
     },
     progressCount: {
       color: colors.text,
@@ -250,7 +250,7 @@ function createStyles(colors, { isSmallScreen }) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       marginBottom: v2Spacing.sm,
-      paddingHorizontal: 14,
+      paddingHorizontal: v2CompactSpacing.md,
       paddingVertical: v2Spacing.md,
     },
     focusNoteLabel: {

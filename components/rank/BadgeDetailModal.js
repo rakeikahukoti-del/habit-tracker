@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { BadgeMedal } from "../progression";
 import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2CompactSpacing, v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getAchievementProgressLabel } from "../../utils/achievementProgress";
 
 export default function BadgeDetailModal({
@@ -143,7 +143,7 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.bold,
       overflow: "hidden",
-      paddingHorizontal: 10,
+      paddingHorizontal: v2CompactSpacing.sm,
       paddingVertical: 5,
     },
     requirementBox: {
