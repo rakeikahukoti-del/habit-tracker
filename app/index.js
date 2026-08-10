@@ -97,14 +97,12 @@ export default function HomeScreen() {
     completedTodayCount,
     completionLabel,
     completionPercentage,
-    habitsSectionMessage,
     levelInfo,
     longestCurrentStreak,
-    motivation,
-    nextAction,
     rank,
     remainingTodayCount,
     scheduledTodayCount,
+    statusMessage,
     todayCountLabel,
     todayXp,
     weeklyContext,
@@ -199,17 +197,17 @@ export default function HomeScreen() {
                 completedTodayCount={completedTodayCount}
                 completionLabel={completionLabel}
                 completionPercentage={completionPercentage}
+                habitCount={habits.length}
                 isSmallScreen={isSmallScreen}
                 levelInfo={levelInfo}
                 longestCurrentStreak={longestCurrentStreak}
-                motivation={motivation}
-                nextAction={nextAction}
                 progressExpanded={progressExpanded}
                 rank={rank}
                 remainingTodayCount={remainingTodayCount}
                 scheduledTodayCount={scheduledTodayCount}
                 showProgressCard={preferences.showProgressCard}
                 showXpRankOnHome={preferences.showXpRankOnHome}
+                statusMessage={statusMessage}
                 todayCountLabel={todayCountLabel}
                 todayXp={todayXp}
                 toggleProgressExpanded={toggleProgressExpanded}
@@ -247,7 +245,6 @@ export default function HomeScreen() {
           onToggleComplete={handleToggleComplete}
           priorityHabits={priorityHabits}
           refreshing={refreshing}
-          subtitle={habitsSectionMessage}
           title="Today's Habits"
           totalHabitsCount={habits.length}
         />
