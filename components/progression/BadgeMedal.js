@@ -25,10 +25,15 @@ const tierStyles = {
     inner: "#2B2418",
     symbol: "#D3B36F",
   },
+  // Platinum was pale grey here while the shipped rank-medal art
+  // (assets/ranks/platinum.png) and the shipped achievement-badge art both
+  // rendered it violet - two independent art passes agreeing with each
+  // other against this component's own programmed value. The art is the
+  // one that's right; corrected to match (Phase 8 badge/rank survey).
   Platinum: {
-    border: "#C4CCD0",
-    inner: "#19242D",
-    symbol: "#E0E5E7",
+    border: "#8B6FD9",
+    inner: "#1E1A33",
+    symbol: "#D6CCF0",
   },
   Diamond: {
     border: "#BFD8DE",
@@ -43,10 +48,10 @@ const tierStyles = {
 };
 
 // tier.border above is tuned against the near-black dark-theme card
-// (#1C1C1E). Two of those values don't survive the trip to the light
+// (#1C1C1E). Some of those values don't survive the trip to the light
 // theme's white card, and one doesn't survive the trip to the dark card
 // well enough:
-//  - Silver/Platinum/Diamond (pale by design, for the dark card) drop to
+//  - Silver/Diamond (pale by design, for the dark card) drop to
 //    ~1.5-2.3:1 against white - under WCAG 1.4.11's 3:1 floor for
 //    meaningful graphical objects (this ring is how sighted/low-vision
 //    users tell tiers apart at a glance; screen reader users already get
@@ -54,9 +59,11 @@ const tierStyles = {
 //  - Master's border is only 2.13:1 against the dark card as authored.
 // Both fixes below darken/lighten along the same hue rather than picking a
 // new color, so the tier stays recognizably the same color family.
+// Platinum needs no override: its corrected violet (#8B6FD9, see above)
+// clears 3:1 against both white (3.91:1) and the dark card (4.35:1) as
+// authored - verified against the WCAG relative-luminance formula.
 const tierBorderLightOverrides = {
   Silver: "#899098",
-  Platinum: "#80919A",
   Diamond: "#5798A8",
 };
 const tierBorderDarkOverrides = {
