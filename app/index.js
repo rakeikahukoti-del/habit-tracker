@@ -140,7 +140,6 @@ export default function HomeScreen() {
                 showProgressCard={preferences.showProgressCard}
                 showXpRankOnHome={preferences.showXpRankOnHome}
                 statusMessage={statusMessage}
-                todayCountLabel={todayCountLabel}
                 todayXp={todayXp}
                 toggleProgressExpanded={toggleProgressExpanded}
                 weeklyContext={weeklyContext}
