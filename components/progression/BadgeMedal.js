@@ -1,48 +1,43 @@
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { getAchievementBadgeAsset } from "../../constants/assets";
+import BadgeFrame from "./BadgeFrame";
 import { v2Radius } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 
-// Single source of truth for tier color. Badge art (assets/achievements/*.png)
-// bakes in its own accent color per asset and is not guaranteed to agree with
-// a badge's actual `tier` (see utils/gamification.js) — do not read color from
-// the art. `image` is inset within `wrap` so the art's own border never sits
-// flush against this ring.
+// Single source of truth for tier color. Border is the one accent color a
+// badge frame ever shows (BadgeFrame.js draws fill/linework in caller-
+// supplied neutrals) - do not read tier color from anywhere else. Symbol
+// is used only for the earned-tier foil sheen below, a soft low-alpha
+// overlay, not a fill.
+//
+// Platinum corrected 2026-08 (Phase 8 badge/rank survey): was #C4CCD0
+// (pale grey) here while the shipped rank-medal art and the shipped
+// achievement-badge art both rendered it violet - two independent art
+// passes agreeing with each other against this component's own
+// programmed value. The art was right; corrected to match.
 const tierStyles = {
   Bronze: {
     border: "#8A6548",
-    inner: "#2A211B",
     symbol: "#C09A77",
   },
   Silver: {
     border: "#A7ACB2",
-    inner: "#1F242A",
     symbol: "#D2D5D8",
   },
   Gold: {
     border: "#A98A52",
-    inner: "#2B2418",
     symbol: "#D3B36F",
   },
-  // Platinum was pale grey here while the shipped rank-medal art
-  // (assets/ranks/platinum.png) and the shipped achievement-badge art both
-  // rendered it violet - two independent art passes agreeing with each
-  // other against this component's own programmed value. The art is the
-  // one that's right; corrected to match (Phase 8 badge/rank survey).
   Platinum: {
     border: "#8B6FD9",
-    inner: "#1E1A33",
     symbol: "#D6CCF0",
   },
   Diamond: {
     border: "#BFD8DE",
-    inner: "#142330",
     symbol: "#EEF5F6",
   },
   Master: {
     border: "#8E303A",
-    inner: "#16090C",
     symbol: "#C75F69",
   },
 };
@@ -70,6 +65,9 @@ const tierBorderDarkOverrides = {
   Master: "#BC3F4D",
 };
 
+// Tiers that get a foil sheen overlay in addition to their tier.border ring.
+const MATERIAL_TIERS = new Set(["Gold", "Platinum", "Diamond", "Master"]);
+
 function getTierStyle(tierName, isDark) {
   const base = tierStyles[tierName] || tierStyles.Bronze;
   const overrides = isDark ? tierBorderDarkOverrides : tierBorderLightOverrides;
@@ -78,11 +76,9 @@ function getTierStyle(tierName, isDark) {
   return border ? { ...base, border } : base;
 }
 
-// Tiers that get a foil sheen overlay in addition to their tier.border ring.
-const MATERIAL_TIERS = new Set(["Gold", "Platinum", "Diamond", "Master"]);
-
 export default function BadgeMedal({
   badge,
+  children,
   earned = false,
   large = false,
   selected = false,
@@ -91,7 +87,7 @@ export default function BadgeMedal({
   const { colors, isDark } = useTheme();
   const tier = getTierStyle(badge?.tier, isDark);
   const size = large ? 112 : 64;
-  const asset = getAchievementBadgeAsset(badge?.id);
+  const frameSize = Math.round(size * 0.9);
   const showSheen = earned && MATERIAL_TIERS.has(badge?.tier);
 
   return (
@@ -110,35 +106,25 @@ export default function BadgeMedal({
         style,
       ]}
     >
-      {asset ? (
-        <View style={styles.artBox}>
-          <Image
-            accessibilityIgnoresInvertColors
-            resizeMode="contain"
-            source={asset}
-            style={styles.image}
-          />
-          {showSheen ? (
-            <LinearGradient
-              colors={[withAlpha(tier.symbol, 0.4), withAlpha(tier.symbol, 0)]}
-              end={{ x: 1, y: 1 }}
-              pointerEvents="none"
-              start={{ x: 0, y: 0 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-          ) : null}
-        </View>
-      ) : (
-        <View
-          style={[
-            styles.fallback,
-            {
-              backgroundColor: earned ? tier.inner : colors.surface,
-              borderColor: earned ? tier.border : colors.border,
-            },
-          ]}
+      <View style={styles.frameBox}>
+        <BadgeFrame
+          accentColor={tier.border}
+          fillColor={colors.surface}
+          mutedColor={colors.border}
+          size={frameSize}
+          tier={badge?.tier}
         />
-      )}
+        {children ? <View style={styles.glyphSlot}>{children}</View> : null}
+        {showSheen ? (
+          <LinearGradient
+            colors={[withAlpha(tier.symbol, 0.4), withAlpha(tier.symbol, 0)]}
+            end={{ x: 1, y: 1 }}
+            pointerEvents="none"
+            start={{ x: 0, y: 0 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -167,22 +153,15 @@ const styles = StyleSheet.create({
   selected: {
     borderWidth: 2,
   },
-  artBox: {
-    borderRadius: v2Radius.medium,
+  frameBox: {
+    alignItems: "center",
     height: "90%",
-    overflow: "hidden",
+    justifyContent: "center",
     width: "90%",
   },
-  image: {
-    height: "100%",
-    width: "100%",
-  },
-  fallback: {
+  glyphSlot: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
-    borderRadius: v2Radius.medium,
-    borderWidth: 1,
-    height: "78%",
     justifyContent: "center",
-    width: "78%",
   },
 });

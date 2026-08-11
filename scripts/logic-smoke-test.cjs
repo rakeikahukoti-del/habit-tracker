@@ -3043,7 +3043,7 @@ test("badges sort by tier progression in stable ascending and descending order",
   );
 });
 
-test("visual asset manifest covers rank and achievement identifiers", () => {
+test("visual asset manifest covers rank identifiers", () => {
   assert(appAssets.BRAND_ASSETS.logoDark.endsWith("momentum-logo-dark.png"));
   assert(appAssets.BRAND_ASSETS.logoLight.endsWith("momentum-logo-light.png"));
   assert(
@@ -3146,12 +3146,11 @@ test("visual asset manifest covers rank and achievement identifiers", () => {
     "Master rank should use the Master asset"
   );
 
-  gamificationLogic.badges.forEach((badge) => {
-    const asset = appAssets.getAchievementBadgeAsset(badge.id);
-
-    assert(asset, `${badge.id} should resolve to an achievement asset`);
-    assert(fs.existsSync(asset), `${badge.id} asset should exist`);
-  });
+  assert.strictEqual(
+    Object.prototype.hasOwnProperty.call(appAssets, "getAchievementBadgeAsset"),
+    false,
+    "achievement badges are code-drawn (BadgeFrame.js) as of Phase 8 - no raster asset lookup should exist"
+  );
 });
 
 test("achievement icon metadata is complete and separated from rank assets", () => {
