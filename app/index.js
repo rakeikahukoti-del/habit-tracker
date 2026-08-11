@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   Platform,
   StyleSheet,
@@ -15,22 +15,18 @@ import {
   CelebrationBanner,
   CompletionRewardCard,
   DailyProgressionPanel,
-  FocusModeModal,
   HomeHabitList,
   HomeHeader,
   LevelUpModal,
   PerfectDayModal,
   ReturnExperienceCard,
   SwipeHintCard,
-  TodaysFocusStatus,
 } from "../components/home";
 import { AppText } from "../components/ui";
 import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useHomeController } from "../hooks/useHomeController";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import { getNextPriorityHabit } from "../utils/dailyPlanning";
-import { getCurrentStreak } from "../utils/habitStats";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -54,8 +50,6 @@ export default function HomeScreen() {
     completionReward,
     confettiKey,
     dailyPlan,
-    dailyPlanMessage,
-    dailyPlanProgress,
     error,
     habits,
     handleRefresh,
@@ -65,7 +59,6 @@ export default function HomeScreen() {
     loading,
     mergedHomeHabits,
     movePriorityForToday,
-    nextPriorityHabit,
     perfectDay,
     preferences,
     priorityHabits,
@@ -80,14 +73,10 @@ export default function HomeScreen() {
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
-    setDailyPlanMessage,
     swipeHintVisible,
     toggleProgressExpanded,
   } = useHomeController();
   const reduceMotion = useReducedMotion();
-  const [focusModeVisible, setFocusModeVisible] = useState(false);
-  const [skippedFocusIds, setSkippedFocusIds] = useState([]);
-  const [focusBusy, setFocusBusy] = useState(false);
 
   const handleReorderPress = useCallback(() => {
     router.push("/reorder-habits");
@@ -107,51 +96,6 @@ export default function HomeScreen() {
     todayXp,
     weeklyContext,
   } = homeSummary;
-  const focusHabit = useMemo(
-    () =>
-      getNextPriorityHabit({
-        habits,
-        plan: dailyPlan,
-        skippedIds: skippedFocusIds,
-      }) || nextPriorityHabit,
-    [dailyPlan, habits, nextPriorityHabit, skippedFocusIds]
-  );
-  const focusComplete = dailyPlanProgress.allComplete;
-  const focusStreak = focusHabit
-    ? getCurrentStreak(focusHabit.completedDates, focusHabit)
-    : 0;
-
-  const handleOpenFocusMode = useCallback(() => {
-    setSkippedFocusIds([]);
-    setFocusModeVisible(true);
-  }, []);
-
-  const handleCloseFocusMode = useCallback(() => {
-    setFocusModeVisible(false);
-    setFocusBusy(false);
-  }, []);
-
-  const handleFocusComplete = useCallback(async () => {
-    if (!focusHabit || focusBusy) {
-      return;
-    }
-
-    setFocusBusy(true);
-    await handleToggleComplete(focusHabit, { source: "focus" });
-    setSkippedFocusIds((ids) => ids.filter((id) => id !== focusHabit.id));
-    setFocusBusy(false);
-  }, [focusBusy, focusHabit, handleToggleComplete]);
-
-  const handleFocusSkip = useCallback(() => {
-    if (!focusHabit) {
-      return;
-    }
-
-    setSkippedFocusIds((ids) =>
-      ids.includes(focusHabit.id) ? ids : [...ids, focusHabit.id]
-    );
-  }, [focusHabit]);
-
   const handleAddPriority = useCallback(
     async (habit) => {
       await addPriorityForToday(habit);
@@ -165,18 +109,6 @@ export default function HomeScreen() {
     },
     [removePriorityForToday]
   );
-
-  useEffect(() => {
-    if (!dailyPlanMessage) {
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setDailyPlanMessage("");
-    }, 2200);
-
-    return () => clearTimeout(timeoutId);
-  }, [dailyPlanMessage, setDailyPlanMessage]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -208,7 +140,6 @@ export default function HomeScreen() {
                 showProgressCard={preferences.showProgressCard}
                 showXpRankOnHome={preferences.showXpRankOnHome}
                 statusMessage={statusMessage}
-                todayCountLabel={todayCountLabel}
                 todayXp={todayXp}
                 toggleProgressExpanded={toggleProgressExpanded}
                 weeklyContext={weeklyContext}
@@ -226,13 +157,6 @@ export default function HomeScreen() {
               {swipeHintVisible ? (
                 <SwipeHintCard onDismiss={dismissSwipeHint} />
               ) : null}
-
-              <TodaysFocusStatus
-                dailyPlanMessage={dailyPlanMessage}
-                dailyPlanProgress={dailyPlanProgress}
-                hasPriorityHabits={priorityHabits.length > 0}
-                onOpenFocusMode={handleOpenFocusMode}
-              />
             </>
           }
           loading={loading}
@@ -249,18 +173,6 @@ export default function HomeScreen() {
           totalHabitsCount={habits.length}
         />
       </View>
-
-      <FocusModeModal
-        dailyPlanProgress={dailyPlanProgress}
-        focusBusy={focusBusy}
-        focusComplete={focusComplete}
-        focusHabit={focusHabit}
-        focusStreak={focusStreak}
-        onComplete={handleFocusComplete}
-        onExit={handleCloseFocusMode}
-        onSkip={handleFocusSkip}
-        visible={focusModeVisible}
-      />
 
       <LevelUpModal
         levelUp={levelUp}

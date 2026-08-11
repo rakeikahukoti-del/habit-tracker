@@ -20,7 +20,6 @@ export default function DailyProgressionPanel({
   showProgressCard,
   showXpRankOnHome,
   statusMessage,
-  todayCountLabel,
   todayXp,
   toggleProgressExpanded,
   weeklyContext,
@@ -66,18 +65,8 @@ export default function DailyProgressionPanel({
             ) : null}
           </View>
           <View style={styles.progressHeaderRight}>
-            <View style={styles.progressPill}>
-              <AppText style={styles.progressCount}>
-                {todayCountLabel}
-              </AppText>
-            </View>
             {!progressExpanded && showXpRankOnHome ? (
-              <View style={styles.compactRankPill}>
-                <RankMedal rank={rank} size="mini" />
-                <AppText style={styles.compactRankText} numberOfLines={1}>
-                  L{levelInfo.level}
-                </AppText>
-              </View>
+              <RankMedal rank={rank} size="mini" />
             ) : null}
             <AppIcon
               color={colors.muted}
@@ -195,36 +184,6 @@ function createStyles(colors, { isSmallScreen }) {
       gap: v2Spacing.sm,
       justifyContent: "flex-end",
       maxWidth: "48%",
-    },
-    progressPill: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: v2Radius.pill,
-      borderWidth: 1,
-      minHeight: 34,
-      justifyContent: "center",
-      paddingHorizontal: v2CompactSpacing.sm,
-    },
-    progressCount: {
-      color: colors.text,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.bold,
-    },
-    compactRankPill: {
-      alignItems: "center",
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: v2Radius.pill,
-      borderWidth: 1,
-      flexDirection: "row",
-      gap: 5,
-      minHeight: 34,
-      paddingHorizontal: 9,
-    },
-    compactRankText: {
-      color: colors.text,
-      fontSize: v2Typography.caption.fontSize,
-      fontWeight: v2FontWeight.bold,
     },
     progressMetaRow: {
       alignItems: "center",
