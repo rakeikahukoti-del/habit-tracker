@@ -33,8 +33,6 @@ import { XP_PER_COMPLETION, XP_PER_LEVEL } from "../utils/gamification";
 import {
   addPriorityId,
   getAvailablePriorityHabits,
-  getDailyPlanProgress,
-  getNextPriorityHabit,
   getTodayPriorityHabits,
   removePriorityId,
   reorderPriorityIds,
@@ -73,7 +71,6 @@ export function useHomeController() {
     habitIds: [],
     version: 1,
   });
-  const [dailyPlanMessage, setDailyPlanMessage] = useState("");
   const [preferences, setPreferences] = useState(defaultAppPreferences);
   const [progressExpanded, setProgressExpanded] = useState(null);
   const [swipeHintVisible, setSwipeHintVisible] = useState(false);
@@ -428,19 +425,16 @@ export function useHomeController() {
     const nextPlan = addPriorityId(dailyPlan, habits, habit.id);
 
     if (nextPlan.habitIds.length === dailyPlan.habitIds.length) {
-      setDailyPlanMessage("Today can include up to three focus habits.");
       return;
     }
 
     await persistDailyPlan(nextPlan);
-    setDailyPlanMessage(`${habit.name} added to today's focus.`);
   }, [dailyPlan, habits, persistDailyPlan]);
 
   const removePriorityForToday = useCallback(async (habit) => {
     const nextPlan = removePriorityId(dailyPlan, habits, habit.id);
 
     await persistDailyPlan(nextPlan);
-    setDailyPlanMessage(`${habit.name} removed from today's focus.`);
   }, [dailyPlan, habits, persistDailyPlan]);
 
   const movePriorityForToday = useCallback(async (habit, direction) => {
@@ -488,14 +482,6 @@ export function useHomeController() {
     () => getAvailablePriorityHabits({ habits, plan: dailyPlan }),
     [dailyPlan, habits]
   );
-  const dailyPlanProgress = useMemo(
-    () => getDailyPlanProgress(dailyPlan, habits),
-    [dailyPlan, habits]
-  );
-  const nextPriorityHabit = useMemo(
-    () => getNextPriorityHabit({ habits, plan: dailyPlan }),
-    [dailyPlan, habits]
-  );
   const dismissBadgeUnlock = useCallback(() => {
     setBadgeUnlockQueue((queue) => queue.slice(1));
   }, []);
@@ -509,8 +495,6 @@ export function useHomeController() {
     completionReward,
     confettiKey,
     dailyPlan,
-    dailyPlanMessage,
-    dailyPlanProgress,
     error,
     habits,
     handleRefresh,
@@ -520,7 +504,6 @@ export function useHomeController() {
     loading,
     mergedHomeHabits,
     movePriorityForToday,
-    nextPriorityHabit,
     perfectDay,
     preferences,
     priorityHabits,
@@ -536,7 +519,6 @@ export function useHomeController() {
     setCompletionReward,
     setLevelUp,
     setPerfectDay,
-    setDailyPlanMessage,
     swipeHintVisible,
     toggleProgressExpanded,
     visibleHabits,
