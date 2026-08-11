@@ -18,12 +18,26 @@ import {
 // states now share one presentation). The medal's own glow effect is kept;
 // the outer card's bespoke border/shadow is dropped in favor of ModalShell's
 // shared chrome.
+//
+// Tier-weighted glow (Phase 8 badge/rank survey, Proposal A): Bronze/
+// Silver/Gold/Platinum keep the original spring-scale + glow exactly as
+// authored. Diamond and Master - the two rarest tiers - get the same
+// animation shape with the glow's ramp-in stretched an extra ~500ms, so
+// the moment reads as visibly slower/more deliberate rather than a
+// bigger or brighter effect. Spring-scale is untouched for every tier;
+// only the glow's timing branches.
+const LINGERING_GLOW_TIERS = new Set(["Diamond", "Master"]);
+const LINGERING_GLOW_EXTRA_MS = 500;
+
 export default function BadgeUnlockCard({ badge, onClose, visible }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
   const scaleAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0.72)).current;
   const glowAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const glowDuration = LINGERING_GLOW_TIERS.has(badge?.tier)
+    ? v2Motion.duration.emphasis + LINGERING_GLOW_EXTRA_MS
+    : v2Motion.duration.emphasis;
 
   useEffect(() => {
     if (!visible) {
@@ -48,7 +62,7 @@ export default function BadgeUnlockCard({ badge, onClose, visible }) {
         useNativeDriver: true,
       }),
       Animated.timing(glowAnim, {
-        duration: v2Motion.duration.emphasis,
+        duration: glowDuration,
         toValue: 1,
         useNativeDriver: false,
       }),
@@ -57,7 +71,7 @@ export default function BadgeUnlockCard({ badge, onClose, visible }) {
     animation.start();
 
     return () => animation.stop();
-  }, [badge?.id, glowAnim, reduceMotion, scaleAnim, visible]);
+  }, [badge?.id, glowAnim, glowDuration, reduceMotion, scaleAnim, visible]);
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
