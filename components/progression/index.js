@@ -1,3 +1,4 @@
+export { default as BadgeGroupGlyph } from "./BadgeGroupGlyph";
 export { default as BadgeMedal, getBadgeTierAccent } from "./BadgeMedal";
 export {
   default as GamificationScreen,

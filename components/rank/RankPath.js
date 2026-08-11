@@ -1,47 +1,77 @@
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
+import { RankMedal } from "../progression";
 import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getRankForLevel, rankMilestones } from "../../storage/gamificationStorage";
 import { getVisibleRank, getVisibleRankMilestones } from "../../utils/rankDisplay";
 
+const MEDAL_SIZE = 40;
+const CONNECTOR_WIDTH = 26;
+const CONNECTOR_HEIGHT = 2;
+
+// Connected trail, replacing the plain vertical locked/unlocked list -
+// Phase 8 badge/rank survey, Proposal B. Medals run in sequence joined by
+// a connector that fills solid up to the user's current level and stays
+// hollow beyond it, so the path reads as one walked-partway shape instead
+// of five unrelated rows.
+//
+// Reuses RankMedal/RankBadge as-is rather than inventing new art - the
+// medal is already this app's established reward visual (Home's
+// collapsed header at size="mini", the Rank hero above this at
+// size="large"). Only addition: a "trail" size preset on RankMedal.
+// RankBadge's existing locked treatment (opacity + dark overlay) handles
+// not-yet-reached tiers with no new code.
+//
+// Five visible tiers, matching today exactly - Diamond stays folded into
+// Platinum this phase (getVisibleRank/getVisibleRankMilestones
+// untouched, same as the vertical-list version used).
 export default function RankPath({ currentLevel }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const visibleRanks = getVisibleRankMilestones(rankMilestones);
+  const currentRankLabel = getVisibleRank(getRankForLevel(currentLevel));
 
   return (
-    <View style={styles.rankPath}>
-      {getVisibleRankMilestones(rankMilestones).map((rankItem) => {
+    <View style={styles.trail}>
+      {visibleRanks.map((rankItem, index) => {
         const unlocked = currentLevel >= rankItem.unlockLevel;
-        const current = getVisibleRank(getRankForLevel(currentLevel)) === rankItem.label;
+        const current = currentRankLabel === rankItem.label;
 
         return (
-          <View
-            accessibilityLabel={`${rankItem.label} rank, unlocks at level ${rankItem.unlockLevel}, ${unlocked ? "unlocked" : "locked"}`}
-            accessible
-            key={rankItem.key}
-            style={[
-              styles.rankStep,
-              current && styles.rankStepCurrent,
-            ]}
-          >
+          <View key={rankItem.key} style={styles.node}>
+            {index > 0 ? (
+              <View
+                style={[
+                  styles.connector,
+                  unlocked && styles.connectorFilled,
+                ]}
+              />
+            ) : null}
             <View
-              style={[
-                styles.rankStepMarker,
-                unlocked && styles.rankStepMarkerUnlocked,
-                current && styles.rankStepMarkerCurrent,
-              ]}
-            />
-            <View style={styles.rankStepText}>
-              <AppText style={styles.rankStepName}>{rankItem.label}</AppText>
-              <AppText style={styles.rankStepMeta}>
-                Level {rankItem.unlockLevel}
-              </AppText>
+              accessibilityLabel={`${rankItem.label} rank, unlocks at level ${rankItem.unlockLevel}, ${current ? "current" : unlocked ? "unlocked" : "locked"}`}
+              accessible
+              style={styles.medalColumn}
+            >
+              <View
+                style={[
+                  styles.medalRing,
+                  current && styles.medalRingCurrent,
+                ]}
+              >
+                <RankMedal locked={!unlocked} rank={rankItem.label} size="trail" />
+              </View>
+              <AppText style={styles.rankName}>{rankItem.label}</AppText>
+              <AppText style={styles.rankLevel}>Level {rankItem.unlockLevel}</AppText>
+              {current ? (
+                <View style={styles.currentChip}>
+                  <AppText numberOfLines={1} style={styles.currentChipText}>
+                    You are here
+                  </AppText>
+                </View>
+              ) : null}
             </View>
-            <AppText style={styles.rankStepState}>
-              {current ? "Current" : unlocked ? "Unlocked" : "Locked"}
-            </AppText>
           </View>
         );
       })}
@@ -51,56 +81,69 @@ export default function RankPath({ currentLevel }) {
 
 function createStyles(colors) {
   return StyleSheet.create({
-    rankPath: {
+    trail: {
+      alignItems: "flex-start",
       backgroundColor: colors.card,
       borderRadius: v2Radius.large,
-      paddingHorizontal: v2Spacing.lg,
-    },
-    rankStep: {
-      alignItems: "center",
-      borderBottomColor: colors.border,
-      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
-      gap: v2Spacing.md,
-      minHeight: 58,
+      flexWrap: "wrap",
+      paddingHorizontal: v2Spacing.lg,
+      paddingVertical: v2Spacing.lg,
+      rowGap: v2Spacing.lg,
     },
-    rankStepCurrent: {
-      backgroundColor: colors.surface,
+    node: {
+      alignItems: "flex-start",
+      flexDirection: "row",
     },
-    rankStepMarker: {
-      borderColor: colors.border,
-      borderRadius: v2Radius.pill,
-      borderWidth: 1,
-      height: 14,
-      width: 14,
+    connector: {
+      backgroundColor: colors.border,
+      height: CONNECTOR_HEIGHT,
+      marginTop: MEDAL_SIZE / 2 - CONNECTOR_HEIGHT / 2,
+      width: CONNECTOR_WIDTH,
     },
-    rankStepMarkerUnlocked: {
+    connectorFilled: {
       backgroundColor: colors.text,
+    },
+    medalColumn: {
+      alignItems: "center",
+      gap: 2,
+      minWidth: 64,
+    },
+    medalRing: {
+      alignItems: "center",
+      borderColor: "transparent",
+      borderRadius: v2Radius.pill,
+      borderWidth: 2,
+      justifyContent: "center",
+      padding: 3,
+    },
+    medalRingCurrent: {
       borderColor: colors.text,
     },
-    rankStepMarkerCurrent: {
-      height: 18,
-      width: 18,
-    },
-    rankStepText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    rankStepName: {
+    rankName: {
       color: colors.text,
-      fontSize: v2Typography.body.fontSize,
+      fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
+      marginTop: 4,
     },
-    rankStepMeta: {
+    rankLevel: {
       color: colors.muted,
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
-      marginTop: 2,
     },
-    rankStepState: {
-      color: colors.muted,
-      fontSize: v2Typography.caption.fontSize,
+    currentChip: {
+      backgroundColor: colors.surface,
+      borderRadius: v2Radius.pill,
+      marginTop: 2,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    currentChipText: {
+      color: colors.text,
+      fontSize: 10,
       fontWeight: v2FontWeight.bold,
+      letterSpacing: 0.2,
+      textTransform: "uppercase",
     },
   });
 }
