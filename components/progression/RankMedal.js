@@ -48,6 +48,15 @@ function getDimensions(size) {
     };
   }
 
+  // Rank path trail (components/rank/RankPath.js, Phase 8) - between
+  // "mini" (Home's collapsed header) and "small", sized for five medals
+  // to sit comfortably in a row on phone width.
+  if (size === "trail") {
+    return {
+      medal: 40,
+    };
+  }
+
   if (size === "large") {
     return {
       medal: 88,
