@@ -99,17 +99,31 @@ export default function BadgeUnlockCard({ badge, onClose, visible }) {
           pressed && v2PressedStyles.card,
         ]}
       >
+        {/* Two nested Animated.Views, not one: RN tracks native/JS driver
+            mode per component, not per Animated.Value. scaleAnim is
+            native-driven (useNativeDriver: true) and glowAnim/glowOpacity
+            is JS-driven (shadow props aren't natively animatable) - mixing
+            both on a single node's style array "moves" that node to
+            native on the first run, then throws "Attempting to run JS
+            driven animation on animated node that has been moved to
+            'native' earlier" the next time shadowOpacity tries to update
+            on it. Reproduces on any tier, from the second badge-unlock
+            popup shown in a session onward - pre-existing, not introduced
+            by the tier-weighted glow above. */}
         <Animated.View
-          style={[
-            styles.medalGlow,
-            {
-              shadowColor: colors.accent,
-              shadowOpacity: glowOpacity,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
+          style={[styles.medalScale, { transform: [{ scale: scaleAnim }] }]}
         >
-          <BadgeMedal badge={badge} earned large />
+          <Animated.View
+            style={[
+              styles.medalGlow,
+              {
+                shadowColor: colors.accent,
+                shadowOpacity: glowOpacity,
+              },
+            ]}
+          >
+            <BadgeMedal badge={badge} earned large />
+          </Animated.View>
         </Animated.View>
         <View style={styles.badgeUnlockContent}>
           <AppText style={styles.badgeUnlockEyebrow}>Badge earned</AppText>
@@ -132,6 +146,10 @@ function createStyles(colors) {
     badgeUnlockPopup: {
       alignItems: "center",
       gap: v2CompactSpacing.md,
+    },
+    medalScale: {
+      alignItems: "center",
+      justifyContent: "center",
     },
     medalGlow: {
       alignItems: "center",
