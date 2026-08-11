@@ -81,24 +81,6 @@ export function getDailyPlanProgress(plan, habits, todayKey = getTodayKey()) {
   };
 }
 
-export function getNextPriorityHabit({
-  habits,
-  plan,
-  skippedIds = [],
-  todayKey = getTodayKey(),
-}) {
-  const skipped = new Set(Array.isArray(skippedIds) ? skippedIds : []);
-  const priorities = getTodayPriorityHabits(plan, habits, todayKey);
-
-  return (
-    priorities.find(
-      (habit) => !isCompletedOnDate(habit, todayKey) && !skipped.has(habit.id)
-    ) ||
-    priorities.find((habit) => !isCompletedOnDate(habit, todayKey)) ||
-    null
-  );
-}
-
 export function addPriorityId(plan, habits, habitId, todayKey = getTodayKey()) {
   const normalizedPlan = normalizeDailyPlan(plan, habits, todayKey);
 

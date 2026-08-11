@@ -3804,7 +3804,7 @@ test("daily plan enforces limit and supports add, remove, and reorder", () => {
   );
 });
 
-test("daily plan progress, remaining list, and focus next habit stay deterministic", () => {
+test("daily plan progress and remaining list stay deterministic", () => {
   const todayKey = "2026-07-13";
   const habits = [
     {
@@ -3854,20 +3854,6 @@ test("daily plan progress, remaining list, and focus next habit stay determinist
       })
       .map((habit) => habit.id),
     ["third"]
-  );
-  assert.strictEqual(
-    dailyPlanning.getNextPriorityHabit({ habits, plan, todayKey }).id,
-    "second"
-  );
-  assert.strictEqual(
-    dailyPlanning.getNextPriorityHabit({
-      habits,
-      plan,
-      skippedIds: ["second"],
-      todayKey,
-    }).id,
-    "second",
-    "when every incomplete priority is skipped, focus mode can cycle back"
   );
 });
 
