@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { BadgeMedal, getBadgeTierAccent } from "../progression";
+import { BadgeGroupGlyph, BadgeMedal, getBadgeTierAccent } from "../progression";
 import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
@@ -10,7 +10,6 @@ import {
   getAchievementProgressLabel,
   getAchievementUnlockDate,
 } from "../../utils/achievementProgress";
-import { getAchievementIconMeta } from "../../constants/achievements";
 
 export default function AchievementsSection({
   badgePreview,
@@ -190,8 +189,7 @@ function SummaryMetric({ label, styles, value }) {
 }
 
 function ClosestBadgeRow({ badge, onPress, progress, styles }) {
-  const { isDark } = useTheme();
-  const meta = getAchievementIconMeta(badge.id);
+  const { colors, isDark } = useTheme();
   const accent = getBadgeTierAccent(badge.tier, isDark);
 
   return (
@@ -204,18 +202,15 @@ function ClosestBadgeRow({ badge, onPress, progress, styles }) {
         pressed && v2PressedStyles.button,
       ]}
     >
+      {/* Neutral glyph, accent-colored ring - same rule as BadgeMedal's
+          badge tiles, so a badge reads the same way in both places. */}
       <View
         style={[
           styles.closestMark,
           { borderColor: accent },
         ]}
       >
-        <AppIcon
-          color={accent}
-          name={meta.iconName}
-          size={20}
-          strokeWidth={2}
-        />
+        <BadgeGroupGlyph color={colors.text} group={badge.group} size={20} />
       </View>
       <View style={styles.closestText}>
         <AppText numberOfLines={1} style={styles.closestName}>

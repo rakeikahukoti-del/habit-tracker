@@ -3153,38 +3153,31 @@ test("visual asset manifest covers rank identifiers", () => {
   );
 });
 
-test("achievement icon metadata is complete and separated from rank assets", () => {
-  gamificationLogic.badges.forEach((badge) => {
-    const meta = achievementConstants.getAchievementIconMeta(badge.id);
+test("every badge group has a dedicated glyph mark", () => {
+  // Phase 8: per-badge icon lookup (ACHIEVEMENT_ICON_MAP, keyed by badge
+  // id) was replaced by BadgeGroupGlyph.js, keyed by badge.group directly
+  // - group is already a field on every badge object (utils/gamification.js's
+  // createBadge), so there's no separate id-to-icon table left to test.
+  // What still matters: every group a badge actually uses has a glyph, and
+  // the group list hasn't silently drifted from the badge data.
+  assert.strictEqual(achievementConstants.ACHIEVEMENT_GROUPS.length, 6);
 
-    assert.strictEqual(typeof meta.iconName, "string");
-    assert.strictEqual(
-      Object.prototype.hasOwnProperty.call(meta, "accent"),
-      false,
-      `${badge.id} icon metadata should not carry its own accent — color is ` +
-        "tier-driven via getBadgeTierAccent(badge.tier) in BadgeMedal.js"
-    );
-    assert.strictEqual(
-      Object.prototype.hasOwnProperty.call(meta, "assetPath"),
-      false,
-      `${badge.id} should not resolve through a rank or logo asset path`
+  const usedGroups = new Set(gamificationLogic.badges.map((badge) => badge.group));
+
+  usedGroups.forEach((group) => {
+    assert(
+      achievementConstants.ACHIEVEMENT_GROUPS.includes(group),
+      `badge group "${group}" is missing from ACHIEVEMENT_GROUPS - BadgeGroupGlyph has no mark for it`
     );
   });
 
-  assertJsonEqual(
-    achievementConstants.getAchievementIconMeta("unknown-achievement"),
-    achievementConstants.ACHIEVEMENT_ICON_FALLBACK
-  );
   assert.strictEqual(
-    JSON.stringify(achievementConstants.ACHIEVEMENT_ICON_MAP).includes("assets/ranks"),
-    false,
-    "achievement icon metadata should not import rank assets"
+    achievementConstants.ACHIEVEMENT_GROUPS.length,
+    usedGroups.size,
+    "ACHIEVEMENT_GROUPS should not carry groups no badge actually uses"
   );
-  assert.strictEqual(
-    JSON.stringify(achievementConstants.ACHIEVEMENT_ICON_MAP).includes("wolf"),
-    false,
-    "achievement icon metadata should not import wolf/logo assets"
-  );
+
+  assert.strictEqual(typeof achievementConstants.getRecentAchievementIconName("badge"), "string");
 });
 
 test("achievement progress clamps values and handles locked, unlocked, and unknown badges", () => {

@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import BadgeFrame from "./BadgeFrame";
+import BadgeGroupGlyph from "./BadgeGroupGlyph";
 import { v2Radius } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -78,7 +79,6 @@ function getTierStyle(tierName, isDark) {
 
 export default function BadgeMedal({
   badge,
-  children,
   earned = false,
   large = false,
   selected = false,
@@ -114,7 +114,16 @@ export default function BadgeMedal({
           size={frameSize}
           tier={badge?.tier}
         />
-        {children ? <View style={styles.glyphSlot}>{children}</View> : null}
+        {/* Neutral ink, not tier.border - the frame's ring is the single
+            tier-color accent; the glyph signals group, a different axis,
+            and stays out of that ring's way rather than competing with it. */}
+        <View pointerEvents="none" style={styles.glyphSlot}>
+          <BadgeGroupGlyph
+            color={colors.text}
+            group={badge?.group}
+            size={Math.round(frameSize * 0.48)}
+          />
+        </View>
         {showSheen ? (
           <LinearGradient
             colors={[withAlpha(tier.symbol, 0.4), withAlpha(tier.symbol, 0)]}
