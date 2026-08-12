@@ -78,6 +78,7 @@ function createStyles(colors) {
       color: colors.text,
       fontSize: 34,
       fontWeight: v2FontWeight.bold,
+      lineHeight: 40,
     },
     levelModalMessage: {
       color: colors.muted,
