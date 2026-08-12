@@ -209,9 +209,7 @@ function createStyles(colors, { isSmallScreen }) {
     },
     focusNote: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: v2Radius.large,
-      borderWidth: 1,
       marginBottom: v2Spacing.sm,
       paddingHorizontal: v2CompactSpacing.md,
       paddingVertical: v2Spacing.md,
