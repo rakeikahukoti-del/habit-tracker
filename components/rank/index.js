@@ -5,4 +5,3 @@ export { default as RankError } from "./RankError";
 export { default as RankHero } from "./RankHero";
 export { default as RankPath } from "./RankPath";
 export { default as RecentAchievementsList } from "./RecentAchievementsList";
-export { default as Section } from "./Section";
