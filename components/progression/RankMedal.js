@@ -9,6 +9,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { AppText } from "../ui";
 
 export default function RankMedal({
+  labelColor,
   locked = false,
   rank = "Bronze",
   size = "medium",
@@ -30,7 +31,8 @@ export default function RankMedal({
       {showLabel ? (
         <AppText
           align="center"
-          color={colors.text}
+          color={labelColor || colors.text}
+          numberOfLines={1}
           style={styles.label}
           variant="label"
         >
