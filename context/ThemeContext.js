@@ -29,17 +29,29 @@ export function ThemeProvider({ children }) {
     async function loadThemePreference() {
       try {
         const savedPreference = await AsyncStorage.getItem(THEME_PREFERENCE_KEY);
-        const normalizedPreference = normalizeThemePreference(
-          savedPreference,
-          systemScheme
-        );
+        // "system" is a supported preference in its own right, not a value
+        // that needs correcting - only genuinely unsupported/legacy values
+        // (old per-habit theme keys, corrupted data) get resolved to a
+        // concrete scheme and rewritten. Resolving "system" here as if it
+        // were invalid silently collapsed it into whatever the device's
+        // scheme happened to be at that moment, permanently: the next time
+        // this effect ran (any future app launch, or a live OS theme
+        // change while the app was already open, since this effect depends
+        // on systemScheme) it would overwrite storage with a fixed
+        // light/dark value, and "follow system" stopped tracking OS changes
+        // for the rest of that session too, since state no longer held
+        // "system" for line 83's resolvedTheme calculation to react to.
+        const isSupported = isSupportedThemePreference(savedPreference);
+        const sanitizedPreference = isSupported
+          ? savedPreference
+          : normalizeThemePreference(savedPreference, systemScheme);
 
         if (isMounted) {
-          setThemePreferenceState(normalizedPreference);
+          setThemePreferenceState(sanitizedPreference);
         }
 
-        if (savedPreference && savedPreference !== normalizedPreference) {
-          await AsyncStorage.setItem(THEME_PREFERENCE_KEY, normalizedPreference);
+        if (savedPreference && !isSupported) {
+          await AsyncStorage.setItem(THEME_PREFERENCE_KEY, sanitizedPreference);
         }
       } catch (error) {
         logStorageError("Could not read theme preference.", error);

@@ -86,4 +86,23 @@ describe("ThemeContext theme switching", () => {
       "dark"
     );
   });
+
+  // Regression: the load effect used to resolve "system" against the live
+  // device scheme and write that concrete value straight back to storage,
+  // since it treated "differs from the resolved scheme" as "needs
+  // correcting" - which is true of "system" by definition. That silently
+  // and permanently downgraded "follow system" to a fixed light/dark after
+  // the very next load (any app restart, not just backup/restore), even
+  // though "system" is itself a fully supported preference, not a legacy
+  // value needing repair.
+  test("loading a saved System preference keeps it as System, not a resolved scheme", async () => {
+    await AsyncStorage.setItem(THEME_PREFERENCE_KEY, "system");
+
+    await renderAndWaitForLoad();
+
+    expect(screen.getByTestId("preference")).toHaveTextContent("system");
+    await expect(AsyncStorage.getItem(THEME_PREFERENCE_KEY)).resolves.toBe(
+      "system"
+    );
+  });
 });
