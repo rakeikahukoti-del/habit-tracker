@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
 import { router } from "expo-router";
-import AnalyticsScaffold from "../../components/analytics/AnalyticsScreen";
 import {
   HabitAnalyticsHeader,
   HabitConsistencyCard,
@@ -11,10 +10,15 @@ import {
   HabitRecentDaysGrid,
   HabitWeekCard,
   MilestoneCard,
-  Section,
 } from "../../components/analytics";
 import ProgressDots from "../../components/ProgressDots";
-import { AppText, BackIcon, IconButton } from "../../components/ui";
+import {
+  AppText,
+  BackIcon,
+  IconButton,
+  ScreenShell,
+  Section,
+} from "../../components/ui";
 import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { useHabitAnalyticsController } from "../../hooks/useHabitAnalyticsController";
@@ -39,7 +43,7 @@ export default function IndividualAnalyticsScreen() {
   } = useHabitAnalyticsController();
 
   return (
-    <AnalyticsScaffold maxWidth={v2Layout.formMaxWidth}>
+    <ScreenShell maxWidth={v2Layout.formMaxWidth}>
         <IconButton
           accessibilityLabel="Back to Analytics"
           color={colors.text}
@@ -129,7 +133,7 @@ export default function IndividualAnalyticsScreen() {
             ) : null}
           </>
         ) : null}
-    </AnalyticsScaffold>
+    </ScreenShell>
   );
 }
 

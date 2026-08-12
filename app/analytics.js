@@ -1,9 +1,6 @@
 import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
 import { router } from "expo-router";
-import AnalyticsScaffold, {
-  AnalyticsHeader,
-} from "../components/analytics/AnalyticsScreen";
 import {
   AnalyticsError,
   DataBuildingAnalytics,
@@ -11,12 +8,19 @@ import {
   InsightsDashboardSection,
   KeyMetricsGrid,
   MonthlyReviewCard,
-  Section,
   TrendChart,
   TrendUnlockBanner,
 } from "../components/analytics";
 import { PeriodControl } from "../components/stats";
-import { AppText, BackIcon, EmptyDataCard, IconButton } from "../components/ui";
+import {
+  AppText,
+  BackIcon,
+  EmptyDataCard,
+  IconButton,
+  ScreenHeader,
+  ScreenShell,
+  Section,
+} from "../components/ui";
 import {
   v2Breakpoints,
   v2FontWeight,
@@ -55,7 +59,7 @@ export default function AnalyticsScreen() {
   } = useAnalyticsController();
 
   return (
-    <AnalyticsScaffold bottomNav>
+    <ScreenShell bottomNav>
         <IconButton
           accessibilityLabel="Back to Progress"
           color={colors.text}
@@ -65,7 +69,7 @@ export default function AnalyticsScreen() {
           <BackIcon color={colors.text} />
         </IconButton>
 
-        <AnalyticsHeader
+        <ScreenHeader
           subtitle={`Trends and habit performance for ${getPeriodLabel(period).toLowerCase()}.`}
           title="Analytics"
         />
@@ -147,7 +151,7 @@ export default function AnalyticsScreen() {
             </Section>
           </>
         ) : null}
-    </AnalyticsScaffold>
+    </ScreenShell>
   );
 }
 

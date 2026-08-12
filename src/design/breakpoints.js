@@ -2,7 +2,7 @@
 // reimplemented ad hoc across screens/components: an SE-class "small
 // screen" compact treatment, and a "tablet" treatment (cap content width,
 // center it) applied by the shared screen scaffolds (HabitFormScreen,
-// SettingsScreen, GamificationScreen, AnalyticsScreen) plus Home and
+// SettingsScreen, GamificationScreen, ScreenShell) plus Home and
 // onboarding.
 //
 // Usage: `width < v2Breakpoints.smallScreenMaxWidth`,

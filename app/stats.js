@@ -1,8 +1,5 @@
 import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
-import AnalyticsScreen, {
-  AnalyticsHeader,
-} from "../components/analytics/AnalyticsScreen";
 import {
   AnalyticsLinks,
   HeroMetric,
@@ -10,12 +7,17 @@ import {
   MonthlyActivityCard,
   PeriodControl,
   PersonalRecordsSection,
-  Section,
   WeeklyReviewCard,
   WeeklyVisual,
   YearActivityCard,
 } from "../components/stats";
-import { AppText, EmptyDataCard } from "../components/ui";
+import {
+  AppText,
+  EmptyDataCard,
+  ScreenHeader,
+  ScreenShell,
+  Section,
+} from "../components/ui";
 import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useStatsController } from "../hooks/useStatsController";
@@ -56,8 +58,8 @@ export default function StatsScreen() {
   } = useStatsController();
 
   return (
-    <AnalyticsScreen bottomNav>
-      <AnalyticsHeader
+    <ScreenShell bottomNav>
+      <ScreenHeader
         subtitle={`Consistency across ${getPeriodLabel(period).toLowerCase()}.`}
         title="Progress"
       />
@@ -139,7 +141,7 @@ export default function StatsScreen() {
           <AnalyticsLinks />
         </>
       ) : null}
-    </AnalyticsScreen>
+    </ScreenShell>
   );
 }
 
