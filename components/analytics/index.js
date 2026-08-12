@@ -12,6 +12,5 @@ export { default as InsightsDashboardSection } from "./InsightsDashboardSection"
 export { default as KeyMetricsGrid } from "./KeyMetricsGrid";
 export { default as MilestoneCard } from "./MilestoneCard";
 export { default as MonthlyReviewCard } from "./MonthlyReviewCard";
-export { default as Section } from "./Section";
 export { default as TrendChart } from "./TrendChart";
 export { default as TrendUnlockBanner } from "./TrendUnlockBanner";

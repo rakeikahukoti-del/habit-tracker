@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import Section from "./Section";
-import { AppText } from "../ui";
+import { AppText, Section } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 

@@ -15,9 +15,17 @@ import {
   v2Spacing,
   v2Typography,
 } from "../../src/design";
-import { AppText } from "../ui";
+import AppText from "./AppText";
 
-export default function AnalyticsScreen({
+// Shared scrollable-screen shell (safe area + scroll container + optional
+// bottom nav) plus a matching title/subtitle header. Originally lived in
+// components/analytics/ as AnalyticsScreen/AnalyticsHeader, but it's
+// generic - nothing in here is analytics-specific - and by the time of
+// the Progress/Analytics coupling survey it was already used by four
+// different screens (Progress, Analytics, per-habit Analytics detail,
+// Year Review), not just Analytics itself. Moved here and renamed to
+// reflect what it actually is rather than which screen it originated in.
+export default function ScreenShell({
   bottomNav = false,
   children,
   maxWidth = v2Layout.maxContentWidth,
@@ -44,7 +52,7 @@ export default function AnalyticsScreen({
   );
 }
 
-export function AnalyticsHeader({ subtitle, title }) {
+export function ScreenHeader({ subtitle, title }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createHeaderStyles(colors), [colors]);
 

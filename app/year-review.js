@@ -8,10 +8,14 @@ import {
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import AnalyticsScreen, {
-  AnalyticsHeader,
-} from "../components/analytics/AnalyticsScreen";
-import { AppIcon, AppText, BackIcon, IconButton } from "../components/ui";
+import {
+  AppIcon,
+  AppText,
+  BackIcon,
+  IconButton,
+  ScreenHeader,
+  ScreenShell,
+} from "../components/ui";
 import { useTheme } from "../context/ThemeContext";
 import { useEntranceAnimation } from "../hooks/useEntranceAnimation";
 import {
@@ -86,7 +90,7 @@ export default function YearReviewScreen() {
   );
 
   return (
-    <AnalyticsScreen bottomNav>
+    <ScreenShell bottomNav>
       <View style={styles.topBar}>
         <IconButton
           accessibilityLabel="Back to Progress"
@@ -102,7 +106,7 @@ export default function YearReviewScreen() {
         </IconButton>
       </View>
 
-      <AnalyticsHeader
+      <ScreenHeader
         subtitle="A deterministic summary built from your local habit history."
         title="Year in Review"
       />
@@ -153,7 +157,7 @@ export default function YearReviewScreen() {
           </Section>
         </>
       ) : null}
-    </AnalyticsScreen>
+    </ScreenShell>
   );
 }
 
