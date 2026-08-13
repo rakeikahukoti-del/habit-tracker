@@ -20,9 +20,8 @@ import {
   RankHero,
   RankPath,
   RecentAchievementsList,
-  Section,
 } from "../components/rank";
-import { AppText } from "../components/ui";
+import { AppText, Section } from "../components/ui";
 import { v2Breakpoints, v2FontWeight, v2Radius, v2Typography } from "../src/design";
 import { useTheme } from "../context/ThemeContext";
 import { useReducedMotion } from "../hooks/useReducedMotion";
