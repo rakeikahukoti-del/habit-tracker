@@ -66,7 +66,12 @@ export default function DailyProgressionPanel({
           </View>
           <View style={styles.progressHeaderRight}>
             {!progressExpanded && showXpRankOnHome ? (
-              <RankMedal rank={rank} size="mini" />
+              <RankMedal
+                labelColor={colors.muted}
+                rank={rank}
+                showLabel
+                size="mini"
+              />
             ) : null}
             <AppIcon
               color={colors.muted}
