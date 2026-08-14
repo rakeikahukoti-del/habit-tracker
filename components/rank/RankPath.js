@@ -24,9 +24,10 @@ const CONNECTOR_HEIGHT = 2;
 // RankBadge's existing locked treatment (opacity + dark overlay) handles
 // not-yet-reached tiers with no new code.
 //
-// Five visible tiers, matching today exactly - Diamond stays folded into
-// Platinum this phase (getVisibleRank/getVisibleRankMilestones
-// untouched, same as the vertical-list version used).
+// Six visible tiers - Diamond un-folded from Platinum once its medal art
+// landed (RankMedalFrame, PR #30). getVisibleRank/getVisibleRankMilestones
+// now pass Diamond through instead of remapping it, so it renders here
+// like every other tier with no changes needed in this file.
 export default function RankPath({ currentLevel }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);

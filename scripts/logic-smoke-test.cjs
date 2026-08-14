@@ -2764,21 +2764,22 @@ test("rank milestone helper finds the nearest rank target", () => {
   );
 });
 
-test("visible rank display hides legacy Diamond without changing stored logic", () => {
+test("visible rank display shows Diamond now that it has medal art", () => {
   assert.strictEqual(gamificationLogic.getRankForLevel(25), "Diamond");
-  assert.strictEqual(rankDisplay.getVisibleRank("Diamond"), "Platinum");
+  assert.strictEqual(rankDisplay.getVisibleRank("Diamond"), "Diamond");
   assertJsonEqual(rankDisplay.ACTIVE_RANK_LABELS, [
     "Bronze",
     "Silver",
     "Gold",
     "Platinum",
+    "Diamond",
     "Master",
   ]);
   assertJsonEqual(
     rankDisplay
       .getVisibleRankMilestones(gamificationLogic.rankMilestones)
       .map((rankItem) => rankItem.label),
-    ["Bronze", "Silver", "Gold", "Platinum", "Master"]
+    ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"]
   );
   assert.strictEqual(
     progressionMilestones.getNextRankMilestone(

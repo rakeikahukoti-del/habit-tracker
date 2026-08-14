@@ -3,11 +3,12 @@ export const ACTIVE_RANK_LABELS = [
   "Silver",
   "Gold",
   "Platinum",
+  "Diamond",
   "Master",
 ];
 
 export function getVisibleRank(rank) {
-  return rank === "Diamond" ? "Platinum" : rank || "Bronze";
+  return rank || "Bronze";
 }
 
 export function getVisibleRankMilestones(rankMilestones = []) {
