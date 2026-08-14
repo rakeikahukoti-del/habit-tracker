@@ -1,4 +1,10 @@
 import Svg, { Circle, Line, Polygon } from "react-native-svg";
+import {
+  facetedRimPoints,
+  hexVertices,
+  polygonPoints,
+  radialTicks,
+} from "./frameGeometry";
 
 // Code-drawn achievement-badge frame, replacing the 26 flat raster PNGs
 // that used to live in assets/achievements/*.png. Converted to
@@ -25,68 +31,13 @@ import Svg, { Circle, Line, Polygon } from "react-native-svg";
 // BadgeMedal.js's tierStyles. That closes the three-way color drift the
 // survey found between this component, the shipped rank-medal art, and
 // the old baked-in achievement-badge ring colors.
-const CENTER = 48;
+//
+// Point-math helpers (pointAt/polygonPoints/facetedRimPoints/radialTicks/
+// hexVertices) live in ./frameGeometry.js, shared with
+// ../rank/RankMedalFrame.js (Phase 9) rather than duplicated per component.
 const R_OUTER = 36;
 const R_INNER = 30;
 const GOLD_INNER_R = 28;
-
-function pointAt(r, deg) {
-  const rad = (deg * Math.PI) / 180;
-  return [CENTER + r * Math.cos(rad), CENTER - r * Math.sin(rad)];
-}
-
-function round(n) {
-  return Math.round(n * 100) / 100;
-}
-
-function polygonPoints(r, sides, rotation = 90) {
-  const pts = [];
-
-  for (let i = 0; i < sides; i++) {
-    pts.push(pointAt(r, rotation - (i * 360) / sides));
-  }
-
-  return pts.map(([x, y]) => `${round(x)},${round(y)}`).join(" ");
-}
-
-function facetedRimPoints(rOuter, rInner, count) {
-  const pts = [];
-
-  for (let i = 0; i < count; i++) {
-    const r = i % 2 === 0 ? rOuter : rInner;
-
-    pts.push(pointAt(r, 90 - (i * 360) / count));
-  }
-
-  return pts.map(([x, y]) => `${round(x)},${round(y)}`).join(" ");
-}
-
-function radialTicks(rInner, rOuter, count, shortenOdd) {
-  const ticks = [];
-
-  for (let i = 0; i < count; i++) {
-    const deg = 90 - (i * 360) / count;
-    const outer = shortenOdd && i % 2 !== 0 ? rOuter - 3 : rOuter;
-    const [x1, y1] = pointAt(rInner, deg);
-    const [x2, y2] = pointAt(outer, deg);
-
-    ticks.push({ x1: round(x1), y1: round(y1), x2: round(x2), y2: round(y2) });
-  }
-
-  return ticks;
-}
-
-function hexVertices(r, rotation = 90) {
-  const pts = [];
-
-  for (let i = 0; i < 6; i++) {
-    const [x, y] = pointAt(r, rotation - i * 60);
-
-    pts.push({ cx: round(x), cy: round(y) });
-  }
-
-  return pts;
-}
 
 // Geometry is static - only color varies per render - so every shape is
 // computed once at module load rather than recomputed on each render.

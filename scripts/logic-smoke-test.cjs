@@ -3043,7 +3043,7 @@ test("badges sort by tier progression in stable ascending and descending order",
   );
 });
 
-test("visual asset manifest covers rank identifiers", () => {
+test("visual asset manifest covers brand identifiers", () => {
   assert(appAssets.BRAND_ASSETS.logoDark.endsWith("momentum-logo-dark.png"));
   assert(appAssets.BRAND_ASSETS.logoLight.endsWith("momentum-logo-light.png"));
   assert(
@@ -3081,18 +3081,6 @@ test("visual asset manifest covers rank identifiers", () => {
     "Unknown resolved themes should use the existing dark fallback"
   );
   assert.strictEqual(
-    Object.keys(appAssets.RANK_BADGE_ASSETS).includes("diamond"),
-    false,
-    "active rank assets should not expose a Diamond rank image"
-  );
-  assertJsonEqual(appAssets.SUPPLIED_RANK_ASSET_ORDER, [
-    "Bronze",
-    "Silver",
-    "Gold",
-    "Platinum",
-    "Master",
-  ]);
-  assert.strictEqual(
     gamificationLogic.rankMilestones[gamificationLogic.rankMilestones.length - 1].label,
     "Master",
     "Master should remain the final rank threshold"
@@ -3102,50 +3090,26 @@ test("visual asset manifest covers rank identifiers", () => {
     [1, 5, 10, 15, 25, 40],
     "existing rank thresholds should not change"
   );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Bronze"),
-    appAssets.RANK_BADGE_ASSETS.bronze
-  );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Silver"),
-    appAssets.RANK_BADGE_ASSETS.silver
-  );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Gold"),
-    appAssets.RANK_BADGE_ASSETS.gold
-  );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Platinum"),
-    appAssets.RANK_BADGE_ASSETS.platinum
-  );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Master"),
-    appAssets.RANK_BADGE_ASSETS.master
-  );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Unknown"),
-    appAssets.RANK_BADGE_ASSETS.bronze,
-    "unknown ranks should use the Bronze fallback"
-  );
-  assert.strictEqual(
-    appAssets.getRankBadgeAsset("Diamond"),
-    appAssets.RANK_BADGE_ASSETS.platinum,
-    "legacy Diamond rank display should use the Platinum visual"
-  );
 
-  gamificationLogic.rankMilestones.forEach((rankItem) => {
-    const asset = appAssets.getRankBadgeAsset(rankItem.label);
-
-    assert(asset, `${rankItem.label} rank should resolve to an asset`);
-    assert(fs.existsSync(asset), `${rankItem.label} rank asset should exist`);
-  });
-
+  // Phase 9: rank medals converted from assets/ranks/*.png to code-drawn
+  // react-native-svg (components/rank/RankMedalFrame.js), the same move
+  // Phase 8 made for achievement badges - no raster asset lookup should
+  // exist for either.
   assert.strictEqual(
-    appAssets.getRankBadgeAsset("Master"),
-    appAssets.RANK_BADGE_ASSETS.master,
-    "Master rank should use the Master asset"
+    Object.prototype.hasOwnProperty.call(appAssets, "RANK_BADGE_ASSETS"),
+    false,
+    "rank medals are code-drawn (RankMedalFrame.js) as of Phase 9 - no raster asset map should exist"
   );
-
+  assert.strictEqual(
+    Object.prototype.hasOwnProperty.call(appAssets, "getRankBadgeAsset"),
+    false,
+    "rank medals are code-drawn (RankMedalFrame.js) as of Phase 9 - no raster asset lookup should exist"
+  );
+  assert.strictEqual(
+    Object.prototype.hasOwnProperty.call(appAssets, "SUPPLIED_RANK_ASSET_ORDER"),
+    false,
+    "rank medals are code-drawn (RankMedalFrame.js) as of Phase 9 - no supplied-asset order list should exist"
+  );
   assert.strictEqual(
     Object.prototype.hasOwnProperty.call(appAssets, "getAchievementBadgeAsset"),
     false,
