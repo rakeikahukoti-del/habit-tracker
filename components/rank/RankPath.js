@@ -61,7 +61,7 @@ export default function RankPath({ currentLevel }) {
                   current && styles.medalRingCurrent,
                 ]}
               >
-                <RankMedal locked={!unlocked} rank={rankItem.label} size="trail" />
+                <RankMedal decorative locked={!unlocked} rank={rankItem.label} size="trail" />
               </View>
               <AppText style={styles.rankName}>{rankItem.label}</AppText>
               <AppText style={styles.rankLevel}>Level {rankItem.unlockLevel}</AppText>

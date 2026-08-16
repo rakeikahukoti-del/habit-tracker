@@ -79,6 +79,7 @@ function getTierStyle(tierName, isDark) {
 
 export default function BadgeMedal({
   badge,
+  decorative = false,
   earned = false,
   large = false,
   selected = false,
@@ -89,11 +90,14 @@ export default function BadgeMedal({
   const size = large ? 112 : 64;
   const frameSize = Math.round(size * 0.9);
   const showSheen = earned && MATERIAL_TIERS.has(badge?.tier);
+  const label = `${badge?.label || "Badge"}, ${badge?.tier || "Bronze"} tier, ${earned ? "earned" : "locked"}`;
 
   return (
     <View
-      accessibilityLabel={`${badge?.label || "Badge"}, ${badge?.tier || "Bronze"} tier, ${earned ? "earned" : "locked"}`}
-      accessible
+      accessibilityLabel={decorative ? undefined : label}
+      accessibilityRole={decorative ? undefined : "image"}
+      accessible={!decorative}
+      importantForAccessibility={decorative ? "no" : "auto"}
       style={[
         styles.wrap,
         {

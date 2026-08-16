@@ -45,7 +45,9 @@ export default function DailyProgressionPanel({
           accessibilityLabel={
             progressExpanded
               ? `Collapse daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${statusMessage}.`
-              : `Expand daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${statusMessage}.`
+              : `Expand daily progression. ${completedTodayCount} of ${scheduledTodayCount} scheduled habits complete. ${statusMessage}.${
+                  showXpRankOnHome ? ` ${rank} rank.` : ""
+                }`
           }
           accessibilityRole="button"
           accessibilityState={{ expanded: Boolean(progressExpanded) }}
@@ -67,6 +69,7 @@ export default function DailyProgressionPanel({
           <View style={styles.progressHeaderRight}>
             {!progressExpanded && showXpRankOnHome ? (
               <RankMedal
+                decorative
                 labelColor={colors.muted}
                 rank={rank}
                 showLabel
@@ -103,7 +106,7 @@ export default function DailyProgressionPanel({
                     {todayXp} XP today
                   </AppText>
                   <View style={styles.rankMeta}>
-                    <RankMedal rank={rank} size="mini" />
+                    <RankMedal decorative rank={rank} size="mini" />
                     <AppText style={styles.progressMeta}>{rank}</AppText>
                   </View>
                 </>

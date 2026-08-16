@@ -246,7 +246,7 @@ function BadgeTile({ badge, earned, onPress, progress, styles, unlockedAt }) {
         pressed && v2PressedStyles.button,
       ]}
     >
-      <BadgeMedal badge={badge} earned={earned} />
+      <BadgeMedal badge={badge} decorative earned={earned} />
       <View style={styles.badgeText}>
         <View style={styles.badgeTopLine}>
           <AppText numberOfLines={2} style={styles.badgeName}>

@@ -38,6 +38,7 @@ import {
   reorderPriorityIds,
 } from "../utils/dailyPlanning";
 import { getVisibleRank } from "../utils/rankDisplay";
+import { getBadgeUnlockDismissDelay } from "../utils/badgeUnlockTiming";
 import {
   getCurrentStreak,
   getTodayKey,
@@ -271,7 +272,7 @@ export function useHomeController() {
 
     const timeoutId = setTimeout(() => {
       setBadgeUnlockQueue((queue) => queue.slice(1));
-    }, 4200);
+    }, getBadgeUnlockDismissDelay(badgeUnlock?.tier));
 
     return () => clearTimeout(timeoutId);
   }, [activeRewardType, badgeUnlock]);
