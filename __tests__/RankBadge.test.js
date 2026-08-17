@@ -1,5 +1,6 @@
 import { renderWithProviders, screen, waitFor } from "../test/test-utils";
 import RankBadge from "../components/RankBadge";
+import RankMedalFrame from "../components/rank/RankMedalFrame";
 
 // The `decorative` prop toggles whether a rank badge announces itself to
 // assistive tech (a standalone badge - e.g. a rank-history entry) or stays
@@ -49,5 +50,39 @@ describe("RankBadge decorative prop", () => {
     renderWithProviders(<RankBadge locked rank="Master" />);
 
     await screen.findByLabelText("Master rank, highest rank, locked");
+  });
+});
+
+// RankBadge is a composite wrapper around RankMedalFrame (the actual SVG,
+// covered element-by-element in RankMedalFrame.test.js) - it doesn't need
+// its own ornament-count math. What's worth locking down here is that it
+// renders without throwing for every tier, and that it hands
+// RankMedalFrame the tier it was actually asked to render, not a stale or
+// mis-normalized value (Phase 9 test-coverage survey, "moderate cost,
+// worth it" tier).
+describe("RankBadge renders across every tier and passes tier through to RankMedalFrame", () => {
+  const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"];
+
+  test.each(TIERS)("%s renders without throwing", (tier) => {
+    expect(() => renderWithProviders(<RankBadge rank={tier} />)).not.toThrow();
+  });
+
+  test.each(TIERS)(
+    "%s passes its own tier through to RankMedalFrame's tier prop",
+    (tier) => {
+      const { UNSAFE_getByType } = renderWithProviders(
+        <RankBadge rank={tier} />
+      );
+
+      expect(UNSAFE_getByType(RankMedalFrame).props.tier).toBe(tier);
+    }
+  );
+
+  test("an unrecognized rank normalizes to Bronze before reaching RankMedalFrame", () => {
+    const { UNSAFE_getByType } = renderWithProviders(
+      <RankBadge rank="NotATier" />
+    );
+
+    expect(UNSAFE_getByType(RankMedalFrame).props.tier).toBe("Bronze");
   });
 });

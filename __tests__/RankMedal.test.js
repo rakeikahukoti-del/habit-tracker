@@ -1,5 +1,6 @@
 import { renderWithProviders, screen, waitFor } from "../test/test-utils";
 import RankMedal from "../components/progression/RankMedal";
+import RankMedalFrame from "../components/rank/RankMedalFrame";
 
 // RankMedal's own `decorative` prop controls its outer wrapper View only -
 // it always renders its inner RankBadge decoratively regardless (see
@@ -50,4 +51,31 @@ describe("RankMedal decorative prop", () => {
 
     expect(node.props.accessibilityLabel).not.toMatch(/locked/);
   });
+});
+
+// RankMedal is a composite wrapper - it renders a decorative RankBadge
+// (itself covered in RankBadge.test.js), which in turn renders
+// RankMedalFrame (the actual SVG, covered element-by-element in
+// RankMedalFrame.test.js). Neither needs its own ornament-count math here.
+// What's worth locking down is that RankMedal renders without throwing for
+// every tier and every size, and that the rank it was given actually
+// reaches RankMedalFrame at the bottom of the chain unchanged (Phase 9
+// test-coverage survey, "moderate cost, worth it" tier).
+describe("RankMedal renders across every tier and passes rank through to RankMedalFrame", () => {
+  const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"];
+
+  test.each(TIERS)("%s renders without throwing", (tier) => {
+    expect(() =>
+      renderWithProviders(<RankMedal rank={tier} showLabel />)
+    ).not.toThrow();
+  });
+
+  test.each(TIERS)(
+    "%s passes its own rank through to RankMedalFrame's tier prop",
+    (tier) => {
+      const { UNSAFE_getByType } = renderWithProviders(<RankMedal rank={tier} />);
+
+      expect(UNSAFE_getByType(RankMedalFrame).props.tier).toBe(tier);
+    }
+  );
 });
