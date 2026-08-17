@@ -1,6 +1,6 @@
 import { act } from "react-test-renderer";
 import { Animated, StyleSheet } from "react-native";
-import { renderWithProviders, waitFor } from "../test/test-utils";
+import { renderWithProviders, screen, waitFor } from "../test/test-utils";
 import BadgeUnlockCard from "../components/home/BadgeUnlockCard";
 import { getBadgeGlowDuration } from "../utils/badgeUnlockTiming";
 
@@ -216,5 +216,34 @@ describe("BadgeUnlockCard reduceMotion", () => {
       // glowOpacity = glowAnim.interpolate({inputRange: [0, 1], outputRange: [0, 0.5]})
       expect(getStyleValue(glowView, "shadowOpacity")).toBe(0.5);
     });
+  });
+});
+
+// The outer Pressable's own accessibilityLabel makes the nested
+// badgeUnlockTier/badgeUnlockRarity AppText nodes unreachable to a screen
+// reader (same RN opaque-accessible-node mechanism as the Phase 9
+// accessibility audit's finding #1/#3) - tier and rarity are visible on
+// screen but were never spoken. Fixed by folding both into the outer
+// label directly, mirroring BadgeMedal.js's own "X tier" convention.
+describe("BadgeUnlockCard accessibility label", () => {
+  test("includes both tier and rarity, not just the badge name and description", async () => {
+    const badge = {
+      id: "badge-gold",
+      label: "Early Riser",
+      description: "Complete a habit before 8am",
+      tier: "Gold",
+      rarity: "Rare",
+      group: "Consistency",
+    };
+
+    renderWithProviders(<BadgeUnlockCard badge={badge} onClose={() => {}} visible />);
+
+    const node = await screen.findByLabelText(
+      "Early Riser achievement unlocked, Gold tier, Rare. Complete a habit before 8am. Double tap to dismiss."
+    );
+
+    expect(node.props.accessibilityLabel).toBe(
+      "Early Riser achievement unlocked, Gold tier, Rare. Complete a habit before 8am. Double tap to dismiss."
+    );
   });
 });

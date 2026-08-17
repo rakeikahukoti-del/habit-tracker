@@ -89,7 +89,7 @@ export default function BadgeUnlockCard({ badge, onClose, visible }) {
       visible={visible}
     >
       <Pressable
-        accessibilityLabel={`${badge.label} achievement unlocked. ${badge.description}. Double tap to dismiss.`}
+        accessibilityLabel={`${badge.label} achievement unlocked, ${badge.tier} tier, ${badge.rarity}. ${badge.description}. Double tap to dismiss.`}
         accessibilityRole="button"
         onPress={onClose}
         style={({ pressed }) => [
