@@ -638,6 +638,17 @@ const widgetActions = loadModule("widgets/widgetActions.js", (moduleName) => {
 
   return require(moduleName);
 });
+// No imports - plain trig helpers on numbers/arrays (Phase 9 rank-medal
+// conversion; shared by BadgeFrame.js and RankMedalFrame.js).
+const frameGeometry = loadModule("components/progression/frameGeometry.js");
+const designMotion = loadModule("src/design/motion.js");
+const badgeUnlockTiming = loadModule("utils/badgeUnlockTiming.js", (moduleName) => {
+  if (moduleName === "../src/design") {
+    return designMotion;
+  }
+
+  return require(moduleName);
+});
 
 test("date keys and active streaks stay local-date safe", () => {
   assert.match(habitStats.getTodayKey(), /^\d{4}-\d{2}-\d{2}$/);
@@ -4504,6 +4515,197 @@ test("completion haptics do not duplicate swipe gesture feedback", () => {
     }),
     false
   );
+});
+
+// frameGeometry.js's five trig helpers (Phase 9 test-coverage survey,
+// "cheap + high-value" tier). Pure functions on numbers/arrays, no RN
+// imports - loaded straight into the smoke runner like the rest of this
+// file's pure-logic modules.
+test("frameGeometry pointAt lands on exact coordinates at cardinal angles", () => {
+  // pointAt's convention: 0deg is due right, 90deg is due up (y decreases,
+  // since screen y grows downward), matching a standard unit circle
+  // reflected across the x-axis rather than raw screen-space angles.
+  assertJsonEqual(frameGeometry.pointAt(10, 0, 48), [58, 48]);
+  assertJsonEqual(frameGeometry.pointAt(10, 90, 48), [48, 38]);
+  assertJsonEqual(frameGeometry.pointAt(10, 180, 48), [38, 48]);
+  assertJsonEqual(frameGeometry.pointAt(10, 270, 48), [48, 58]);
+});
+
+test("frameGeometry round rounds to two decimal places", () => {
+  assert.strictEqual(frameGeometry.round(3.14159), 3.14);
+  assert.strictEqual(frameGeometry.round(-2.5555), -2.56);
+  assert.strictEqual(frameGeometry.round(48), 48);
+  assert.strictEqual(frameGeometry.round(65.324999), 65.32);
+  assert.strictEqual(frameGeometry.round(0), 0);
+});
+
+test("frameGeometry polygonPoints matches sides count, honors rotation for the first vertex, and emits a well-formed point string", () => {
+  const points = frameGeometry.polygonPoints(10, 4, 90, 48);
+
+  assert.strictEqual(points, "48,38 58,48 48,58 38,48");
+
+  const pairs = points.split(" ");
+  assert.strictEqual(pairs.length, 4);
+  pairs.forEach((pair) => {
+    assert.match(pair, /^-?\d+(\.\d{1,2})?,-?\d+(\.\d{1,2})?$/);
+  });
+
+  // The first vertex always sits at exactly `rotation` degrees - changing
+  // rotation should move it to the matching pointAt() coordinate.
+  [0, 45, 112.5, 200].forEach((rotation) => {
+    const [expectedX, expectedY] = frameGeometry.pointAt(10, rotation, 48);
+    const firstVertex = frameGeometry
+      .polygonPoints(10, 8, rotation, 48)
+      .split(" ")[0];
+
+    assert.strictEqual(
+      firstVertex,
+      `${frameGeometry.round(expectedX)},${frameGeometry.round(expectedY)}`
+    );
+  });
+});
+
+test("frameGeometry facetedRimPoints alternates rOuter/rInner by index parity and matches the requested count", () => {
+  const rOuter = 40;
+  const rInner = 20;
+  const count = 12;
+  const points = frameGeometry.facetedRimPoints(rOuter, rInner, count, 48).split(" ");
+
+  assert.strictEqual(points.length, count);
+
+  for (let i = 0; i < count; i += 1) {
+    const expectedR = i % 2 === 0 ? rOuter : rInner;
+    const [x, y] = frameGeometry.pointAt(expectedR, 90 - (i * 360) / count, 48);
+
+    assert.strictEqual(points[i], `${frameGeometry.round(x)},${frameGeometry.round(y)}`);
+  }
+
+  // Known-good fixed string for a smaller count, to catch a total-breakage
+  // regression that a per-index loop re-deriving its own expectation from
+  // the same pointAt()/round() helpers could theoretically miss.
+  assert.strictEqual(
+    frameGeometry.facetedRimPoints(20, 10, 6, 48),
+    "48,28 56.66,43 65.32,58 48,58 30.68,58 39.34,43"
+  );
+});
+
+test("frameGeometry radialTicks shortens only odd-indexed ticks by exactly 3, with tick count matching count and inner/outer coordinates consistent with pointAt", () => {
+  const rInner = 30;
+  const rOuter = 44;
+  const count = 16; // matches BadgeFrame.js's MASTER_TICKS real usage
+
+  const shortened = frameGeometry.radialTicks(rInner, rOuter, count, true, 48);
+  const unshortened = frameGeometry.radialTicks(rInner, rOuter, count, false, 48);
+
+  assert.strictEqual(shortened.length, count);
+  assert.strictEqual(unshortened.length, count);
+
+  for (let i = 0; i < count; i += 1) {
+    const deg = 90 - (i * 360) / count;
+    const [innerX, innerY] = frameGeometry.pointAt(rInner, deg, 48);
+
+    // The inner end never shortens, regardless of shortenOdd or parity.
+    assert.strictEqual(shortened[i].x1, frameGeometry.round(innerX));
+    assert.strictEqual(shortened[i].y1, frameGeometry.round(innerY));
+    assert.strictEqual(unshortened[i].x1, frameGeometry.round(innerX));
+    assert.strictEqual(unshortened[i].y1, frameGeometry.round(innerY));
+
+    // The unshortened variant's outer end always sits at the full radius.
+    const [fullX, fullY] = frameGeometry.pointAt(rOuter, deg, 48);
+
+    assert.strictEqual(unshortened[i].x2, frameGeometry.round(fullX));
+    assert.strictEqual(unshortened[i].y2, frameGeometry.round(fullY));
+
+    if (i % 2 !== 0) {
+      // Odd index + shortenOdd: outer end pulls in by exactly 3.
+      const [shortX, shortY] = frameGeometry.pointAt(rOuter - 3, deg, 48);
+
+      assert.strictEqual(shortened[i].x2, frameGeometry.round(shortX));
+      assert.strictEqual(shortened[i].y2, frameGeometry.round(shortY));
+    } else {
+      // Even index: shortenOdd leaves it untouched, same as the unshortened run.
+      assert.strictEqual(shortened[i].x2, unshortened[i].x2);
+      assert.strictEqual(shortened[i].y2, unshortened[i].y2);
+    }
+  }
+});
+
+test("frameGeometry hexVertices always returns exactly 6 points regardless of radius or rotation", () => {
+  [0, 5, 100, 250].forEach((r) => {
+    [0, 45, 90, 137].forEach((rotation) => {
+      const vertices = frameGeometry.hexVertices(r, rotation, 48);
+
+      assert.strictEqual(vertices.length, 6);
+      vertices.forEach(({ cx, cy }, i) => {
+        const [x, y] = frameGeometry.pointAt(r, rotation - i * 60, 48);
+
+        assert.strictEqual(cx, frameGeometry.round(x));
+        assert.strictEqual(cy, frameGeometry.round(y));
+      });
+    });
+  });
+});
+
+// utils/badgeUnlockTiming.js - the exact value that already drifted out of
+// sync once before (Phase 9 accessibility re-audit fix #5, PR #32): a flat
+// dismiss timer vs. tier-weighted glow duration. The relationship
+// assertion below - not the fixed-value one - is what actually prevents a
+// regression here, since a fixed-value test alone would happily pass if
+// both functions were edited to drift apart again as long as someone
+// updated the hardcoded numbers to match.
+test("badge unlock dismiss delay always equals that tier's glow duration plus a fixed reading margin", () => {
+  const READING_TIME_MARGIN_MS = 3900;
+  const tiers = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"];
+
+  tiers.forEach((tier) => {
+    const glow = badgeUnlockTiming.getBadgeGlowDuration(tier);
+    const dismiss = badgeUnlockTiming.getBadgeUnlockDismissDelay(tier);
+
+    assert.strictEqual(
+      dismiss,
+      glow + READING_TIME_MARGIN_MS,
+      `${tier}: dismiss delay should derive from glow duration + margin`
+    );
+    // The margin itself must be the same fixed constant for every tier -
+    // only the glow duration is allowed to branch by tier.
+    assert.strictEqual(
+      dismiss - glow,
+      READING_TIME_MARGIN_MS,
+      `${tier}: reading margin should not vary by tier`
+    );
+  });
+});
+
+test("Diamond and Master get a longer badge glow duration than the other four tiers", () => {
+  const baselineTiers = ["Bronze", "Silver", "Gold", "Platinum"];
+  const lingeringTiers = ["Diamond", "Master"];
+
+  const baselineDurations = new Set(
+    baselineTiers.map((tier) => badgeUnlockTiming.getBadgeGlowDuration(tier))
+  );
+
+  assert.strictEqual(
+    baselineDurations.size,
+    1,
+    "the four non-lingering tiers should share one baseline glow duration"
+  );
+
+  const [baselineDuration] = baselineDurations;
+
+  lingeringTiers.forEach((tier) => {
+    assert.ok(
+      badgeUnlockTiming.getBadgeGlowDuration(tier) > baselineDuration,
+      `${tier} glow duration should be longer than the baseline tiers'`
+    );
+  });
+});
+
+test("badge glow duration and dismiss delay match known values for representative tiers", () => {
+  assert.strictEqual(badgeUnlockTiming.getBadgeGlowDuration("Bronze"), 300);
+  assert.strictEqual(badgeUnlockTiming.getBadgeGlowDuration("Diamond"), 800);
+  assert.strictEqual(badgeUnlockTiming.getBadgeGlowDuration("Master"), 800);
+  assert.strictEqual(badgeUnlockTiming.getBadgeUnlockDismissDelay("Bronze"), 4200);
+  assert.strictEqual(badgeUnlockTiming.getBadgeUnlockDismissDelay("Diamond"), 4700);
 });
 
 async function run() {
