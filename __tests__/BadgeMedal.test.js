@@ -1,5 +1,6 @@
 import { renderWithProviders, screen, waitFor } from "../test/test-utils";
 import BadgeMedal from "../components/progression/BadgeMedal";
+import BadgeFrame from "../components/progression/BadgeFrame";
 
 // The `decorative` prop toggles whether an achievement badge medal
 // announces itself to assistive tech. Phase 9 accessibility re-audit,
@@ -40,4 +41,34 @@ describe("BadgeMedal decorative prop", () => {
 
     expect(node.props.accessibilityLabel).toBe("Early Riser, Gold tier, locked");
   });
+});
+
+// BadgeMedal is a composite wrapper around BadgeFrame (the actual SVG,
+// covered element-by-element in BadgeFrame.test.js) plus BadgeGroupGlyph -
+// it doesn't need its own ornament-count math. What's worth locking down
+// here is that it renders without throwing for every tier, and that it
+// hands BadgeFrame the tier the badge actually carries (Phase 9
+// test-coverage survey, "moderate cost, worth it" tier).
+describe("BadgeMedal renders across every tier and passes tier through to BadgeFrame", () => {
+  const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"];
+
+  test.each(TIERS)("%s renders without throwing", (tier) => {
+    const tierBadge = { label: "Tier Badge", tier, group: "Consistency" };
+
+    expect(() =>
+      renderWithProviders(<BadgeMedal badge={tierBadge} earned />)
+    ).not.toThrow();
+  });
+
+  test.each(TIERS)(
+    "%s passes its own tier through to BadgeFrame's tier prop",
+    (tier) => {
+      const tierBadge = { label: "Tier Badge", tier, group: "Consistency" };
+      const { UNSAFE_getByType } = renderWithProviders(
+        <BadgeMedal badge={tierBadge} earned />
+      );
+
+      expect(UNSAFE_getByType(BadgeFrame).props.tier).toBe(tier);
+    }
+  );
 });
