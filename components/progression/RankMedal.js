@@ -9,6 +9,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { AppText } from "../ui";
 
 export default function RankMedal({
+  decorative = false,
   labelColor,
   locked = false,
   rank = "Bronze",
@@ -18,12 +19,14 @@ export default function RankMedal({
 }) {
   const { colors } = useTheme();
   const dimensions = getDimensions(size);
+  const label = `${rank} rank medal${locked ? ", locked" : ""}`;
 
   return (
     <View
-      accessibilityLabel={`${rank} rank medal`}
-      accessibilityRole="image"
-      accessible
+      accessibilityLabel={decorative ? undefined : label}
+      accessibilityRole={decorative ? undefined : "image"}
+      accessible={!decorative}
+      importantForAccessibility={decorative ? "no" : "auto"}
       style={[styles.wrap, style]}
     >
       <RankBadge decorative locked={locked} rank={rank} size={dimensions.medal} />

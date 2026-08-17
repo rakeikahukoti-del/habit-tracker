@@ -4,6 +4,7 @@ import { BadgeMedal } from "../progression";
 import { AppText, ModalShell } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { getBadgeGlowDuration } from "../../utils/badgeUnlockTiming";
 import {
   v2CompactSpacing,
   v2FontWeight,
@@ -25,19 +26,16 @@ import {
 // animation shape with the glow's ramp-in stretched an extra ~500ms, so
 // the moment reads as visibly slower/more deliberate rather than a
 // bigger or brighter effect. Spring-scale is untouched for every tier;
-// only the glow's timing branches.
-const LINGERING_GLOW_TIERS = new Set(["Diamond", "Master"]);
-const LINGERING_GLOW_EXTRA_MS = 500;
-
+// only the glow's timing branches. Duration now lives in
+// utils/badgeUnlockTiming.js so useHomeController.js's auto-dismiss timer
+// can derive from the same numbers (Phase 9 fix #5).
 export default function BadgeUnlockCard({ badge, onClose, visible }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
   const scaleAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0.72)).current;
   const glowAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const glowDuration = LINGERING_GLOW_TIERS.has(badge?.tier)
-    ? v2Motion.duration.emphasis + LINGERING_GLOW_EXTRA_MS
-    : v2Motion.duration.emphasis;
+  const glowDuration = getBadgeGlowDuration(badge?.tier);
 
   useEffect(() => {
     if (!visible) {
@@ -122,7 +120,7 @@ export default function BadgeUnlockCard({ badge, onClose, visible }) {
               },
             ]}
           >
-            <BadgeMedal badge={badge} earned large />
+            <BadgeMedal badge={badge} decorative earned large />
           </Animated.View>
         </Animated.View>
         <View style={styles.badgeUnlockContent}>
