@@ -1,3 +1,4 @@
+import { StyleSheet } from "react-native";
 import {
   fireEvent,
   renderWithProviders,
@@ -8,6 +9,7 @@ import {
 } from "react-native-gesture-handler/jest-utils";
 import { GestureDetector, State } from "react-native-gesture-handler";
 import HabitCard from "../components/HabitCard";
+import { v2Layout } from "../src/design";
 import { toDateKey } from "../utils/habitStats";
 
 // The toggleComplete accessibility action exercises the exact same
@@ -30,7 +32,7 @@ describe("HabitCard completion toggle", () => {
       <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
     );
 
-    const card = await screen.findByLabelText(/Drink water/);
+    const card = await screen.findByLabelText(/Drink water, Health/);
     fireEvent(card, "accessibilityAction", {
       nativeEvent: { actionName: "toggleComplete" },
     });
@@ -52,7 +54,7 @@ describe("HabitCard completion toggle", () => {
       <HabitCard habit={completedToday} onToggleComplete={jest.fn()} />
     );
 
-    const card = await screen.findByLabelText(/Drink water/);
+    const card = await screen.findByLabelText(/Drink water, Health/);
     expect(card.props.accessibilityState).toMatchObject({ selected: true });
   });
 });
@@ -113,7 +115,7 @@ describe("HabitCard pin controls", () => {
       <HabitCard habit={habit} onToggleComplete={jest.fn()} />
     );
 
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
     expect(
       screen.queryByLabelText("Pin Drink water to today's focus")
     ).toBeNull();
@@ -217,7 +219,7 @@ describe("HabitCard swipe gesture (RNGH)", () => {
     const { UNSAFE_root } = renderWithProviders(
       <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     endSwipe(UNSAFE_root, { translationX: 40, velocityX: 50 });
 
@@ -233,7 +235,7 @@ describe("HabitCard swipe gesture (RNGH)", () => {
     const { UNSAFE_root } = renderWithProviders(
       <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     endSwipe(UNSAFE_root, { translationX: 15, velocityX: 900 });
 
@@ -245,7 +247,7 @@ describe("HabitCard swipe gesture (RNGH)", () => {
     const { UNSAFE_root } = renderWithProviders(
       <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     endSwipe(UNSAFE_root, { translationX: 15, velocityX: 50 });
 
@@ -260,7 +262,7 @@ describe("HabitCard swipe gesture (RNGH)", () => {
     const { UNSAFE_root } = renderWithProviders(
       <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     endSwipe(UNSAFE_root, { translationX: -40, velocityX: -900 });
 
@@ -276,7 +278,7 @@ describe("HabitCard swipe gesture (RNGH)", () => {
     const { UNSAFE_root } = renderWithProviders(
       <HabitCard habit={completedToday} onToggleComplete={onToggleComplete} />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     endSwipe(UNSAFE_root, { translationX: -40, velocityX: -50 });
 
@@ -290,7 +292,7 @@ describe("HabitCard swipe gesture (RNGH)", () => {
     const { UNSAFE_root } = renderWithProviders(
       <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     fireGestureHandler(getPanGesture(UNSAFE_root), [
       { translationX: 40, velocityX: 50 },
@@ -309,8 +311,106 @@ describe("HabitCard swipe gesture (RNGH)", () => {
         onToggleComplete={onToggleComplete}
       />
     );
-    await screen.findByLabelText(/Drink water/);
+    await screen.findByLabelText(/Drink water, Health/);
 
     expect(getPanGesture(UNSAFE_root).config.enabled).toBe(false);
+  });
+});
+
+// Phase 10 Thread B's tick button: a real, coexisting alternative to swipe,
+// not a replacement - both call the same onToggleComplete with a distinct
+// `source` tag, matching the pattern swipe/swipe-undo/accessibility already
+// established.
+describe("HabitCard tick button", () => {
+  const habit = {
+    id: "habit-1",
+    name: "Drink water",
+    category: "Health",
+    color: "#4F755B",
+    emoji: "💧",
+    completedDates: [],
+  };
+
+  test("tapping the tick button on a not-completed habit completes it", async () => {
+    const onToggleComplete = jest.fn();
+    renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
+    );
+
+    fireEvent.press(
+      await screen.findByLabelText("Complete Drink water for today")
+    );
+
+    expect(onToggleComplete).toHaveBeenCalledWith(habit, { source: "tick" });
+  });
+
+  test("tapping the tick button on a completed-today habit undoes it", async () => {
+    const completedToday = {
+      ...habit,
+      completedDates: [toDateKey(new Date())],
+    };
+    const onToggleComplete = jest.fn();
+    renderWithProviders(
+      <HabitCard habit={completedToday} onToggleComplete={onToggleComplete} />
+    );
+
+    fireEvent.press(
+      await screen.findByLabelText("Undo today's completion of Drink water")
+    );
+
+    expect(onToggleComplete).toHaveBeenCalledWith(completedToday, {
+      source: "tick",
+    });
+  });
+
+  test("the tick button is not hidden from accessibility (it's interactive now, not decorative)", async () => {
+    // Regression guard: the corner it lives in used to be
+    // accessibilityElementsHidden/importantForAccessibility="no-hide-
+    // descendants"/pointerEvents="none" when it only held a decorative dot
+    // and streak badge. That has to be gone now that a real button is there.
+    renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={jest.fn()} />
+    );
+
+    const tickButton = await screen.findByLabelText(
+      "Complete Drink water for today"
+    );
+
+    expect(tickButton.props.accessibilityElementsHidden).not.toBe(true);
+    expect(tickButton.props.importantForAccessibility).not.toBe(
+      "no-hide-descendants"
+    );
+  });
+
+  test("the tick button guarantees the app's minimum tap target in both dimensions", async () => {
+    // Same convention Thread A enforced on category buttons
+    // (v2Layout.minTapTarget, 44x44).
+    renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={jest.fn()} />
+    );
+
+    const tickButton = await screen.findByLabelText(
+      "Complete Drink water for today"
+    );
+    const flattened = StyleSheet.flatten(
+      typeof tickButton.props.style === "function"
+        ? tickButton.props.style({ pressed: false })
+        : tickButton.props.style
+    );
+
+    expect(flattened.height).toBe(v2Layout.minTapTarget);
+    expect(flattened.width).toBe(v2Layout.minTapTarget);
+  });
+
+  test("the streak badge still renders (relocated, not removed) alongside the week's progress dots", async () => {
+    renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={jest.fn()} />
+    );
+
+    await screen.findByLabelText(/Drink water, Health/);
+    // habit has no completedDates, so the (relocated, not removed) streak
+    // badge should still be showing a real "0" - proof it moved, not
+    // vanished, when the tick button took over its old corner.
+    expect(screen.getByText("0")).toBeTruthy();
   });
 });

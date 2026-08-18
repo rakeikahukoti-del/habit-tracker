@@ -14,6 +14,7 @@ import {
   v2ActionColors,
   v2Breakpoints,
   v2FontWeight,
+  v2Layout,
   v2PressedStyles,
   v2Radius,
   v2Shadows,
@@ -490,37 +491,32 @@ function HabitCard({
               </View>
             </Pressable>
 
-            <View
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={styles.rightActions}
-              pointerEvents="none"
+            <Pressable
+              accessibilityLabel={
+                completedToday
+                  ? `Undo today's completion of ${habit.name}`
+                  : `Complete ${habit.name} for today`
+              }
+              accessibilityRole="button"
+              accessibilityState={{ selected: completedToday }}
+              hitSlop={4}
+              onPress={() => onToggleComplete(habit, { source: "tick" })}
+              style={({ pressed }) => [
+                styles.tickButton,
+                completedToday && {
+                  backgroundColor: themeAccent,
+                  borderColor: themeAccent,
+                },
+                pressed && v2PressedStyles.button,
+              ]}
             >
-              <View
-                style={[
-                  styles.completionDot,
-                  completedToday && {
-                    backgroundColor: themeAccent,
-                    borderColor: themeAccent,
-                  },
-                ]}
+              <AppIcon
+                color={completedToday ? v2ActionColors.completeIcon : colors.muted}
+                name="check"
+                size={18}
+                strokeWidth={2.4}
               />
-              <View style={styles.streakBadge}>
-                <AppIcon
-                  color={completedToday ? themeAccent : colors.muted}
-                  name="flame"
-                  size={15}
-                  strokeWidth={1.6}
-                />
-                <AppText
-                  color={colors.muted}
-                  style={styles.streakText}
-                  numberOfLines={1}
-                >
-                  {currentStreak}
-                </AppText>
-              </View>
-            </View>
+            </Pressable>
           </View>
 
           {isPinned ? (
@@ -568,6 +564,21 @@ function HabitCard({
           ) : null}
 
           <View style={styles.weekRow}>
+            <View style={styles.streakBadge}>
+              <AppIcon
+                color={completedToday ? themeAccent : colors.muted}
+                name="flame"
+                size={15}
+                strokeWidth={1.6}
+              />
+              <AppText
+                color={colors.muted}
+                style={styles.streakText}
+                numberOfLines={1}
+              >
+                {currentStreak}
+              </AppText>
+            </View>
             <ProgressDots days={weeklyProgress} compact />
           </View>
         </Animated.View>
@@ -784,33 +795,42 @@ function createStyles(colors, isCompact) {
     pinControlButtonDisabled: {
       opacity: 0.4,
     },
-    rightActions: {
+    // Real, tappable alternative to the swipe gesture (Phase 10 Thread B) -
+    // not a replacement, both call the same onToggleComplete. Sized to the
+    // app's minTapTarget convention (Thread A's category-button fix) and
+    // uses the same contrast-fixed colors.border/colors.card idle tokens,
+    // so it doesn't reintroduce the low-contrast idle state that fix
+    // addressed.
+    tickButton: {
       alignItems: "center",
-      flexDirection: "row",
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
       flexShrink: 0,
-      gap: isCompact ? v2Spacing.sm : 10,
+      height: v2Layout.minTapTarget,
+      justifyContent: "center",
+      width: v2Layout.minTapTarget,
     },
     weekRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: v2Spacing.md,
       marginTop: 10,
       maxWidth: "100%",
       paddingTop: 2,
       width: "100%",
     },
-    completionDot: {
-      backgroundColor: "transparent",
-      borderColor: colors.border,
-      borderRadius: v2Radius.pill,
-      borderWidth: 1.5,
-      height: 14,
-      width: 14,
-    },
+    // Relocated from the card's top-right corner (Phase 10 Thread B) to
+    // make room for the tick button there - grouped with ProgressDots in
+    // the same row since both are progress/streak indicators, and this
+    // row already has full width to spare rather than competing with the
+    // name/category text's flex:1/flexShrink:1 space upstream.
     streakBadge: {
       alignItems: "center",
       flexDirection: "row",
       flexShrink: 0,
       gap: v2Spacing.xs,
-      justifyContent: "center",
-      maxWidth: isCompact ? 54 : 62,
       minHeight: 28,
     },
     streakText: {
