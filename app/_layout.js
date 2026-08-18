@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppErrorBoundary from "../components/AppErrorBoundary";
 import { MomentumLogo } from "../components/brand";
@@ -11,13 +12,15 @@ import { reconcileHabitNotifications } from "../storage/habitsStorage";
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AppErrorBoundary>
-        <ThemeProvider>
-          <ThemedApp />
-        </ThemeProvider>
-      </AppErrorBoundary>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.gestureRoot}>
+      <SafeAreaProvider>
+        <AppErrorBoundary>
+          <ThemeProvider>
+            <ThemedApp />
+          </ThemeProvider>
+        </AppErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -119,6 +122,9 @@ function LaunchShell() {
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
   root: {
     flex: 1,
   },

@@ -1,16 +1,19 @@
-import { fireEvent, renderWithProviders, screen } from "../test/test-utils";
+import {
+  fireEvent,
+  renderWithProviders,
+  screen,
+} from "../test/test-utils";
+import {
+  fireGestureHandler,
+} from "react-native-gesture-handler/jest-utils";
+import { GestureDetector, State } from "react-native-gesture-handler";
 import HabitCard from "../components/HabitCard";
 import { toDateKey } from "../utils/habitStats";
 
-// HabitCard's primary interaction is a swipe gesture built on a raw
-// PanResponder (not react-native-gesture-handler), which RTL has no
-// supported way to simulate - there's no fireGestureHandler equivalent for
-// hand-rolled PanResponder sequences, and faking the underlying touch
-// sequence would test our simulation of the gesture math, not the
-// component. Testing through the "toggleComplete" accessibility action
-// instead exercises the exact same onToggleComplete call the swipe
-// eventually makes (see components/HabitCard.js's onAccessibilityAction),
-// without re-implementing gesture physics in the test.
+// The toggleComplete accessibility action exercises the exact same
+// onToggleComplete call the swipe eventually makes (see
+// components/HabitCard.js's onAccessibilityAction) - useful as a stand-in
+// wherever a test just needs "the toggle fired," without gesture physics.
 describe("HabitCard completion toggle", () => {
   const habit = {
     id: "habit-1",
@@ -164,5 +167,150 @@ describe("HabitCard pin controls", () => {
     expect(moveDown.props.accessibilityState).toMatchObject({
       disabled: true,
     });
+  });
+});
+
+// HabitCard's swipe is built on RNGH's Gesture.Pan(), created internally via
+// useMemo and not exposed as a prop/ref - fireGestureHandler needs the real
+// GestureType instance actually mounted by <GestureDetector>, not a fresh
+// one built in the test, so its handlerTag matches what RNGH's test mocks
+// registered at render time. UNSAFE_root.findByType(GestureDetector).props
+// .gesture reaches it without changing HabitCard's public API for testing.
+// UNSAFE_root (not the render result's `root`, a host-element query
+// wrapper without this) is the raw react-test-renderer ReactTestInstance,
+// which exposes plain findByType/findAllByType rather than the
+// "UNSAFE_getByType" naming @testing-library/react-native's own docs use
+// elsewhere - confirmed by inspecting the actual instance's prototype
+// chain rather than assuming the docs' naming applies here verbatim.
+//
+// One real limit, stated plainly rather than glossed over: fireGestureHandler
+// simulates a gesture the native recognizer has *already decided* to
+// activate (it emits BEGAN/ACTIVE/END state transitions directly) - it does
+// not exercise activeOffsetX/failOffsetY's native-side arbitration logic
+// itself, which is mocked away entirely in the Jest environment. So these
+// tests cover onEnd's own threshold/velocity/direction decision (real,
+// meaningful coverage that was structurally impossible under the old
+// PanResponder implementation), not whether the native recognizer would
+// have activated the gesture in the first place.
+describe("HabitCard swipe gesture (RNGH)", () => {
+  const habit = {
+    id: "habit-1",
+    name: "Drink water",
+    category: "Health",
+    color: "#4F755B",
+    emoji: "💧",
+    completedDates: [],
+  };
+
+  function getPanGesture(UNSAFE_root) {
+    return UNSAFE_root.findByType(GestureDetector).props.gesture;
+  }
+
+  function endSwipe(UNSAFE_root, { translationX, translationY = 0, velocityX = 0 }) {
+    fireGestureHandler(getPanGesture(UNSAFE_root), [
+      { translationX, translationY, velocityX },
+    ]);
+  }
+
+  test("a deliberate drag past the distance threshold completes, even at low velocity", async () => {
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    endSwipe(UNSAFE_root, { translationX: 40, velocityX: 50 });
+
+    expect(onToggleComplete).toHaveBeenCalledWith(habit, { source: "swipe" });
+  });
+
+  test("a fast flick under the distance threshold still completes via velocity", async () => {
+    // The actual fix for root cause #1 from the Thread B interaction
+    // survey ("a fast flick does nothing"): the old PanResponder release
+    // handler never read gestureState.vx at all, so this exact case
+    // (short distance, high speed) could not succeed before this migration.
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    endSwipe(UNSAFE_root, { translationX: 15, velocityX: 900 });
+
+    expect(onToggleComplete).toHaveBeenCalledWith(habit, { source: "swipe" });
+  });
+
+  test("a slow drag under both the distance and velocity thresholds does not toggle", async () => {
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    endSwipe(UNSAFE_root, { translationX: 15, velocityX: 50 });
+
+    expect(onToggleComplete).not.toHaveBeenCalled();
+  });
+
+  test("a wrong-direction drag does not toggle (onEnd's own direction check)", async () => {
+    // Not completed today, so only rightward (positive translationX) is a
+    // valid direction - a leftward drag should never reach onToggleComplete
+    // even with threshold-clearing distance and velocity.
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    endSwipe(UNSAFE_root, { translationX: -40, velocityX: -900 });
+
+    expect(onToggleComplete).not.toHaveBeenCalled();
+  });
+
+  test("swiping left past threshold undoes a completed-today habit", async () => {
+    const completedToday = {
+      ...habit,
+      completedDates: [toDateKey(new Date())],
+    };
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard habit={completedToday} onToggleComplete={onToggleComplete} />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    endSwipe(UNSAFE_root, { translationX: -40, velocityX: -50 });
+
+    expect(onToggleComplete).toHaveBeenCalledWith(completedToday, {
+      source: "swipe-undo",
+    });
+  });
+
+  test("a gesture interrupted before completing (as the parent list's scroll winning would cause) does not toggle", async () => {
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={onToggleComplete} />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    fireGestureHandler(getPanGesture(UNSAFE_root), [
+      { translationX: 40, velocityX: 50 },
+      { translationX: 40, velocityX: 50, state: State.CANCELLED },
+    ]);
+
+    expect(onToggleComplete).not.toHaveBeenCalled();
+  });
+
+  test("swipe is inert when enableSwipeToComplete is false", async () => {
+    const onToggleComplete = jest.fn();
+    const { UNSAFE_root } = renderWithProviders(
+      <HabitCard
+        habit={habit}
+        enableSwipeToComplete={false}
+        onToggleComplete={onToggleComplete}
+      />
+    );
+    await screen.findByLabelText(/Drink water/);
+
+    expect(getPanGesture(UNSAFE_root).config.enabled).toBe(false);
   });
 });

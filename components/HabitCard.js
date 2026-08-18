@@ -2,12 +2,12 @@ import { memo, useEffect, useMemo, useRef } from "react";
 import * as Haptics from "expo-haptics";
 import {
   Animated,
-  PanResponder,
   Pressable,
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { AppIcon, AppText } from "./ui";
 import ProgressDots from "./ProgressDots";
 import {
@@ -37,9 +37,37 @@ import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const SWIPE_COMPLETE_COLOR = v2ActionColors.complete;
 const SWIPE_UNDO_COLOR = v2ActionColors.undo;
+// How far (px) a drag has to travel in the valid direction before the Pan
+// gesture activates and starts driving swipeX/the background reveal. Same
+// value the old PanResponder used as its own capture distance - keeps the
+// "card starts sliding almost immediately" feel unchanged.
 const SWIPE_START_DISTANCE = 6;
-const SWIPE_DIRECTION_RATIO = 1.15;
+// How far (px) a touch can drift vertically before activation without
+// failing the gesture to the parent FlatList's scroll. Replaces the old
+// manual dx/dy-ratio check (SWIPE_DIRECTION_RATIO) with RNGH's declarative
+// failOffsetY, evaluated by the native recognizer instead of a JS heuristic
+// computed after each bridge-crossing touch-move - the actual fix for the
+// FlatList-vs-card arbitration weakness the migration exists for. Slightly
+// more generous than the old ratio math implied (~5px at the old 6px/1.15
+// activation point) specifically because this arbitration is now handled by
+// the platform's own recognizer, not a JS race.
+const SWIPE_FAIL_OFFSET_Y = 10;
+// Distance (px) a drag must cross past activation for onEnd to count it as
+// a deliberate swipe-to-complete/undo, independent of speed. Unchanged from
+// the prior PanResponder implementation's SWIPE_THRESHOLD.
 const SWIPE_THRESHOLD = 30;
+// Velocity (px/s) past which onEnd counts a fast, short flick as a trigger
+// even if it never crossed SWIPE_THRESHOLD - the actual fix for "a fast
+// flick does nothing" (root cause #1 from the Thread B interaction
+// survey): the old PanResponder release handler never read gestureState.vx
+// at all. No prior value existed to preserve here, so this is a judgment
+// call: 800px/s sits in the range commonly used to distinguish a genuine
+// flick from a fast-but-controlled drag in RN swipeable-row
+// implementations (roughly 500-1000px/s in community practice) - fast
+// enough that an ordinary deliberate drag past SWIPE_THRESHOLD won't
+// double-trigger via this branch, but well below what it takes to
+// physically flick a phone screen with intent.
+const SWIPE_MIN_VELOCITY = 800;
 const SWIPE_LIMIT = 112;
 
 function HabitCard({
@@ -124,57 +152,33 @@ function HabitCard({
     outputRange: [1, 0.75, 0],
     extrapolate: "clamp",
   });
-  const panResponder = useMemo(
+  const panGesture = useMemo(
     () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-          if (!enableSwipeToComplete) {
-            return false;
-          }
-
-          const horizontalDistance = Math.abs(gestureState.dx);
-          const verticalDistance = Math.abs(gestureState.dy);
-          const validDirection =
-            (!completedToday && gestureState.dx > 0) ||
-            (completedToday && gestureState.dx < 0);
-
-          return (
-            validDirection &&
-            horizontalDistance > SWIPE_START_DISTANCE &&
-            horizontalDistance > verticalDistance * SWIPE_DIRECTION_RATIO
-          );
-        },
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          if (!enableSwipeToComplete) {
-            return false;
-          }
-
-          const horizontalSwipe =
-            ((!completedToday && gestureState.dx > 0) ||
-              (completedToday && gestureState.dx < 0)) &&
-            Math.abs(gestureState.dx) > SWIPE_START_DISTANCE &&
-            Math.abs(gestureState.dx) >
-              Math.abs(gestureState.dy) * SWIPE_DIRECTION_RATIO;
-
-          if (!horizontalSwipe) {
-            return false;
-          }
-
-          return horizontalSwipe;
-        },
-        onPanResponderMove: (_, gestureState) => {
-          if (Math.abs(gestureState.dx) > 5) {
+      Gesture.Pan()
+        .enabled(enableSwipeToComplete)
+        // Declarative direction+start-distance gate, evaluated by the native
+        // recognizer instead of a JS onMoveShouldSetPanResponder(Capture)
+        // heuristic - only the valid direction for the current completion
+        // state can activate the gesture at all.
+        .activeOffsetX(
+          completedToday
+            ? [-Infinity, -SWIPE_START_DISTANCE]
+            : [SWIPE_START_DISTANCE, Infinity]
+        )
+        .failOffsetY([-SWIPE_FAIL_OFFSET_Y, SWIPE_FAIL_OFFSET_Y])
+        .onUpdate((event) => {
+          if (Math.abs(event.translationX) > 5) {
             tapBlockedBySwipe.current = true;
           }
 
           let nextSwipeX = 0;
 
-          if (!completedToday && gestureState.dx > 0) {
-            nextSwipeX = Math.min(gestureState.dx, SWIPE_LIMIT);
+          if (!completedToday && event.translationX > 0) {
+            nextSwipeX = Math.min(event.translationX, SWIPE_LIMIT);
           }
 
-          if (completedToday && gestureState.dx < 0) {
-            nextSwipeX = Math.max(gestureState.dx, -SWIPE_LIMIT);
+          if (completedToday && event.translationX < 0) {
+            nextSwipeX = Math.max(event.translationX, -SWIPE_LIMIT);
           }
 
           swipeX.setValue(nextSwipeX);
@@ -186,13 +190,36 @@ function HabitCard({
             swipeHapticTriggered.current = true;
             triggerSelectionHaptic();
           }
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          if (
-            enableSwipeToComplete &&
+        })
+        .onEnd((event, success) => {
+          // success is false when the gesture was interrupted (e.g. the
+          // parent FlatList's scroll won the arbitration) rather than ending
+          // on its own - equivalent to the old onPanResponderTerminate path.
+          if (!success) {
+            swipeHapticTriggered.current = false;
+            runSwipeResetAnimation(swipeX, reduceMotion, resetTapBlock);
+            return;
+          }
+
+          const { translationX, velocityX } = event;
+          // Either a deliberate drag past SWIPE_THRESHOLD, or a fast flick
+          // past SWIPE_MIN_VELOCITY that never reached the distance
+          // threshold - the actual fix for "a fast flick does nothing"
+          // (root cause #1 from the interaction survey). requiring
+          // translationX to have crossed SWIPE_START_DISTANCE keeps a
+          // stray high-velocity reading with near-zero movement from
+          // triggering on its own.
+          const completeReached =
             !completedToday &&
-            gestureState.dx > SWIPE_THRESHOLD
-          ) {
+            translationX > SWIPE_START_DISTANCE &&
+            (translationX > SWIPE_THRESHOLD || velocityX > SWIPE_MIN_VELOCITY);
+          const undoReached =
+            completedToday &&
+            translationX < -SWIPE_START_DISTANCE &&
+            (translationX < -SWIPE_THRESHOLD ||
+              velocityX < -SWIPE_MIN_VELOCITY);
+
+          if (completeReached) {
             runSwipeSuccessAnimation(swipeX, SWIPE_LIMIT, reduceMotion, () => {
               swipeHapticTriggered.current = false;
               resetTapBlock();
@@ -201,11 +228,7 @@ function HabitCard({
             return;
           }
 
-          if (
-            enableSwipeToComplete &&
-            completedToday &&
-            gestureState.dx < -SWIPE_THRESHOLD
-          ) {
+          if (undoReached) {
             runSwipeSuccessAnimation(swipeX, -SWIPE_LIMIT, reduceMotion, () => {
               swipeHapticTriggered.current = false;
               resetTapBlock();
@@ -216,12 +239,7 @@ function HabitCard({
 
           swipeHapticTriggered.current = false;
           runSwipeResetAnimation(swipeX, reduceMotion, resetTapBlock);
-        },
-        onPanResponderTerminate: () => {
-          swipeHapticTriggered.current = false;
-          runSwipeResetAnimation(swipeX, reduceMotion, resetTapBlock);
-        },
-      }),
+        }),
     [
       completedToday,
       enableSwipeToComplete,
@@ -271,291 +289,290 @@ function HabitCard({
   }
 
   return (
-    <View
-      {...panResponder.panHandlers}
-      style={styles.swipeWrap}
-    >
-      <Animated.View
-        style={[
-          styles.swipeAction,
-          styles.completeAction,
-          {
-            backgroundColor: swipeActionBackground,
-            borderColor: SWIPE_COMPLETE_COLOR,
-            opacity: completeActionOpacity,
-          },
-        ]}
-      >
+    <GestureDetector gesture={panGesture}>
+      <View style={styles.swipeWrap}>
         <Animated.View
           style={[
-            styles.swipeProgress,
+            styles.swipeAction,
+            styles.completeAction,
             {
-              backgroundColor: "rgba(255, 255, 255, 0.22)",
-              width: completeProgressWidth,
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.swipeIndicator,
-            {
-              opacity: completeIndicatorOpacity,
-              transform: [{ scale: completeIndicatorScale }],
+              backgroundColor: swipeActionBackground,
+              borderColor: SWIPE_COMPLETE_COLOR,
+              opacity: completeActionOpacity,
             },
           ]}
         >
-          <AppIcon
-            color={v2ActionColors.completeIcon}
-            name="check"
-            size={18}
-            strokeWidth={2.4}
-          />
-        </Animated.View>
-        <Animated.Text
-          style={[styles.swipeText, { opacity: completeInstructionOpacity }]}
-        >
-          Complete
-        </Animated.Text>
-      </Animated.View>
-      <Animated.View
-        style={[
-          styles.swipeAction,
-          styles.undoAction,
-          {
-            backgroundColor: undoActionBackground,
-            borderColor: SWIPE_UNDO_COLOR,
-            opacity: undoActionOpacity,
-          },
-        ]}
-      >
-        <Animated.View
-          style={[
-            styles.undoSwipeProgress,
-            {
-              backgroundColor: "rgba(255, 255, 255, 0.18)",
-              width: undoProgressWidth,
-            },
-          ]}
-        />
-        <Animated.Text
-          style={[styles.swipeText, { opacity: undoInstructionOpacity }]}
-        >
-          Undo
-        </Animated.Text>
-        <Animated.View
-          style={[
-            styles.swipeIndicator,
-            {
-              opacity: undoIndicatorOpacity,
-              transform: [{ scale: undoIndicatorScale }],
-            },
-          ]}
-        >
-          <AppIcon
-            color={v2ActionColors.undoIcon}
-            name="undo"
-            size={18}
-            strokeWidth={2.2}
-          />
-        </Animated.View>
-      </Animated.View>
-      <Animated.View
-        style={[
-          styles.card,
-          {
-            borderColor: completedToday
-              ? themeAccent
-              : colors.habitCardBorder || withAlpha(accentColor, 0.58),
-            backgroundColor: colors.card,
-            shadowColor: completedToday ? themeAccent : colors.shadow,
-            transform: [{ translateX: swipeX }],
-          },
-          completedToday && styles.cardCompleted,
-          styles.cardLayer,
-        ]}
-      >
-        <View style={styles.topRow}>
-          <Pressable
-            accessibilityActions={[
-              { name: "activate", label: "Open details" },
+          <Animated.View
+            style={[
+              styles.swipeProgress,
               {
-                name: "toggleComplete",
-                label: completedToday ? "Undo today" : "Complete today",
+                backgroundColor: "rgba(255, 255, 255, 0.22)",
+                width: completeProgressWidth,
               },
-              { name: "longpress", label: "Reorder habit" },
             ]}
-            accessibilityHint={habitCardHint}
-            accessibilityLabel={`${habit.name}, ${habit.category || "General"}, ${currentStreak} day streak, ${completionLabel}`}
-            accessibilityRole="button"
-            accessibilityState={{ selected: completedToday }}
-            delayLongPress={260}
-            onLongPress={() => {
-              if (enableLongPressReorder) {
-                onReorderPress?.(habit);
-              }
-            }}
-            onAccessibilityAction={(event) => {
-              if (event.nativeEvent.actionName === "activate") {
-                handleOpenHabit();
-              }
-
-              if (event.nativeEvent.actionName === "toggleComplete") {
-                onToggleComplete(habit, { source: "accessibility" });
-              }
-
-              if (event.nativeEvent.actionName === "longpress") {
-                onReorderPress?.(habit);
-              }
-            }}
-            onPress={handleOpenHabit}
-            style={({ pressed }) => [
-              styles.cardMainContent,
-              pressed && styles.cardMainPressed,
+          />
+          <Animated.View
+            style={[
+              styles.swipeIndicator,
+              {
+                opacity: completeIndicatorOpacity,
+                transform: [{ scale: completeIndicatorScale }],
+              },
             ]}
           >
-            <View style={styles.identity}>
-              <View
-                style={[
-                  styles.iconBadge,
-                  {
-                    backgroundColor: withAlpha(accentColor, 0.1),
-                    borderColor: withAlpha(accentColor, 0.28),
-                  },
-                ]}
-              >
-                <AppText align="center" style={styles.icon}>
-                  {icon}
-                </AppText>
-              </View>
+            <AppIcon
+              color={v2ActionColors.completeIcon}
+              name="check"
+              size={18}
+              strokeWidth={2.4}
+            />
+          </Animated.View>
+          <Animated.Text
+            style={[styles.swipeText, { opacity: completeInstructionOpacity }]}
+          >
+            Complete
+          </Animated.Text>
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.swipeAction,
+            styles.undoAction,
+            {
+              backgroundColor: undoActionBackground,
+              borderColor: SWIPE_UNDO_COLOR,
+              opacity: undoActionOpacity,
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.undoSwipeProgress,
+              {
+                backgroundColor: "rgba(255, 255, 255, 0.18)",
+                width: undoProgressWidth,
+              },
+            ]}
+          />
+          <Animated.Text
+            style={[styles.swipeText, { opacity: undoInstructionOpacity }]}
+          >
+            Undo
+          </Animated.Text>
+          <Animated.View
+            style={[
+              styles.swipeIndicator,
+              {
+                opacity: undoIndicatorOpacity,
+                transform: [{ scale: undoIndicatorScale }],
+              },
+            ]}
+          >
+            <AppIcon
+              color={v2ActionColors.undoIcon}
+              name="undo"
+              size={18}
+              strokeWidth={2.2}
+            />
+          </Animated.View>
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              borderColor: completedToday
+                ? themeAccent
+                : colors.habitCardBorder || withAlpha(accentColor, 0.58),
+              backgroundColor: colors.card,
+              shadowColor: completedToday ? themeAccent : colors.shadow,
+              transform: [{ translateX: swipeX }],
+            },
+            completedToday && styles.cardCompleted,
+            styles.cardLayer,
+          ]}
+        >
+          <View style={styles.topRow}>
+            <Pressable
+              accessibilityActions={[
+                { name: "activate", label: "Open details" },
+                {
+                  name: "toggleComplete",
+                  label: completedToday ? "Undo today" : "Complete today",
+                },
+                { name: "longpress", label: "Reorder habit" },
+              ]}
+              accessibilityHint={habitCardHint}
+              accessibilityLabel={`${habit.name}, ${habit.category || "General"}, ${currentStreak} day streak, ${completionLabel}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: completedToday }}
+              delayLongPress={260}
+              onLongPress={() => {
+                if (enableLongPressReorder) {
+                  onReorderPress?.(habit);
+                }
+              }}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === "activate") {
+                  handleOpenHabit();
+                }
 
-              <View style={styles.titleGroup}>
-                <View style={styles.nameRow}>
-                  {isPinned || canPin ? (
-                    <Pressable
-                      accessibilityLabel={
-                        isPinned
-                          ? `Unpin ${habit.name} from today's focus`
-                          : `Pin ${habit.name} to today's focus`
-                      }
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => onTogglePin?.(habit)}
-                      style={({ pressed }) => [
-                        styles.pinButton,
-                        pressed && v2PressedStyles.button,
-                      ]}
-                    >
-                      <AppIcon
-                        color={isPinned ? colors.primary : colors.softText}
-                        name="star"
-                        size={15}
-                        strokeWidth={2}
-                      />
-                    </Pressable>
-                  ) : null}
-                  <AppText
-                    color={colors.text}
-                    numberOfLines={2}
-                    style={styles.name}
-                    variant="cardTitle"
-                  >
-                    {habit.name}
+                if (event.nativeEvent.actionName === "toggleComplete") {
+                  onToggleComplete(habit, { source: "accessibility" });
+                }
+
+                if (event.nativeEvent.actionName === "longpress") {
+                  onReorderPress?.(habit);
+                }
+              }}
+              onPress={handleOpenHabit}
+              style={({ pressed }) => [
+                styles.cardMainContent,
+                pressed && styles.cardMainPressed,
+              ]}
+            >
+              <View style={styles.identity}>
+                <View
+                  style={[
+                    styles.iconBadge,
+                    {
+                      backgroundColor: withAlpha(accentColor, 0.1),
+                      borderColor: withAlpha(accentColor, 0.28),
+                    },
+                  ]}
+                >
+                  <AppText align="center" style={styles.icon}>
+                    {icon}
                   </AppText>
                 </View>
+
+                <View style={styles.titleGroup}>
+                  <View style={styles.nameRow}>
+                    {isPinned || canPin ? (
+                      <Pressable
+                        accessibilityLabel={
+                          isPinned
+                            ? `Unpin ${habit.name} from today's focus`
+                            : `Pin ${habit.name} to today's focus`
+                        }
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={() => onTogglePin?.(habit)}
+                        style={({ pressed }) => [
+                          styles.pinButton,
+                          pressed && v2PressedStyles.button,
+                        ]}
+                      >
+                        <AppIcon
+                          color={isPinned ? colors.primary : colors.softText}
+                          name="star"
+                          size={15}
+                          strokeWidth={2}
+                        />
+                      </Pressable>
+                    ) : null}
+                    <AppText
+                      color={colors.text}
+                      numberOfLines={2}
+                      style={styles.name}
+                      variant="cardTitle"
+                    >
+                      {habit.name}
+                    </AppText>
+                  </View>
+                  <AppText
+                    color={colors.muted}
+                    numberOfLines={1}
+                    style={styles.category}
+                    variant="caption"
+                  >
+                    {habit.category || "General"}
+                  </AppText>
+                </View>
+              </View>
+            </Pressable>
+
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={styles.rightActions}
+              pointerEvents="none"
+            >
+              <View
+                style={[
+                  styles.completionDot,
+                  completedToday && {
+                    backgroundColor: themeAccent,
+                    borderColor: themeAccent,
+                  },
+                ]}
+              />
+              <View style={styles.streakBadge}>
+                <AppIcon
+                  color={completedToday ? themeAccent : colors.muted}
+                  name="flame"
+                  size={15}
+                  strokeWidth={1.6}
+                />
                 <AppText
                   color={colors.muted}
+                  style={styles.streakText}
                   numberOfLines={1}
-                  style={styles.category}
-                  variant="caption"
                 >
-                  {habit.category || "General"}
+                  {currentStreak}
                 </AppText>
               </View>
             </View>
-          </Pressable>
-
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={styles.rightActions}
-            pointerEvents="none"
-          >
-            <View
-              style={[
-                styles.completionDot,
-                completedToday && {
-                  backgroundColor: themeAccent,
-                  borderColor: themeAccent,
-                },
-              ]}
-            />
-            <View style={styles.streakBadge}>
-              <AppIcon
-                color={completedToday ? themeAccent : colors.muted}
-                name="flame"
-                size={15}
-                strokeWidth={1.6}
-              />
-              <AppText
-                color={colors.muted}
-                style={styles.streakText}
-                numberOfLines={1}
-              >
-                {currentStreak}
-              </AppText>
-            </View>
           </View>
-        </View>
 
-        {isPinned ? (
-          <View style={styles.pinControlsRow}>
-            <AppText style={styles.pinControlsLabel}>Today's Focus</AppText>
-            <View style={styles.pinControlsButtons}>
-              <Pressable
-                accessibilityLabel={`Move ${habit.name} up in today's focus`}
-                accessibilityRole="button"
-                disabled={!canMoveUp}
-                hitSlop={8}
-                onPress={() => onMoveUp?.(habit)}
-                style={({ pressed }) => [
-                  styles.pinControlButton,
-                  !canMoveUp && styles.pinControlButtonDisabled,
-                  pressed && v2PressedStyles.button,
-                ]}
-              >
-                <AppIcon
-                  color={canMoveUp ? colors.text : colors.softText}
-                  name="chevron-up"
-                  size={15}
-                />
-              </Pressable>
-              <Pressable
-                accessibilityLabel={`Move ${habit.name} down in today's focus`}
-                accessibilityRole="button"
-                disabled={!canMoveDown}
-                hitSlop={8}
-                onPress={() => onMoveDown?.(habit)}
-                style={({ pressed }) => [
-                  styles.pinControlButton,
-                  !canMoveDown && styles.pinControlButtonDisabled,
-                  pressed && v2PressedStyles.button,
-                ]}
-              >
-                <AppIcon
-                  color={canMoveDown ? colors.text : colors.softText}
-                  name="chevron-down"
-                  size={15}
-                />
-              </Pressable>
+          {isPinned ? (
+            <View style={styles.pinControlsRow}>
+              <AppText style={styles.pinControlsLabel}>Today's Focus</AppText>
+              <View style={styles.pinControlsButtons}>
+                <Pressable
+                  accessibilityLabel={`Move ${habit.name} up in today's focus`}
+                  accessibilityRole="button"
+                  disabled={!canMoveUp}
+                  hitSlop={8}
+                  onPress={() => onMoveUp?.(habit)}
+                  style={({ pressed }) => [
+                    styles.pinControlButton,
+                    !canMoveUp && styles.pinControlButtonDisabled,
+                    pressed && v2PressedStyles.button,
+                  ]}
+                >
+                  <AppIcon
+                    color={canMoveUp ? colors.text : colors.softText}
+                    name="chevron-up"
+                    size={15}
+                  />
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={`Move ${habit.name} down in today's focus`}
+                  accessibilityRole="button"
+                  disabled={!canMoveDown}
+                  hitSlop={8}
+                  onPress={() => onMoveDown?.(habit)}
+                  style={({ pressed }) => [
+                    styles.pinControlButton,
+                    !canMoveDown && styles.pinControlButtonDisabled,
+                    pressed && v2PressedStyles.button,
+                  ]}
+                >
+                  <AppIcon
+                    color={canMoveDown ? colors.text : colors.softText}
+                    name="chevron-down"
+                    size={15}
+                  />
+                </Pressable>
+              </View>
             </View>
-          </View>
-        ) : null}
+          ) : null}
 
-        <View style={styles.weekRow}>
-          <ProgressDots days={weeklyProgress} compact />
-        </View>
-      </Animated.View>
-    </View>
+          <View style={styles.weekRow}>
+            <ProgressDots days={weeklyProgress} compact />
+          </View>
+        </Animated.View>
+      </View>
+    </GestureDetector>
   );
 }
 
