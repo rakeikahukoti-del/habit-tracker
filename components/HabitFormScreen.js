@@ -1,8 +1,11 @@
+import { createContext, useCallback, useContext, useRef } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableWithoutFeedback,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -18,6 +21,23 @@ import {
 } from "../src/design";
 import { AppText } from "./ui";
 
+// Extra breathing room (in px) kept between a focused field and the top of
+// the keyboard when scrolling it into view - matches the field's own
+// vertical padding so it doesn't land flush against the keyboard.
+const SCROLL_INTO_VIEW_OFFSET = v2Spacing.base;
+
+// Lets any descendant (HabitFormFields' TextInputs) ask the screen's own
+// ScrollView to bring a focused field above the keyboard, without threading
+// a ref through app/add.js and app/habit/[id].js - both already render
+// their fields as children of this component, so a context reaches them
+// directly. Default of a no-op keeps callers safe if ever used outside a
+// HabitFormScreen (e.g. in isolation in a test).
+export const ScrollIntoViewContext = createContext(() => {});
+
+export function useScrollIntoView() {
+  return useContext(ScrollIntoViewContext);
+}
+
 export default function HabitFormScreen({
   children,
   error,
@@ -30,6 +50,18 @@ export default function HabitFormScreen({
   const isSmallScreen = width < v2Breakpoints.smallScreenMaxWidth;
   const isTablet = width >= v2Breakpoints.tabletMinWidth;
   const styles = createStyles(colors, { isSmallScreen, isTablet });
+  const scrollViewRef = useRef(null);
+  const scrollFieldIntoView = useCallback((nodeHandle) => {
+    if (nodeHandle == null) {
+      return;
+    }
+
+    scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+      nodeHandle,
+      SCROLL_INTO_VIEW_OFFSET,
+      true
+    );
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -37,20 +69,25 @@ export default function HabitFormScreen({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {topBar ? <View style={styles.topBar}>{topBar}</View> : null}
-          {header}
-          {error ? (
-            <AppText accessibilityRole="alert" style={styles.error}>
-              {error}
-            </AppText>
-          ) : null}
-          {children}
-        </ScrollView>
+        <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+          >
+            <ScrollIntoViewContext.Provider value={scrollFieldIntoView}>
+              {topBar ? <View style={styles.topBar}>{topBar}</View> : null}
+              {header}
+              {error ? (
+                <AppText accessibilityRole="alert" style={styles.error}>
+                  {error}
+                </AppText>
+              ) : null}
+              {children}
+            </ScrollIntoViewContext.Provider>
+          </ScrollView>
+        </TouchableWithoutFeedback>
 
         {footer ? <View style={styles.footer}>{footer}</View> : null}
       </KeyboardAvoidingView>

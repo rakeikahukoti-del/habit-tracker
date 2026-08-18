@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { Keyboard, StyleSheet } from "react-native";
 import { fireEvent, renderWithProviders, screen } from "../test/test-utils";
 import HabitFormFields from "../components/HabitFormFields";
+import { ScrollIntoViewContext } from "../components/HabitFormScreen";
+import { v2Layout } from "../src/design";
 import {
+  categoryOptions,
   DEFAULT_HABIT_CATEGORY,
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
@@ -111,5 +115,94 @@ describe("HabitFormFields draft updates", () => {
     expect(
       screen.getByLabelText("Custom day Wed").props.accessibilityState
     ).toMatchObject({ selected: false });
+  });
+});
+
+describe("HabitFormFields keyboard behavior", () => {
+  test("name field's onSubmitEditing keeps its own focus-shifting behavior, not the reminder field's new dismiss behavior", async () => {
+    // Regression guard for Phase 10 Thread A's constraint: preserve the name
+    // field's existing tab order (shift focus to reminder time) while adding
+    // dismiss-on-submit only to the reminder field. This project's test
+    // renderer doesn't expose real native TextInput refs (no `.focus()` to
+    // spy on - confirmed: RTL host instances here have no `instance`), so
+    // the strongest guard obtainable is checking submitting the name field
+    // doesn't also trigger the dismiss behavior that would land here if the
+    // two onSubmitEditing handlers were ever accidentally swapped or merged.
+    const dismissSpy = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    renderWithProviders(<FormHarness />);
+
+    expect(() =>
+      fireEvent(screen.getByLabelText("Habit name"), "submitEditing")
+    ).not.toThrow();
+    expect(dismissSpy).not.toHaveBeenCalled();
+    dismissSpy.mockRestore();
+  });
+
+  test("submitting the reminder field dismisses the keyboard", async () => {
+    const dismissSpy = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    renderWithProviders(<FormHarness />);
+
+    fireEvent(
+      await screen.findByLabelText("Reminder time"),
+      "submitEditing"
+    );
+
+    expect(dismissSpy).toHaveBeenCalledTimes(1);
+    dismissSpy.mockRestore();
+  });
+
+  test("focusing the name field asks the screen to scroll it into view", async () => {
+    const scrollFieldIntoView = jest.fn();
+    renderWithProviders(
+      <ScrollIntoViewContext.Provider value={scrollFieldIntoView}>
+        <FormHarness />
+      </ScrollIntoViewContext.Provider>
+    );
+
+    fireEvent(await screen.findByLabelText("Habit name"), "focus");
+
+    expect(scrollFieldIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  test("focusing the reminder field asks the screen to scroll it into view", async () => {
+    const scrollFieldIntoView = jest.fn();
+    renderWithProviders(
+      <ScrollIntoViewContext.Provider value={scrollFieldIntoView}>
+        <FormHarness />
+      </ScrollIntoViewContext.Provider>
+    );
+
+    fireEvent(await screen.findByLabelText("Reminder time"), "focus");
+
+    expect(scrollFieldIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  test("without a HabitFormScreen ancestor, focusing a field is a no-op instead of crashing", async () => {
+    // HabitFormFields.test.js renders the component standalone (no
+    // HabitFormScreen wrapper) everywhere else in this file - confirms
+    // useScrollIntoView()'s default context value keeps that safe.
+    renderWithProviders(<FormHarness />);
+
+    expect(() =>
+      fireEvent(screen.getByLabelText("Habit name"), "focus")
+    ).not.toThrow();
+  });
+});
+
+describe("HabitFormFields touch targets", () => {
+  test("every category button guarantees the app's minimum tap target in both dimensions", async () => {
+    // Phase 10 Thread A: category buttons previously only guaranteed
+    // minHeight, leaving width to whatever the label + padding happened to
+    // produce. Guards the explicit minWidth added to close that gap -
+    // matches emoji/color buttons, which already had both.
+    renderWithProviders(<FormHarness />);
+
+    for (const category of categoryOptions) {
+      const button = await screen.findByLabelText(`Category ${category}`);
+      const flattened = StyleSheet.flatten(button.props.style);
+
+      expect(flattened.minHeight).toBe(v2Layout.minTapTarget);
+      expect(flattened.minWidth).toBe(v2Layout.minTapTarget);
+    }
   });
 });

@@ -111,7 +111,6 @@ export default function AddHabitScreen() {
       {message ? <AppText style={styles.message}>{message}</AppText> : null}
 
       <HabitFormFields
-        autoFocus
         category={category}
         color={color}
         customDays={customDays}

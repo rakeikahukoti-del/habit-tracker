@@ -1,5 +1,8 @@
 import { useMemo, useRef } from "react";
 import {
+  findNodeHandle,
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -24,8 +27,19 @@ import {
   weekDayOptions,
 } from "../constants/habitOptions";
 import { useTheme } from "../context/ThemeContext";
+import { useScrollIntoView } from "./HabitFormScreen";
 import { getReminderPreview } from "../notifications/habitNotifications";
 import { AppText } from "./ui";
+
+// react-native-web's ScrollView.scrollResponderScrollNativeHandleToKeyboard
+// measures a real DOM node directly (react-native-web/src/exports/UIManager
+// reads node.offsetHeight/parentNode/isConnected) and findNodeHandle()
+// throws there ("findNodeHandle is not supported on web"). Native's
+// UIManager.measureLayout needs the numeric tag findNodeHandle() produces
+// instead. Same call, different node type per platform.
+function getScrollTarget(ref) {
+  return Platform.OS === "web" ? ref.current : findNodeHandle(ref.current);
+}
 
 export default function HabitFormFields({
   name,
@@ -52,6 +66,8 @@ export default function HabitFormFields({
     () => createStyles(colors, isSmallScreen),
     [colors, isSmallScreen]
   );
+  const scrollFieldIntoView = useScrollIntoView();
+  const nameInputRef = useRef(null);
   const reminderInputRef = useRef(null);
   const reminderPreview = useMemo(
     () =>
@@ -84,9 +100,13 @@ export default function HabitFormFields({
           setName(value);
           onNameChange?.();
         }}
+        onFocus={() =>
+          scrollFieldIntoView(getScrollTarget(nameInputRef))
+        }
         onSubmitEditing={() => reminderInputRef.current?.focus()}
         placeholder="Drink water"
         placeholderTextColor={colors.muted}
+        ref={nameInputRef}
         returnKeyType="next"
         style={styles.input}
         value={name}
@@ -220,6 +240,10 @@ export default function HabitFormFields({
         accessibilityLabel="Reminder time"
         keyboardType="numbers-and-punctuation"
         onChangeText={setReminderTime}
+        onFocus={() =>
+          scrollFieldIntoView(getScrollTarget(reminderInputRef))
+        }
+        onSubmitEditing={() => Keyboard.dismiss()}
         placeholder="Optional, e.g. 08:30"
         placeholderTextColor={colors.muted}
         ref={reminderInputRef}
@@ -288,6 +312,7 @@ function createStyles(colors, isSmallScreen) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       minHeight: v2Layout.minTapTarget,
+      minWidth: v2Layout.minTapTarget,
       paddingHorizontal: v2Spacing.md,
       paddingVertical: v2CompactSpacing.sm,
     },

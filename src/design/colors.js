@@ -6,7 +6,14 @@ export const v2Colors = {
   surfacePressed: "#2C2C2E",
 
   borderSubtle: "#28282A",
-  borderDefault: "#333335",
+  // Lightened from #333335: at the original value, this read at only
+  // 1.23-1.53:1 against the backgrounds/surfaces it's actually used on as a
+  // UI-component boundary (idle Pressable buttons in HabitFormFields, cards,
+  // dividers) - below WCAG 1.4.11's 3:1 non-text contrast minimum, and the
+  // literal cause of Phase 10 Thread A's "buttons read as decoration"
+  // finding. #6E6E6E clears 3:1 against background/backgroundElevated/
+  // surface/surfaceElevated (3.04-3.78:1).
+  borderDefault: "#6E6E6E",
   borderStrong: "#45454A",
 
   textPrimary: "#F5F5F4",
@@ -35,7 +42,12 @@ export const v2LightColors = {
   surfacePressed: "#ECECEC",
 
   borderSubtle: "#E8E8E8",
-  borderDefault: "#DDDDDD",
+  // Darkened from #DDDDDD: read at only 1.26-1.36:1 against the
+  // backgrounds/surfaces it's used on as a UI-component boundary - same
+  // WCAG 1.4.11 failure as the dark theme's borderDefault above, same fix
+  // (see that comment). #8E8E8E clears 3:1 against background/
+  // backgroundElevated/surface/surfaceElevated (3.03-3.28:1).
+  borderDefault: "#8E8E8E",
   borderStrong: "#C6C6C8",
 
   textPrimary: "#17171A",
