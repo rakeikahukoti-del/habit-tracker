@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Keyboard } from "react-native";
+import { Keyboard, StyleSheet } from "react-native";
 import { fireEvent, renderWithProviders, screen } from "../test/test-utils";
 import HabitFormFields from "../components/HabitFormFields";
 import { ScrollIntoViewContext } from "../components/HabitFormScreen";
+import { v2Layout } from "../src/design";
 import {
+  categoryOptions,
   DEFAULT_HABIT_CATEGORY,
   DEFAULT_HABIT_COLOR,
   DEFAULT_HABIT_EMOJI,
@@ -184,5 +186,23 @@ describe("HabitFormFields keyboard behavior", () => {
     expect(() =>
       fireEvent(screen.getByLabelText("Habit name"), "focus")
     ).not.toThrow();
+  });
+});
+
+describe("HabitFormFields touch targets", () => {
+  test("every category button guarantees the app's minimum tap target in both dimensions", async () => {
+    // Phase 10 Thread A: category buttons previously only guaranteed
+    // minHeight, leaving width to whatever the label + padding happened to
+    // produce. Guards the explicit minWidth added to close that gap -
+    // matches emoji/color buttons, which already had both.
+    renderWithProviders(<FormHarness />);
+
+    for (const category of categoryOptions) {
+      const button = await screen.findByLabelText(`Category ${category}`);
+      const flattened = StyleSheet.flatten(button.props.style);
+
+      expect(flattened.minHeight).toBe(v2Layout.minTapTarget);
+      expect(flattened.minWidth).toBe(v2Layout.minTapTarget);
+    }
   });
 });

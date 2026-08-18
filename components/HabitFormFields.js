@@ -312,6 +312,7 @@ function createStyles(colors, isSmallScreen) {
       borderRadius: v2Radius.large,
       borderWidth: 1,
       minHeight: v2Layout.minTapTarget,
+      minWidth: v2Layout.minTapTarget,
       paddingHorizontal: v2Spacing.md,
       paddingVertical: v2CompactSpacing.sm,
     },
