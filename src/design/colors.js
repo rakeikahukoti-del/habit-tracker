@@ -1,7 +1,26 @@
 export const v2Colors = {
   background: "#0E0E10",
-  backgroundElevated: "#161618",
-  surface: "#1C1C1E",
+  // Raised from #161618: read at only 1.062:1 against `surface` below (the
+  // nested-tile-inside-a-card pattern - e.g. stat tiles inside
+  // WeeklyReviewCard) - Phase 11 Thread E, the card/tile fill contrast
+  // backlog item Thread A deliberately left for its own pass. Capped well
+  // below `surface`'s new value (not chasing the full ~1.5:1 target here)
+  // to leave `surface`/`surfaceElevated`/`surfacePressed`'s existing
+  // ordering above it untouched - see `surface`'s comment for why 1.5:1
+  // wasn't reachable everywhere without side effects. #121214 clears
+  // 1.164:1 against the new `surface` (up from 1.062:1).
+  backgroundElevated: "#121214",
+  // Raised from #1C1C1E: read at only 1.133:1 against `background` above -
+  // the literal "card" fill (colors.card in the legacy adapter) sitting on
+  // the page canvas behind it, ~90 call sites. Capped below
+  // `surfaceElevated` (#242426) deliberately, not raised all the way to
+  // the ~1.5:1 target computed for this fix: reaching 1.5:1 exactly would
+  // require a value brighter than surfaceElevated/surfacePressed above it,
+  // inverting their elevation/pressed-state ordering (e.g. a "pressed"
+  // state would darken instead of lighten). Landed at 1.1997:1 instead -
+  // a real improvement with no ordering side effects. See
+  // backgroundElevated's comment above for the matching nested-tile fix.
+  surface: "#212123",
   surfaceElevated: "#242426",
   surfacePressed: "#2C2C2E",
 
@@ -36,8 +55,35 @@ export const v2Colors = {
 
 export const v2LightColors = {
   background: "#F6F6F6",
-  backgroundElevated: "#FAFAFA",
-  surface: "#FFFFFF",
+  // Darkened from #FAFAFA: read at only 1.044:1 against `surface` below,
+  // same nested-tile-inside-a-card pattern as the dark theme (see
+  // v2Colors.backgroundElevated's comment). Unlike dark theme, the full
+  // 1.5:1 target was reachable here without any ordering side effects, so
+  // it's not capped short - #A6A6A6 clears 1.5005:1 against the new
+  // `surface` value below.
+  backgroundElevated: "#A6A6A6",
+  // Darkened from #FFFFFF: read at only 1.081:1 against `background`
+  // above - the literal "card" fill, ~90 call sites (colors.card in the
+  // legacy adapter). #FFFFFF was already pure white, the maximum possible
+  // luminance - there was no lighter value to move to, so reaching ~1.5:1
+  // required flipping the relationship (card now reads darker/grayer than
+  // the page, not lighter/whiter) rather than a same-direction shade
+  // adjustment. Escalated and confirmed before implementing (Phase 11
+  // Thread E). #CBCBCB clears 1.5012:1.
+  //
+  // Flagging one consequence of the flip that wasn't part of that
+  // decision: `surfacePressed` (#ECECEC, mapped to colors.accentSoft/
+  // colors.primarySoft - mostly soft icon-tint backgrounds, not literal
+  // press-feedback, at 18 call sites) was lighter than card before and is
+  // now darker than it (1.373:1 apart) - the same kind of ordering
+  // inversion the dark-theme surface value was deliberately capped to
+  // avoid. Left as-is here since capping card to preserve that ordering
+  // caps the achievable ratio at ~1.09:1 - barely above the original
+  // 1.081:1, making the fix nearly pointless - and the token's actual
+  // usage (soft tint fills, not real pressed-state feedback outside one
+  // ripple color) makes the inversion low-stakes. Worth a look, not
+  // reverted silently.
+  surface: "#CBCBCB",
   surfaceElevated: "#FCFCFC",
   surfacePressed: "#ECECEC",
 

@@ -55,12 +55,29 @@ const tierStyles = {
 //  - Master's border is only 2.13:1 against the dark card as authored.
 // Both fixes below darken/lighten along the same hue rather than picking a
 // new color, so the tier stays recognizably the same color family.
-// Platinum needs no override: its corrected violet (#8B6FD9, see above)
-// clears 3:1 against both white (3.91:1) and the dark card (4.35:1) as
-// authored - verified against the WCAG relative-luminance formula.
+//
+// Re-tuned again in Phase 11 Thread E: the light-theme card fill itself
+// moved (src/design/colors.js's v2LightColors.surface, #FFFFFF -> #CBCBCB
+// - that pass darkened light-theme card because #FFFFFF was already the
+// max possible luminance, so there was no lighter value left to raise its
+// own contrast against the page background). Checked what that did to
+// every tier ring here rather than assuming the existing Silver/Diamond
+// fixes still held - they didn't, and two more tiers needed a fix that
+// wasn't necessary before:
+//  - Silver and Diamond's overrides above (already darkened once for the
+//    old white card) needed a second pass - #899098/#5798A8 dropped to
+//    1.99:1/2.00:1 against the new #CBCBCB card.
+//  - Platinum and Gold, previously fine at 3.91:1/3.26:1 against white
+//    with no override needed, dropped to 2.41:1/2.01:1 against the new
+//    card and now need one.
+// All four re-tuned the same way as the original fixes above - darken
+// along the same hue, verified against the WCAG relative-luminance
+// formula, landing just past 3:1 rather than exactly on it.
 const tierBorderLightOverrides = {
-  Silver: "#899098",
-  Diamond: "#5798A8",
+  Diamond: "#447784",
+  Gold: "#856C40",
+  Platinum: "#7A5AD4",
+  Silver: "#697179",
 };
 const tierBorderDarkOverrides = {
   Master: "#BC3F4D",
