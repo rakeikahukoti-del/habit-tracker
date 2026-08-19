@@ -28,6 +28,10 @@ const points = [
   { icon: "home", text: "Home keeps today focused." },
   { icon: "progress", text: "Progress shows streaks, trends, and weekly context." },
   { icon: "rank", text: "XP and ranks reward consistency without pressure." },
+  {
+    icon: "analytics",
+    text: "Category isn't just organization — it shows up in Analytics too.",
+  },
 ];
 
 export default function OnboardingScreen() {
