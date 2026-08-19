@@ -5,5 +5,4 @@ export { default as MonthlyActivityCard } from "./MonthlyActivityCard";
 export { default as PeriodControl } from "./PeriodControl";
 export { default as PersonalRecordsSection } from "./PersonalRecordsSection";
 export { default as WeeklyReviewCard } from "./WeeklyReviewCard";
-export { default as WeeklyVisual } from "./WeeklyVisual";
 export { default as YearActivityCard } from "./YearActivityCard";

@@ -4,7 +4,13 @@ import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
-export default function WeeklyReviewCard({ expanded, isSmallScreen, onToggle, review }) {
+export default function WeeklyReviewCard({
+  days,
+  expanded,
+  isSmallScreen,
+  onToggle,
+  review,
+}) {
   const { colors } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
@@ -27,6 +33,8 @@ export default function WeeklyReviewCard({ expanded, isSmallScreen, onToggle, re
           <AppText style={styles.reviewRateText}>{review.completionRateLabel}</AppText>
         </View>
       </View>
+
+      <WeekDotRow days={days} styles={styles} />
 
       <View style={styles.reviewStats}>
         <ReviewStat label="Active days" value={review.activeDaysLabel} styles={styles} />
@@ -71,6 +79,46 @@ export default function WeeklyReviewCard({ expanded, isSmallScreen, onToggle, re
       </Pressable>
 
       {expanded ? <WeeklyReviewDetails review={review} styles={styles} /> : null}
+    </View>
+  );
+}
+
+// The fast-glance 7-day dot row folded in from the standalone WeeklyVisual
+// component (Thread C, Analytics/Progress density survey) - kept in the
+// card's always-visible portion, not behind the expand toggle below, since
+// it's meant to be seen at a glance alongside the 3 stat tiles. `days` is
+// the same rolling-7-day `progress.weeklySummary` data WeeklyVisual always
+// used; `review`'s own day data (`review.days`, week-to-date from Monday)
+// is a different date range with no `label` field, so it isn't a drop-in
+// substitute here - see the commit message for why this wasn't reconciled.
+function WeekDotRow({ days, styles }) {
+  return (
+    <View style={styles.weekDotRow}>
+      {days.map((day) => {
+        const complete = day.totalHabits > 0 && day.completedCount === day.totalHabits;
+        const partial = day.completedCount > 0 && !complete;
+
+        return (
+          <View
+            accessibilityLabel={`${day.label}: ${day.completedCount} of ${day.totalHabits} completed`}
+            accessible
+            key={day.dateKey}
+            style={styles.weekDotDay}
+          >
+            <AppText style={styles.weekDotLabel}>{day.label}</AppText>
+            <View
+              style={[
+                styles.weekDot,
+                partial && styles.weekDotPartial,
+                complete && styles.weekDotComplete,
+              ]}
+            />
+            <AppText style={styles.weekDotCount}>
+              {day.completedCount}/{day.totalHabits}
+            </AppText>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -234,6 +282,42 @@ function createStyles(colors, { isSmallScreen }) {
       color: colors.text,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
+    },
+    weekDotRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: v2Spacing.lg,
+    },
+    weekDotDay: {
+      alignItems: "center",
+      flex: 1,
+      gap: 7,
+      minWidth: 0,
+    },
+    weekDotLabel: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    weekDot: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      height: 16,
+      width: 16,
+    },
+    weekDotPartial: {
+      borderColor: colors.text,
+    },
+    weekDotComplete: {
+      backgroundColor: colors.text,
+      borderColor: colors.text,
+    },
+    weekDotCount: {
+      color: colors.muted,
+      fontSize: v2Typography.navigationLabel.fontSize,
+      fontWeight: v2FontWeight.medium,
     },
     reviewStats: {
       flexDirection: "row",
