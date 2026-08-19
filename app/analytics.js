@@ -51,8 +51,10 @@ export default function AnalyticsScreen() {
     loading,
     monthlyReview,
     period,
+    progressSignalsExpanded,
     readiness,
     setPeriod,
+    setProgressSignalsExpanded,
     setReloadRequest,
     setTrendUnlockVisible,
     trendUnlockVisible,
@@ -119,7 +121,9 @@ export default function AnalyticsScreen() {
 
             <InsightsDashboardSection
               dashboard={insightsDashboard}
+              expanded={progressSignalsExpanded}
               isSmallScreen={isSmallScreen}
+              onToggle={() => setProgressSignalsExpanded((value) => !value)}
             />
 
             <Section title="Consistency trend">

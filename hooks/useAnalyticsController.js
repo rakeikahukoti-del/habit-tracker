@@ -23,6 +23,7 @@ export function useAnalyticsController() {
   const [error, setError] = useState("");
   const [reloadRequest, setReloadRequest] = useState(0);
   const [trendUnlockVisible, setTrendUnlockVisible] = useState(false);
+  const [progressSignalsExpanded, setProgressSignalsExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -103,8 +104,10 @@ export function useAnalyticsController() {
     loading,
     monthlyReview,
     period,
+    progressSignalsExpanded,
     readiness,
     setPeriod,
+    setProgressSignalsExpanded,
     setReloadRequest,
     setTrendUnlockVisible,
     trendUnlockVisible,
