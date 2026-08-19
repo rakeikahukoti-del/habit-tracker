@@ -13,8 +13,8 @@ export default function SwipeHintCard({ onDismiss }) {
   return (
     <Animated.View style={entrance.style}>
       <Pressable
-        accessibilityHint="Dismisses this one-time swipe tip."
-        accessibilityLabel="Swipe right to complete a habit. Double tap to dismiss this tip."
+        accessibilityHint="Dismisses this one-time completion tip."
+        accessibilityLabel="Swipe right or tap the tick to complete a habit. Double tap to dismiss this tip."
         accessibilityRole="button"
         onPress={onDismiss}
         style={({ pressed }) => [
@@ -31,10 +31,10 @@ export default function SwipeHintCard({ onDismiss }) {
           />
         </View>
         <View style={styles.swipeHintText}>
-          <AppText style={styles.swipeHintTitle}>Swipe to complete</AppText>
+          <AppText style={styles.swipeHintTitle}>Two ways to complete</AppText>
           <AppText style={styles.swipeHintBody}>
-            Swipe a habit right when it is done. Tap the card to view its
-            details.
+            Swipe a habit right, or tap the tick, when it is done. Tap the
+            card to view its details.
           </AppText>
         </View>
         <AppText style={styles.swipeHintDismiss}>Got it</AppText>

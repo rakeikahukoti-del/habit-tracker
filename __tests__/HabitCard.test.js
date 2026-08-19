@@ -57,6 +57,34 @@ describe("HabitCard completion toggle", () => {
     const card = await screen.findByLabelText(/Drink water, Health/);
     expect(card.props.accessibilityState).toMatchObject({ selected: true });
   });
+
+  // Thread D (onboarding/tutorial): the tick button shipped in Phase 10
+  // Thread B, but this permanent per-card hint kept describing swipe as the
+  // only completion method. Regression guard against that going stale
+  // again.
+  test("the accessibility hint names both swipe and the tick button when incomplete", async () => {
+    renderWithProviders(
+      <HabitCard habit={habit} onToggleComplete={jest.fn()} />
+    );
+
+    const card = await screen.findByLabelText(/Drink water, Health/);
+    expect(card.props.accessibilityHint).toMatch(/swipe right/i);
+    expect(card.props.accessibilityHint).toMatch(/tick button/i);
+  });
+
+  test("the accessibility hint names both swipe and the tick button when completed", async () => {
+    const completedToday = {
+      ...habit,
+      completedDates: [toDateKey(new Date())],
+    };
+    renderWithProviders(
+      <HabitCard habit={completedToday} onToggleComplete={jest.fn()} />
+    );
+
+    const card = await screen.findByLabelText(/Drink water, Health/);
+    expect(card.props.accessibilityHint).toMatch(/swipe left/i);
+    expect(card.props.accessibilityHint).toMatch(/tick button/i);
+  });
 });
 
 // Ported from the deleted TodaysFocusSection.test.js: pinning, unpinning,
