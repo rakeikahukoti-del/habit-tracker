@@ -256,8 +256,8 @@ function HabitCard({
     ? "Completed today"
     : "Not completed today";
   const habitCardHint = completedToday
-    ? "Swipe left to undo today's completion, or double tap to open details."
-    : "Swipe right to complete today, or double tap to open details.";
+    ? "Swipe left or use the tick button to undo today's completion, or double tap to open details."
+    : "Swipe right or use the tick button to complete today, or double tap to open details.";
 
   useEffect(
     () => () => {

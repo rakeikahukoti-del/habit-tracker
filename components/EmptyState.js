@@ -31,7 +31,7 @@ export default function EmptyState() {
           color={colors.muted}
           icon="check"
           styles={styles}
-          text="Swipe right to complete a habit."
+          text="Swipe right or tap the tick to complete a habit."
         />
         <TipRow
           color={colors.muted}
