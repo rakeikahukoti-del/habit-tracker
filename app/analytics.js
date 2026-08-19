@@ -51,8 +51,10 @@ export default function AnalyticsScreen() {
     loading,
     monthlyReview,
     period,
+    progressSignalsExpanded,
     readiness,
     setPeriod,
+    setProgressSignalsExpanded,
     setReloadRequest,
     setTrendUnlockVisible,
     trendUnlockVisible,
@@ -119,7 +121,9 @@ export default function AnalyticsScreen() {
 
             <InsightsDashboardSection
               dashboard={insightsDashboard}
+              expanded={progressSignalsExpanded}
               isSmallScreen={isSmallScreen}
+              onToggle={() => setProgressSignalsExpanded((value) => !value)}
             />
 
             <Section title="Consistency trend">
@@ -140,14 +144,6 @@ export default function AnalyticsScreen() {
 
             <Section title="Habit performance">
               <HabitPerformanceList items={analytics.habitPerformance} />
-            </Section>
-
-            <Section title="Insights">
-              {analytics.insights.map((insight) => (
-                <AppText key={insight} style={styles.insightText}>
-                  {insight}
-                </AppText>
-              ))}
             </Section>
           </>
         ) : null}
@@ -187,15 +183,6 @@ function createStyles(colors) {
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
-    },
-    insightText: {
-      backgroundColor: colors.card,
-      borderRadius: v2Radius.large,
-      color: colors.text,
-      fontSize: v2Typography.body.fontSize,
-      fontWeight: v2FontWeight.medium,
-      lineHeight: v2Typography.body.lineHeight,
-      padding: v2Spacing.lg,
     },
   });
 }

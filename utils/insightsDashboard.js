@@ -65,7 +65,6 @@ export function getInsightsDashboard(habits, gamification = null, now = new Date
     habitRankings,
     insightCards,
     monthlyComparison,
-    personalBests: aggregates.personalRecords.slice(0, 4),
     readiness: getInsightsReadiness(aggregates),
     rollingTrend,
     totals: aggregates.lifetime,
@@ -444,10 +443,6 @@ function getDashboardSections({
 
   if (habitRankings.strongest.length > 0 || habitRankings.needsAttention.length > 0) {
     sections.push("habit-rankings");
-  }
-
-  if (aggregates.personalRecords.length > 0) {
-    sections.push("personal-bests");
   }
 
   if (insightCards.length === 0) {

@@ -199,12 +199,6 @@ export function getDeepAnalytics(habits, period = "month", gamification = null) 
     ...overview,
     bestHabit,
     habitPerformance,
-    insights: getProgressInsights({
-      bestHabit,
-      overview,
-      previousOverview,
-      weakestHabit,
-    }),
     previousCompletionRate: previousOverview.completionRate,
     trendDelta: overview.completionRate - previousOverview.completionRate,
     trendPoints: getTrendPoints(safeHabits, period),
@@ -644,64 +638,6 @@ function getPreviousProgressOverview(habits, period) {
     safeHabits,
     getDateRangeDays(previousStart, previousEnd)
   );
-}
-
-function getProgressInsights({
-  bestHabit,
-  overview,
-  previousOverview,
-  weakestHabit,
-}) {
-  const insights = [];
-
-  if (overview.habitCount === 0) {
-    return ["Create a habit to begin seeing progress."];
-  }
-
-  if (overview.completedCount === 0) {
-    return ["Complete habits for a few days to begin seeing trends."];
-  }
-
-  const delta = overview.completionRate - previousOverview.completionRate;
-
-  if (Math.abs(delta) >= 8) {
-    insights.push(
-      `Consistency ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(
-        delta
-      )}% compared with the previous period.`
-    );
-  }
-
-  if (bestHabit && bestHabit.completionRate > 0) {
-    insights.push(
-      `${bestHabit.habit.name} has the highest completion rate this period.`
-    );
-  }
-
-  if (
-    weakestHabit &&
-    weakestHabit.completionRate < 60 &&
-    weakestHabit.habit.id !== bestHabit?.habit.id
-  ) {
-    insights.push(
-      `${weakestHabit.habit.name} needs the most attention this period.`
-    );
-  }
-
-  if (overview.currentLongestStreak > 0 && overview.bestAllTimeStreak > 0) {
-    const daysToBest =
-      overview.bestAllTimeStreak - overview.currentLongestStreak;
-
-    if (daysToBest > 0 && daysToBest <= 3) {
-      insights.push(`${daysToBest} more days would match your best streak.`);
-    }
-  }
-
-  if (insights.length === 0) {
-    insights.push("Keep completing habits to reveal clearer patterns.");
-  }
-
-  return insights.slice(0, 3);
 }
 
 function getCompletionSummaryForDays(habits, days) {

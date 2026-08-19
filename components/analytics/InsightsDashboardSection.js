@@ -1,11 +1,16 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { AppText, Section } from "../ui";
+import { AppIcon, AppText, Section } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2PressedStyles, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
-export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
+export default function InsightsDashboardSection({
+  dashboard,
+  expanded = false,
+  isSmallScreen,
+  onToggle,
+}) {
   const { colors } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
@@ -17,7 +22,33 @@ export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
     <Section title="Progress signals">
       <OverviewInsightsCard dashboard={dashboard} styles={styles} />
 
-      {sections.has("insights") ? (
+      <Pressable
+        accessibilityLabel={
+          expanded
+            ? "Hide insight cards, comparisons, and habit rankings"
+            : "Show insight cards, comparisons, and habit rankings"
+        }
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        hitSlop={{ bottom: 4, top: 4 }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.signalsToggle,
+          pressed && v2PressedStyles.stats,
+        ]}
+      >
+        <AppText style={styles.signalsToggleText}>
+          {expanded ? "See less" : "See more"}
+        </AppText>
+        <AppIcon
+          color={colors.primary}
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          strokeWidth={2}
+        />
+      </Pressable>
+
+      {expanded && sections.has("insights") ? (
         <View style={styles.insightCardStack}>
           {dashboard.insightCards.map((card) => (
             <InsightCard card={card} key={card.id} styles={styles} />
@@ -25,7 +56,7 @@ export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
         </View>
       ) : null}
 
-      {sections.has("weekly-comparison") || sections.has("trends") ? (
+      {expanded && (sections.has("weekly-comparison") || sections.has("trends")) ? (
         <View style={styles.comparisonGrid}>
           <ComparisonCard
             comparison={dashboard.weeklyComparison}
@@ -40,7 +71,7 @@ export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
         </View>
       ) : null}
 
-      {sections.has("habit-rankings") ? (
+      {expanded && sections.has("habit-rankings") ? (
         <View style={styles.rankingGrid}>
           <HabitRankingCard
             emptyText="Complete more scheduled days to rank habits."
@@ -55,10 +86,6 @@ export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
             styles={styles}
           />
         </View>
-      ) : null}
-
-      {sections.has("personal-bests") ? (
-        <PersonalBestStrip records={dashboard.personalBests} styles={styles} />
       ) : null}
 
       {sections.has("empty-state") ? (
@@ -202,33 +229,6 @@ function HabitRankingCard({ emptyText, habits, label, styles }) {
   );
 }
 
-function PersonalBestStrip({ records, styles }) {
-  if (records.length === 0) {
-    return null;
-  }
-
-  return (
-    <View style={styles.personalBestStrip}>
-      <AppText style={styles.personalBestTitle}>Personal bests</AppText>
-      {records.map((record) => (
-        <View
-          accessibilityLabel={`${record.title}. ${record.value}. ${record.description}`}
-          accessible
-          key={record.id}
-          style={styles.personalBestRow}
-        >
-          <AppText numberOfLines={1} style={styles.personalBestName}>
-            {record.title}
-          </AppText>
-          <AppText numberOfLines={1} style={styles.personalBestValue}>
-            {record.value}
-          </AppText>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 function getDirectionLabel(direction) {
   if (direction === "improving") {
     return "Improving";
@@ -334,6 +334,23 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
       marginTop: 2,
+    },
+    signalsToggle: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+      marginTop: v2Spacing.lg,
+      minHeight: 40,
+      paddingHorizontal: v2Spacing.md,
+    },
+    signalsToggleText: {
+      color: colors.primary,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     insightCardStack: {
       gap: v2Spacing.sm,
@@ -476,42 +493,6 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
       marginTop: 2,
-    },
-    personalBestStrip: {
-      backgroundColor: colors.card,
-      borderRadius: v2Radius.large,
-      padding: v2Spacing.lg,
-    },
-    personalBestTitle: {
-      color: colors.text,
-      fontSize: v2Typography.body.fontSize,
-      fontWeight: v2FontWeight.bold,
-      marginBottom: v2Spacing.xs,
-    },
-    personalBestRow: {
-      alignItems: "center",
-      borderTopColor: colors.border,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      flexDirection: "row",
-      gap: v2Spacing.md,
-      justifyContent: "space-between",
-      minHeight: 40,
-      paddingTop: v2Spacing.sm,
-    },
-    personalBestName: {
-      color: colors.muted,
-      flex: 1,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.medium,
-      minWidth: 0,
-    },
-    personalBestValue: {
-      color: colors.text,
-      flexShrink: 0,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.bold,
-      maxWidth: "46%",
-      textAlign: "right",
     },
     dashboardEmptyText: {
       backgroundColor: colors.card,

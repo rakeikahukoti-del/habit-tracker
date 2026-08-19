@@ -8,7 +8,6 @@ import {
   PeriodControl,
   PersonalRecordsSection,
   WeeklyReviewCard,
-  WeeklyVisual,
   YearActivityCard,
 } from "../components/stats";
 import {
@@ -98,15 +97,12 @@ export default function StatsScreen() {
 
           <Section title="Weekly review">
             <WeeklyReviewCard
+              days={progress.weeklySummary}
               expanded={weeklyDetailsExpanded}
               isSmallScreen={isSmallScreen}
               onToggle={() => setWeeklyDetailsExpanded((value) => !value)}
               review={weeklyReview}
             />
-          </Section>
-
-          <Section title="This week">
-            <WeeklyVisual days={progress.weeklySummary} isSmallScreen={isSmallScreen} />
           </Section>
 
           <Section title="Monthly summary">
