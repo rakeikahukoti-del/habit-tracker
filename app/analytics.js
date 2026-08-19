@@ -141,14 +141,6 @@ export default function AnalyticsScreen() {
             <Section title="Habit performance">
               <HabitPerformanceList items={analytics.habitPerformance} />
             </Section>
-
-            <Section title="Insights">
-              {analytics.insights.map((insight) => (
-                <AppText key={insight} style={styles.insightText}>
-                  {insight}
-                </AppText>
-              ))}
-            </Section>
           </>
         ) : null}
     </ScreenShell>
@@ -187,15 +179,6 @@ function createStyles(colors) {
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
-    },
-    insightText: {
-      backgroundColor: colors.card,
-      borderRadius: v2Radius.large,
-      color: colors.text,
-      fontSize: v2Typography.body.fontSize,
-      fontWeight: v2FontWeight.medium,
-      lineHeight: v2Typography.body.lineHeight,
-      padding: v2Spacing.lg,
     },
   });
 }

@@ -57,10 +57,6 @@ export default function InsightsDashboardSection({ dashboard, isSmallScreen }) {
         </View>
       ) : null}
 
-      {sections.has("personal-bests") ? (
-        <PersonalBestStrip records={dashboard.personalBests} styles={styles} />
-      ) : null}
-
       {sections.has("empty-state") ? (
         <AppText style={styles.dashboardEmptyText}>
           {dashboard.readiness.message}
@@ -198,33 +194,6 @@ function HabitRankingCard({ emptyText, habits, label, styles }) {
           </Pressable>
         ))
       )}
-    </View>
-  );
-}
-
-function PersonalBestStrip({ records, styles }) {
-  if (records.length === 0) {
-    return null;
-  }
-
-  return (
-    <View style={styles.personalBestStrip}>
-      <AppText style={styles.personalBestTitle}>Personal bests</AppText>
-      {records.map((record) => (
-        <View
-          accessibilityLabel={`${record.title}. ${record.value}. ${record.description}`}
-          accessible
-          key={record.id}
-          style={styles.personalBestRow}
-        >
-          <AppText numberOfLines={1} style={styles.personalBestName}>
-            {record.title}
-          </AppText>
-          <AppText numberOfLines={1} style={styles.personalBestValue}>
-            {record.value}
-          </AppText>
-        </View>
-      ))}
     </View>
   );
 }
@@ -476,42 +445,6 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
       marginTop: 2,
-    },
-    personalBestStrip: {
-      backgroundColor: colors.card,
-      borderRadius: v2Radius.large,
-      padding: v2Spacing.lg,
-    },
-    personalBestTitle: {
-      color: colors.text,
-      fontSize: v2Typography.body.fontSize,
-      fontWeight: v2FontWeight.bold,
-      marginBottom: v2Spacing.xs,
-    },
-    personalBestRow: {
-      alignItems: "center",
-      borderTopColor: colors.border,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      flexDirection: "row",
-      gap: v2Spacing.md,
-      justifyContent: "space-between",
-      minHeight: 40,
-      paddingTop: v2Spacing.sm,
-    },
-    personalBestName: {
-      color: colors.muted,
-      flex: 1,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.medium,
-      minWidth: 0,
-    },
-    personalBestValue: {
-      color: colors.text,
-      flexShrink: 0,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.bold,
-      maxWidth: "46%",
-      textAlign: "right",
     },
     dashboardEmptyText: {
       backgroundColor: colors.card,
