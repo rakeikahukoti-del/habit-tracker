@@ -1,12 +1,18 @@
 import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   View,
 } from "react-native";
+// Gesture-handler-aware FlatList, not react-native's own: this list hosts
+// HabitCard's RNGH Gesture.Pan() swipe, and the two only arbitrate reliably
+// against each other (native recognizer negotiation instead of RN's older
+// JS-thread responder heuristics) when the scroll container is also
+// gesture-handler-backed. Confirmed necessary, not just nicer, in the
+// Thread B RNGH feasibility survey.
+import { FlatList } from "react-native-gesture-handler";
 import EmptyState from "../EmptyState";
 import HabitCard from "../HabitCard";
 import { AppIcon, AppText } from "../ui";
