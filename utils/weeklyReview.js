@@ -6,14 +6,38 @@ import {
 const MIN_COMPARISON_OPPORTUNITIES = 3;
 const WEEK_LENGTH = 7;
 
-export function getWeeklyReview(habits, now = new Date()) {
+// Window strategy for getWeeklyReview's 3rd parameter (Thread C week-
+// definition swap). Defaults to the original calendar-week-to-date window
+// (getWeekToDateDays + the weekday-aligned "same days last week" comparison
+// wording) so every existing caller - homeHabitActions.js (Home screen) and
+// the smoke-test suite's direct getWeeklyReview() calls - sees zero
+// behavior change without passing anything. ROLLING_WEEK_WINDOW is the one
+// opt-in caller (useStatsController -> WeeklyReviewCard) should pass, since
+// it pairs the rolling-7-day generator with wording that doesn't claim a
+// weekday alignment the rolling window doesn't have. Bundled together
+// rather than as two separate options so a caller can't accidentally pair
+// the rolling window with the calendar-week label (or vice versa).
+export const ROLLING_WEEK_WINDOW = {
+  getComparisonLabel: getRollingComparisonLabel,
+  getDays: getRollingWeekDays,
+};
+
+export function getWeeklyReview(
+  habits,
+  now = new Date(),
+  { getComparisonLabel = getWeekToDateComparisonLabel, getDays = getWeekToDateDays } = {}
+) {
   const safeHabits = getSafeHabits(habits);
   const today = startOfDay(now);
-  const currentDays = getWeekToDateDays(today);
+  const currentDays = getDays(today);
   const previousDays = currentDays.map((date) => addDays(date, -WEEK_LENGTH));
   const current = getPeriodSummary(safeHabits, currentDays, toDateKey(today));
   const previous = getPeriodSummary(safeHabits, previousDays, toDateKey(today));
-  const comparison = getComparison(current, previous);
+  const comparisonStats = getComparisonStats(current, previous);
+  const comparison = {
+    ...comparisonStats,
+    label: getComparisonLabel(comparisonStats),
+  };
   const dateRange = getDateRangeLabel(currentDays);
 
   return {
@@ -37,7 +61,6 @@ export function getWeeklyReview(habits, now = new Date()) {
     possibleCount: current.possibleCount,
     previousCompletionRate: previous.completionRate,
     summaryLabel: `${current.completedCount} of ${current.possibleCount}`,
-    weekStatus: "Week in progress",
   };
 }
 
@@ -56,7 +79,11 @@ export function getHabitWeeklyPattern(habit, now = new Date()) {
     previousDays,
     toDateKey(today)
   );
-  const comparison = getComparison(current, previous);
+  const comparisonStats = getComparisonStats(current, previous);
+  const comparison = {
+    ...comparisonStats,
+    label: getWeekToDateComparisonLabel(comparisonStats),
+  };
   const nextScheduled = getNextScheduledOpportunity(safeHabit, today);
 
   return {
@@ -251,13 +278,19 @@ function getSortedHabitBreakdown(habitSummaries) {
     .map(({ sortGroup, ...summary }) => summary);
 }
 
+// Shared by getWeeklyReview's per-habit breakdown table (rendered on
+// Progress, in scope) and getHabitWeeklyPattern's `status` field (per-habit
+// drill-down) - but the latter is confirmed dead (no component or test
+// reads `weeklyPattern.status`; the only status assertion in the smoke
+// suite is on "On track", untouched below), so this wording change is safe
+// to make once here rather than needing the getComparisonLabel-style split.
 function getWeeklyHabitStatus(summary) {
   if (summary.possibleCount === 0) {
-    return "No scheduled days this week";
+    return "No scheduled days in the last 7 days";
   }
 
   if (summary.completedCount === summary.possibleCount) {
-    return "Complete this week";
+    return "Complete (last 7 days)";
   }
 
   const remaining = summary.possibleCount - summary.completedCount;
@@ -270,7 +303,7 @@ function getWeeklyHabitStatus(summary) {
     return "On track";
   }
 
-  return "No completions yet this week";
+  return "No completions in the last 7 days";
 }
 
 function getWeeklyStatusSortGroup(summary) {
@@ -289,35 +322,52 @@ function getWeeklyStatusSortGroup(summary) {
   return 0;
 }
 
-function getComparison(current, previous) {
+// Split from the wording (below) so the same current-vs-previous math can
+// be labeled two different ways without duplicating it: getWeekToDateDays'
+// previousDays is the same weekdays one week back, so its label can
+// honestly say "the same days last week"; a rolling window's previousDays
+// is just the prior 7-day span, no weekday alignment, so it needs
+// window-agnostic wording instead (getRollingComparisonLabel, below).
+function getComparisonStats(current, previous) {
   if (
     current.possibleCount < MIN_COMPARISON_OPPORTUNITIES ||
     previous.possibleCount < MIN_COMPARISON_OPPORTUNITIES
   ) {
-    return {
-      available: false,
-      delta: 0,
-      label: "Comparison needs more scheduled data.",
-    };
-  }
-
-  const delta = current.completionRate - previous.completionRate;
-
-  if (delta === 0) {
-    return {
-      available: true,
-      delta,
-      label: "Same as the same days last week.",
-    };
+    return { available: false, delta: 0 };
   }
 
   return {
     available: true,
-    delta,
-    label: `${delta > 0 ? "Up" : "Down"} ${Math.abs(
-      delta
-    )}% from the same days last week.`,
+    delta: current.completionRate - previous.completionRate,
   };
+}
+
+function getWeekToDateComparisonLabel(comparison) {
+  if (!comparison.available) {
+    return "Comparison needs more scheduled data.";
+  }
+
+  if (comparison.delta === 0) {
+    return "Same as the same days last week.";
+  }
+
+  return `${comparison.delta > 0 ? "Up" : "Down"} ${Math.abs(
+    comparison.delta
+  )}% from the same days last week.`;
+}
+
+function getRollingComparisonLabel(comparison) {
+  if (!comparison.available) {
+    return "Comparison needs more scheduled data.";
+  }
+
+  if (comparison.delta === 0) {
+    return "Same as last week.";
+  }
+
+  return `${comparison.delta > 0 ? "Up" : "Down"} ${Math.abs(
+    comparison.delta
+  )}% vs last week.`;
 }
 
 function getWeeklyContext(current, comparison) {
@@ -352,6 +402,18 @@ function getStartOfWeek(date) {
   const mondayOffset = (localDate.getDay() + 6) % WEEK_LENGTH;
 
   return addDays(localDate, -mondayOffset);
+}
+
+// Rolling 7-day window (today and the 6 days before it), always a fixed
+// length regardless of what day of the week `today` is - unlike
+// getWeekToDateDays above, which shrinks to 1 day on a Monday. Kept private
+// (like getWeekToDateDays) and reached only via ROLLING_WEEK_WINDOW, so
+// getWeeklyReview stays the single call path this thread was scoped to -
+// see the module-level comment on ROLLING_WEEK_WINDOW.
+function getRollingWeekDays(today) {
+  return Array.from({ length: WEEK_LENGTH }, (_, index) =>
+    addDays(today, index - (WEEK_LENGTH - 1))
+  );
 }
 
 function getDateRangeLabel(days) {

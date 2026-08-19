@@ -9,7 +9,7 @@ import {
 } from "../utils/activityHistory";
 import { getProgressOverview } from "../utils/habitStats";
 import { getAnalyticsAggregates } from "../utils/personalRecords";
-import { getWeeklyReview } from "../utils/weeklyReview";
+import { ROLLING_WEEK_WINDOW, getWeeklyReview } from "../utils/weeklyReview";
 
 export function useStatsController() {
   const [period, setPeriod] = useState("month");
@@ -67,7 +67,10 @@ export function useStatsController() {
     () => getProgressOverview(habits, period, gamification),
     [gamification, habits, period]
   );
-  const weeklyReview = useMemo(() => getWeeklyReview(habits), [habits]);
+  const weeklyReview = useMemo(
+    () => getWeeklyReview(habits, new Date(), ROLLING_WEEK_WINDOW),
+    [habits]
+  );
   const analyticsAggregates = useMemo(
     () => getAnalyticsAggregates(habits, gamification),
     [gamification, habits]

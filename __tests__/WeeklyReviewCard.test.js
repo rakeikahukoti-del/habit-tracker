@@ -10,17 +10,18 @@ import WeeklyReviewCard from "../components/stats/WeeklyReviewCard";
 const review = {
   activeDaysLabel: "3 active days",
   bestHabit: null,
-  breakdown: [],
+  breakdown: [
+    { completedCount: 7, id: "h1", name: "Drink water", possibleCount: 7, status: "Complete (last 7 days)" },
+  ],
   comparison: { available: true, label: "+5% vs last week" },
   completedCount: 10,
   completionRateLabel: "71%",
   context: "Keep completing habits to build this week's summary.",
-  dateRange: "Mon 3 - Sun 9",
+  dateRange: "3 Aug - 9 Aug",
   focusHabit: null,
   missedCount: 4,
   possibleCount: 14,
   summaryLabel: "10 of 14",
-  weekStatus: "Week in progress",
 };
 
 const days = [
@@ -94,5 +95,83 @@ describe("WeeklyReviewCard dot row", () => {
     );
 
     expect(await screen.findAllByLabelText(/: 0 of 0 completed/)).toHaveLength(7);
+  });
+});
+
+// Covers the week-definition swap's copy changes (Thread C follow-up -
+// utils/weeklyReview.js / components/stats/WeeklyReviewCard.js): wording
+// that assumed a resettable calendar-week boundary either dropped ("Week
+// in progress") or reworded to be window-agnostic ("Open so far" -> "Open",
+// per-habit breakdown status strings). `review` here already carries the
+// wording getWeeklyReview would produce for the rolling window (see
+// utils/weeklyReview.js's getRollingComparisonLabel/getWeeklyHabitStatus) -
+// this suite is about what the card does with that data, not re-deriving
+// it; utils/weeklyReview.js's own coverage in scripts/logic-smoke-test.cjs
+// verifies the data layer.
+describe("WeeklyReviewCard week-definition copy", () => {
+  test("collapsed tile reads 'Open', not 'Open so far'", async () => {
+    renderWithProviders(
+      <WeeklyReviewCard
+        days={days}
+        expanded={false}
+        isSmallScreen={false}
+        onToggle={jest.fn()}
+        review={review}
+      />
+    );
+
+    expect(await screen.findByText("Open")).toBeTruthy();
+    expect(screen.queryByText("Open so far")).toBeNull();
+  });
+
+  test("expanded view has no 'Week status' row and never renders 'Week in progress'", async () => {
+    renderWithProviders(
+      <WeeklyReviewCard
+        days={days}
+        expanded
+        isSmallScreen={false}
+        onToggle={jest.fn()}
+        review={review}
+      />
+    );
+
+    expect(await screen.findByText("Date range")).toBeTruthy();
+    expect(screen.queryByText("Week status")).toBeNull();
+    expect(screen.queryByText("Week in progress")).toBeNull();
+    expect(screen.queryByLabelText(/Week in progress/)).toBeNull();
+  });
+
+  test("per-habit breakdown row shows window-agnostic status text", async () => {
+    renderWithProviders(
+      <WeeklyReviewCard
+        days={days}
+        expanded
+        isSmallScreen={false}
+        onToggle={jest.fn()}
+        review={review}
+      />
+    );
+
+    expect(await screen.findByText("Complete (last 7 days)")).toBeTruthy();
+    expect(screen.queryByText("Complete this week")).toBeNull();
+  });
+
+  test("composite header accessibility label omits weekStatus cleanly (no stray 'undefined')", async () => {
+    renderWithProviders(
+      <WeeklyReviewCard
+        days={days}
+        expanded={false}
+        isSmallScreen={false}
+        onToggle={jest.fn()}
+        review={review}
+      />
+    );
+
+    const header = await screen.findByLabelText(/^Weekly review\./);
+
+    expect(header.props.accessibilityLabel).not.toMatch(/undefined/);
+    expect(header.props.accessibilityLabel).toBe(
+      "Weekly review. 3 Aug - 9 Aug. 10 of 14 scheduled opportunities completed. 71%. 3 active days. +5% vs last week"
+    );
   });
 });

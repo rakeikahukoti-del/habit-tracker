@@ -20,7 +20,7 @@ export default function WeeklyReviewCard({
   return (
     <View style={styles.reviewCard}>
       <View
-        accessibilityLabel={`Weekly review. ${review.dateRange}. ${review.weekStatus}. ${review.summaryLabel} scheduled opportunities completed. ${review.completionRateLabel}. ${review.activeDaysLabel}. ${review.comparison.label}`}
+        accessibilityLabel={`Weekly review. ${review.dateRange}. ${review.summaryLabel} scheduled opportunities completed. ${review.completionRateLabel}. ${review.activeDaysLabel}. ${review.comparison.label}`}
         accessible
         style={styles.reviewHeader}
       >
@@ -39,7 +39,7 @@ export default function WeeklyReviewCard({
       <View style={styles.reviewStats}>
         <ReviewStat label="Active days" value={review.activeDaysLabel} styles={styles} />
         <ReviewStat
-          label="Open so far"
+          label="Open"
           value={review.missedCount}
           styles={styles}
         />
@@ -132,11 +132,6 @@ function WeeklyReviewDetails({ review, styles }) {
     >
       <View style={styles.reviewDetailGrid}>
         <ReviewStat label="Date range" value={review.dateRange} styles={styles} />
-        <ReviewStat
-          label="Week status"
-          value={review.weekStatus}
-          styles={styles}
-        />
         <ReviewStat
           label="Scheduled"
           value={review.possibleCount}
