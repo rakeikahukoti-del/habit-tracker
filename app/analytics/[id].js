@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
 import { router } from "expo-router";
 import {
+  AnalyticsError,
   HabitAnalyticsHeader,
   HabitConsistencyCard,
   HabitHeroSection,
@@ -19,7 +20,7 @@ import {
   ScreenShell,
   Section,
 } from "../../components/ui";
-import { v2Breakpoints, v2CompactSpacing, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import { v2Breakpoints, v2FontWeight, v2Layout, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { useTheme } from "../../context/ThemeContext";
 import { useHabitAnalyticsController } from "../../hooks/useHabitAnalyticsController";
 
@@ -39,6 +40,7 @@ export default function IndividualAnalyticsScreen() {
     loading,
     milestones,
     readiness,
+    retry,
     weeklyPattern,
   } = useHabitAnalyticsController();
 
@@ -53,7 +55,9 @@ export default function IndividualAnalyticsScreen() {
           <BackIcon color={colors.text} />
         </IconButton>
 
-        {error ? <AppText style={styles.errorBanner}>{error}</AppText> : null}
+        {!loading && error ? (
+          <AnalyticsError message={error} onRetry={retry} />
+        ) : null}
 
         {loading ? (
           <View style={styles.loadingCard}>
@@ -193,16 +197,6 @@ function createStyles(colors) {
       color: colors.muted,
       fontSize: v2Typography.body.fontSize,
       fontWeight: v2FontWeight.medium,
-    },
-    errorBanner: {
-      backgroundColor: colors.dangerSoft,
-      borderRadius: v2Radius.small,
-      color: colors.danger,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.medium,
-      marginBottom: 12,
-      paddingHorizontal: v2CompactSpacing.md,
-      paddingVertical: v2CompactSpacing.sm,
     },
     emptyCard: {
       backgroundColor: colors.card,

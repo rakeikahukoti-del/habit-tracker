@@ -19,6 +19,10 @@ export function useHabitAnalyticsController() {
   const [habit, setHabit] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Bumped only by retry() below, never by a plain refocus - keeps this
+  // screen's existing no-flash-on-refocus behavior intact while still
+  // giving AnalyticsError's "Try again" button a real reload to trigger.
+  const [reloadRequest, setReloadRequest] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,8 +55,13 @@ export function useHabitAnalyticsController() {
       return () => {
         isActive = false;
       };
-    }, [id])
+    }, [id, reloadRequest])
   );
+
+  const retry = useCallback(() => {
+    setLoading(true);
+    setReloadRequest((value) => value + 1);
+  }, []);
 
   const analytics = useMemo(
     () => (habit ? getHabitPerformance(habit, "month") : null),
@@ -98,6 +107,7 @@ export function useHabitAnalyticsController() {
     loading,
     milestones,
     readiness,
+    retry,
     weeklyPattern,
   };
 }
@@ -124,6 +134,13 @@ function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+// HabitWeekCard's "Next scheduled" row already shows
+// weeklyPattern.nextScheduled.label verbatim two sections below this card,
+// so the ordinary case here falls back to `guidance` (streak/pattern
+// guidance from getHabitAnalyticsGuidance) instead of repeating that same
+// sentence - see Phase 12 Finding B. The "today" and "week complete"
+// branches stay schedule-specific and aren't verbatim repeats of the Week
+// card's text, so they're untouched.
 function getHabitFocusGuidance(guidance, weeklyPattern) {
   if (!weeklyPattern?.nextScheduled?.available) {
     return guidance;
@@ -137,5 +154,5 @@ function getHabitFocusGuidance(guidance, weeklyPattern) {
     return `${weeklyPattern.nextScheduled.label}. This week is complete so far.`;
   }
 
-  return weeklyPattern.nextScheduled.label;
+  return guidance;
 }
