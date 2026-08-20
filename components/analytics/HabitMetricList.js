@@ -12,7 +12,7 @@ export default function HabitMetricList({ bestStreak, completedCount, currentStr
     <View style={styles.metricList}>
       <MetricRow label="Current streak" value={currentStreak} styles={styles} />
       <MetricRow label="Best streak" value={bestStreak} styles={styles} />
-      <MetricRow label="Total completions" value={completedCount} styles={styles} />
+      <MetricRow label="Completions (30 days)" value={completedCount} styles={styles} />
     </View>
   );
 }
