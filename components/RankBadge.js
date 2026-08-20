@@ -15,8 +15,9 @@ const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"];
 //
 // Reference backgrounds, the tightest real case per theme (not just the
 // card): light theme's #F6F6F6 screen background (RankHero and
-// DailyProgressionPanel's "mini" instances sit directly on it, and it's
-// tighter than the white card every other light-theme surface uses); dark
+// DailyProgressionPanel's "mini" instances sit directly on it, and it was
+// tighter than the white card every other light-theme surface used - see
+// the Phase 11 Thread E note below for why that's no longer true); dark
 // theme's #1C1C1E card, the same reference BadgeMedal.js uses.
 //
 //  - Silver/Gold/Platinum/Diamond (pale-to-mid by design, tuned for the
@@ -25,11 +26,26 @@ const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master"];
 //  - Master's border is tuned for light and drops under 3:1 against the
 //    dark card, the same shape as BadgeMedal.js's Master issue.
 //  - Bronze needs no override: clears 3:1 against both themes as authored.
+//
+// Re-tuned again in Phase 11 Thread E, same root cause and same discovery
+// process as BadgeMedal.js's matching note: the light-theme card fill
+// moved (#FFFFFF -> #CBCBCB), which flips which reference is actually
+// tightest - card is now darker than the #F6F6F6 background it used to be
+// lighter than, so it's the binding constraint here now, not background.
+// Checked all six tiers against the new card rather than assuming the
+// background-tuned values still covered it - they didn't: every tier
+// except Master (already comfortably clear at 4.63:1) dropped to
+// 2.2-2.3:1 against the new card, including Bronze, which had never
+// needed an override before. All five re-tuned the same way as the
+// existing fixes above - darken along the same hue, verified against both
+// the new card and the still-unchanged background (both stay well clear
+// of 3:1 at the new values).
 const tierBorderLightOverrides = {
-  Silver: "#77869B",
-  Gold: "#9E813D",
-  Platinum: "#558EAF",
-  Diamond: "#3C909E",
+  Bronze: "#916742",
+  Diamond: "#337985",
+  Gold: "#856D34",
+  Platinum: "#457592",
+  Silver: "#637186",
 };
 const tierBorderDarkOverrides = {
   Master: "#C1434E",
