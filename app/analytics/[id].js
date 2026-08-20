@@ -88,7 +88,11 @@ export default function IndividualAnalyticsScreen() {
             />
 
             {habitStrength ? (
-              <HabitConsistencyCard isSmallScreen={isSmallScreen} strength={habitStrength} />
+              <HabitConsistencyCard
+                completionRate={analytics.completionRate}
+                isSmallScreen={isSmallScreen}
+                strength={habitStrength}
+              />
             ) : null}
 
             <HabitMetricList
