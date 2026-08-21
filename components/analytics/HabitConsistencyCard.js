@@ -4,7 +4,17 @@ import { AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 
-export default function HabitConsistencyCard({ isSmallScreen, strength }) {
+// completionRate is passed in separately rather than read off `strength` -
+// it's the same 30-day scheduled-completion rate HabitHeroSection already
+// computed via getHabitPerformance, reused here instead of letting
+// getHabitStrength's own independent last30 calculation (kept for
+// `strength.score`'s ranking use elsewhere) also drive a second, separately
+// computed number for display. See Phase 12 Finding D.
+export default function HabitConsistencyCard({
+  completionRate,
+  isSmallScreen,
+  strength,
+}) {
   const { colors } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, { isSmallScreen }),
@@ -13,7 +23,7 @@ export default function HabitConsistencyCard({ isSmallScreen, strength }) {
 
   return (
     <View
-      accessibilityLabel={`Habit consistency. Last 30 days ${strength.completionRate} percent. Last 7 days ${strength.weeklyRate} percent. Trend ${getHabitTrendLabel(strength.trend)}.`}
+      accessibilityLabel={`Habit consistency. Last 30 days ${completionRate} percent. Last 7 days ${strength.weeklyRate} percent. Trend ${getHabitTrendLabel(strength.trend)}.`}
       accessible
       style={styles.consistencyCard}
     >
@@ -21,7 +31,7 @@ export default function HabitConsistencyCard({ isSmallScreen, strength }) {
         <View style={styles.consistencyMain}>
           <AppText style={styles.consistencyLabel}>Consistency</AppText>
           <AppText style={styles.consistencyValue}>
-            {strength.completionRate}%
+            {completionRate}%
           </AppText>
         </View>
         <AppText style={styles.consistencyPill}>
