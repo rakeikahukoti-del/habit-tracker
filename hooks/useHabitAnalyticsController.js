@@ -7,6 +7,7 @@ import {
 } from "../utils/analyticsReadiness";
 import {
   getHabitPerformance,
+  getScheduleAwareWeeklyProgress,
   getTodayKey,
   toDateKey,
 } from "../utils/habitStats";
@@ -95,6 +96,10 @@ export function useHabitAnalyticsController() {
     () => (habit ? getHabitStrength(habit) : null),
     [habit]
   );
+  const scheduleAwareWeeklyProgress = useMemo(
+    () => (habit ? getScheduleAwareWeeklyProgress(habit) : []),
+    [habit]
+  );
 
   return {
     analytics,
@@ -108,6 +113,7 @@ export function useHabitAnalyticsController() {
     milestones,
     readiness,
     retry,
+    scheduleAwareWeeklyProgress,
     weeklyPattern,
   };
 }

@@ -39,6 +39,26 @@ export function getWeeklyProgress(habit) {
   }));
 }
 
+// Schedule-aware variant of getWeeklyProgress, adding a `scheduled` flag
+// per day - built for the per-habit drill-down screen's dedicated "Last 7
+// days" dot row (app/analytics/[id].js) specifically, not as a replacement
+// for getWeeklyProgress: HabitCard's and HabitPerformanceList's dot rows
+// (both via ProgressDots, both fed by getWeeklyProgress/getHabitPerformance)
+// stay exactly as they render today - widening getWeeklyProgress itself
+// would change those two call sites' output too, outside this fix's scope.
+// Reuses isHabitScheduledOnDate, the same schedule-filtering check
+// getWeeklyCompletionSummary below (WeeklyReviewCard's own dot-row data)
+// already uses, rather than a new schedule-detection rule.
+export function getScheduleAwareWeeklyProgress(habit) {
+  const completedSet = new Set(getCompletedDates(habit));
+
+  return getWeekDays().map((day) => ({
+    ...day,
+    completed: completedSet.has(day.dateKey),
+    scheduled: isHabitScheduledOnDate(habit, day.dateKey),
+  }));
+}
+
 export function getStatsSummary(habits) {
   const safeHabits = getSafeHabits(habits);
   const weekDays = getWeekDays();

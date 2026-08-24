@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import {
   AnalyticsError,
   HabitAnalyticsHeader,
-  HabitConsistencyCard,
   HabitHeroSection,
   HabitMetricList,
   HabitMiniTrend,
@@ -41,6 +40,7 @@ export default function IndividualAnalyticsScreen() {
     milestones,
     readiness,
     retry,
+    scheduleAwareWeeklyProgress,
     weeklyPattern,
   } = useHabitAnalyticsController();
 
@@ -91,14 +91,6 @@ export default function IndividualAnalyticsScreen() {
               readiness={readiness}
             />
 
-            {habitStrength ? (
-              <HabitConsistencyCard
-                completionRate={analytics.completionRate}
-                isSmallScreen={isSmallScreen}
-                strength={habitStrength}
-              />
-            ) : null}
-
             <HabitMetricList
               bestStreak={analytics.bestStreak}
               completedCount={analytics.completedCount}
@@ -115,7 +107,11 @@ export default function IndividualAnalyticsScreen() {
             </View>
 
             <Section title="This week">
-              <HabitWeekCard isSmallScreen={isSmallScreen} pattern={weeklyPattern} />
+              <HabitWeekCard
+                isSmallScreen={isSmallScreen}
+                pattern={weeklyPattern}
+                strength={habitStrength}
+              />
             </Section>
 
             {milestones ? (
@@ -126,7 +122,7 @@ export default function IndividualAnalyticsScreen() {
 
             <Section title="Last 7 days">
               <View style={styles.weekCard}>
-                <ProgressDots days={analytics.weeklyProgress} compact />
+                <ProgressDots days={scheduleAwareWeeklyProgress} compact />
               </View>
             </Section>
 
