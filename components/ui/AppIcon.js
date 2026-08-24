@@ -39,6 +39,21 @@ const SVG_ICON_DEFS = {
     // sunburst instead of a gear at 23px.
     teeth: [0, 45, 90, 135, 180, 225, 270, 315],
   },
+  // Phase 13 Initiative 1: replaces the old View-based flame (a rotated,
+  // asymmetric-corner-radius, border-only outline) - confirmed to collapse
+  // into an illegible blob at its real usage sizes (15-22px) because the
+  // stroke consumed most of the already-tiny shape. A solid fill, like
+  // `analytics`'s bars above, doesn't have that failure mode: the silhouette
+  // stays legible down to the smallest real call site (HabitCard's 15px
+  // streak badge) because there's no stroke width to collapse. One asymmetric
+  // teardrop (wide belly, curled tip) plus a small inward pinch on the right
+  // for the classic flicker - kept generous/rounded rather than a thin notch,
+  // since fine detail is exactly what was illegible before.
+  flame: {
+    fills: [
+      "M13.2 3 C11 5.3 8 8.6 7.6 12.5 C7.2 16.3 9.3 19.4 12.2 20.6 C15.2 21.8 18.4 20 18.6 16.5 C18.7 14 17.1 12.2 15.3 11.2 C16.3 10 16.2 8.2 15.4 6.8 C15 8 14.2 8.7 13.6 8.2 C14 6.4 14.2 4.5 13.2 3 Z",
+    ],
+  },
 };
 SVG_ICON_DEFS.trophy = SVG_ICON_DEFS.rank;
 
@@ -194,15 +209,6 @@ function renderIcon(name, styles) {
                 : styles.chevronDownRight,
           ]}
         />
-      </>
-    );
-  }
-
-  if (name === "flame") {
-    return (
-      <>
-        <View style={[styles.outline, styles.flameOuter]} />
-        <View style={[styles.fill, styles.flameInner]} />
       </>
     );
   }
@@ -368,24 +374,6 @@ function createStyles(color, size, strokeWidth) {
       top: 14 * unit,
       transform: [{ rotate: "45deg" }],
       width: 9 * unit,
-    },
-    flameOuter: {
-      borderBottomLeftRadius: 9 * unit,
-      borderBottomRightRadius: 9 * unit,
-      borderTopLeftRadius: 12 * unit,
-      borderTopRightRadius: 5 * unit,
-      height: 17 * unit,
-      left: 6 * unit,
-      top: 3 * unit,
-      transform: [{ rotate: "18deg" }],
-      width: 12 * unit,
-    },
-    flameInner: {
-      borderRadius: 999,
-      height: 5 * unit,
-      left: 10 * unit,
-      top: 12 * unit,
-      width: 4 * unit,
     },
     starA: {
       left: 5 * unit,

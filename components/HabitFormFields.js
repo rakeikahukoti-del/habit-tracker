@@ -360,7 +360,13 @@ function createStyles(colors, isSmallScreen) {
     segmentButton: {
       alignItems: "center",
       borderRadius: v2Radius.medium,
-      flexBasis: isSmallScreen ? "48%" : 0,
+      // 100%, not 48% - this is a 3-item row (Daily/Weekdays/Custom), and a
+      // 2-up basis wraps unevenly (2 on row one, 1 stretched alone on row
+      // two) below the breakpoint. Matches every sibling call site on this
+      // same isSmallScreen breakpoint (AchievementsSection.js,
+      // YearActivityCard.js, InsightsDashboardSection.js, KeyMetricsGrid.js),
+      // which all stack single-column instead.
+      flexBasis: isSmallScreen ? "100%" : 0,
       flexGrow: 1,
       justifyContent: "center",
       minHeight: v2Layout.minTapTarget,
