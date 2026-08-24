@@ -111,15 +111,20 @@ export default function MonthlyActivityCard({
       {monthSummary.strongestHabit || monthSummary.mostImprovedHabit ? (
         <View style={styles.monthInsightList}>
           {monthSummary.strongestHabit ? (
-            <AppText style={styles.monthInsightText}>
-              Strongest: {monthSummary.strongestHabit.name} at{" "}
-              {monthSummary.strongestHabit.completionRate}%
-            </AppText>
+            <InsightRow
+              badge="Strongest"
+              name={monthSummary.strongestHabit.name}
+              styles={styles}
+              value={`${monthSummary.strongestHabit.completionRate}%`}
+            />
           ) : null}
           {monthSummary.mostImprovedHabit ? (
-            <AppText style={styles.monthInsightText}>
-              Most improved: {monthSummary.mostImprovedHabit.name} +{monthSummary.mostImprovedHabit.improvement}%
-            </AppText>
+            <InsightRow
+              badge="Most improved"
+              name={monthSummary.mostImprovedHabit.name}
+              styles={styles}
+              value={`+${monthSummary.mostImprovedHabit.improvement}%`}
+            />
           ) : null}
         </View>
       ) : (
@@ -136,6 +141,27 @@ function CompactMetric({ label, styles, value }) {
     <View style={styles.compactMetric}>
       <AppText style={styles.compactMetricValue}>{value}</AppText>
       <AppText style={styles.compactMetricLabel}>{label}</AppText>
+    </View>
+  );
+}
+
+// Shrunk from a full sentence ("Strongest: {name} at {rate}%") to a badge
+// + name + value row (Phase 13 text-density pass) - same information,
+// scannable at a glance instead of read as prose.
+function InsightRow({ badge, name, styles, value }) {
+  return (
+    <View
+      accessibilityLabel={`${badge}: ${name}, ${value}`}
+      accessible
+      style={styles.insightRow}
+    >
+      <View style={styles.insightBadge}>
+        <AppText style={styles.insightBadgeText}>{badge}</AppText>
+      </View>
+      <AppText numberOfLines={1} style={styles.insightName}>
+        {name}
+      </AppText>
+      <AppText style={styles.insightValue}>{value}</AppText>
     </View>
   );
 }
@@ -221,15 +247,41 @@ function createStyles(colors) {
     monthInsightList: {
       borderTopColor: colors.border,
       borderTopWidth: StyleSheet.hairlineWidth,
-      gap: v2Spacing.xs,
+      gap: v2Spacing.sm,
       marginTop: v2Spacing.lg,
       paddingTop: v2Spacing.md,
     },
-    monthInsightText: {
+    insightRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: v2Spacing.sm,
+    },
+    insightBadge: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: v2Radius.pill,
+      borderWidth: 1,
+      flexShrink: 0,
+      paddingHorizontal: v2Spacing.sm,
+      paddingVertical: 3,
+    },
+    insightBadgeText: {
+      color: colors.muted,
+      fontSize: v2Typography.caption.fontSize,
+      fontWeight: v2FontWeight.bold,
+    },
+    insightName: {
       color: colors.text,
+      flex: 1,
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.medium,
-      lineHeight: v2Typography.label.lineHeight,
+      minWidth: 0,
+    },
+    insightValue: {
+      color: colors.text,
+      flexShrink: 0,
+      fontSize: v2Typography.label.fontSize,
+      fontWeight: v2FontWeight.bold,
     },
     monthEmptyText: {
       color: colors.muted,

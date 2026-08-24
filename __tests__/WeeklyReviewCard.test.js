@@ -141,7 +141,13 @@ describe("WeeklyReviewCard week-definition copy", () => {
     expect(screen.queryByLabelText(/Week in progress/)).toBeNull();
   });
 
-  test("per-habit breakdown row shows window-agnostic status text", async () => {
+  // habit.status's visible text was dropped from this row (Phase 13
+  // text-density pass - rate% + count already say the same thing), so
+  // this now checks the accessibilityLabel instead of visible text. Keeps
+  // this test's original purpose: guarding that the window-agnostic
+  // wording ("last 7 days", not "this week") is what actually reaches
+  // the user, screen-reader or not.
+  test("per-habit breakdown row's accessibility label uses window-agnostic status text", async () => {
     renderWithProviders(
       <WeeklyReviewCard
         days={days}
@@ -152,8 +158,11 @@ describe("WeeklyReviewCard week-definition copy", () => {
       />
     );
 
-    expect(await screen.findByText("Complete (last 7 days)")).toBeTruthy();
-    expect(screen.queryByText("Complete this week")).toBeNull();
+    expect(
+      await screen.findByLabelText(/Complete \(last 7 days\)/)
+    ).toBeTruthy();
+    expect(screen.queryByLabelText(/Complete this week/)).toBeNull();
+    expect(screen.queryByText("Complete (last 7 days)")).toBeNull();
   });
 
   test("composite header accessibility label omits weekStatus cleanly (no stray 'undefined')", async () => {

@@ -91,6 +91,11 @@ export default function WeeklyReviewCard({
 // used; `review`'s own day data (`review.days`, week-to-date from Monday)
 // is a different date range with no `label` field, so it isn't a drop-in
 // substitute here - see the commit message for why this wasn't reconciled.
+//
+// The per-dot "completedCount/totalHabits" caption that used to sit under
+// each dot was dropped (Phase 13 text-density pass) - the dot's own fill
+// state (empty/partial/complete) already carries that, and the count is
+// still available to screen readers via this row's accessibilityLabel.
 function WeekDotRow({ days, styles }) {
   return (
     <View style={styles.weekDotRow}>
@@ -113,9 +118,6 @@ function WeekDotRow({ days, styles }) {
                 complete && styles.weekDotComplete,
               ]}
             />
-            <AppText style={styles.weekDotCount}>
-              {day.completedCount}/{day.totalHabits}
-            </AppText>
           </View>
         );
       })}
@@ -181,6 +183,10 @@ function WeeklyReviewDetails({ review, styles }) {
   );
 }
 
+// habit.status (a sentence like "Completed 4 of 5 scheduled days") was
+// dropped from the visible row (Phase 13 text-density pass) - the rate%
+// and count on the right already say the same thing. Still read out via
+// this row's accessibilityLabel.
 function WeeklyHabitBreakdownRow({ habit, styles }) {
   return (
     <View
@@ -192,7 +198,6 @@ function WeeklyHabitBreakdownRow({ habit, styles }) {
         <AppText numberOfLines={2} style={styles.breakdownName}>
           {habit.name}
         </AppText>
-        <AppText style={styles.breakdownStatus}>{habit.status}</AppText>
       </View>
       <View style={styles.breakdownMetric}>
         <AppText style={styles.breakdownRate}>{habit.completionRate}%</AppText>
@@ -308,11 +313,6 @@ function createStyles(colors, { isSmallScreen }) {
     weekDotComplete: {
       backgroundColor: colors.text,
       borderColor: colors.text,
-    },
-    weekDotCount: {
-      color: colors.muted,
-      fontSize: v2Typography.navigationLabel.fontSize,
-      fontWeight: v2FontWeight.medium,
     },
     reviewStats: {
       flexDirection: "row",
@@ -441,13 +441,6 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.label.fontSize,
       fontWeight: v2FontWeight.bold,
       lineHeight: 18,
-    },
-    breakdownStatus: {
-      color: colors.muted,
-      fontSize: v2Typography.caption.fontSize,
-      fontWeight: v2FontWeight.medium,
-      lineHeight: 16,
-      marginTop: 3,
     },
     breakdownMetric: {
       alignItems: "flex-end",

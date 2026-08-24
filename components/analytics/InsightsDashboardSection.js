@@ -59,11 +59,13 @@ export default function InsightsDashboardSection({
       {expanded && (sections.has("weekly-comparison") || sections.has("trends")) ? (
         <View style={styles.comparisonGrid}>
           <ComparisonCard
+            colors={colors}
             comparison={dashboard.weeklyComparison}
             label="This week"
             styles={styles}
           />
           <ComparisonCard
+            colors={colors}
             comparison={dashboard.monthlyComparison}
             label="This month"
             styles={styles}
@@ -154,6 +156,12 @@ function SmallDashboardMetric({ label, styles, value }) {
   );
 }
 
+// A small tone-colored dot next to the label, so tone isn't carried by
+// the pill word alone (Phase 13 text-density pass) - color is the
+// standard way this app's design tokens (v2Colors success/warning) signal
+// tone elsewhere, so this reuses that convention rather than inventing a
+// new one. Body sentence is untouched: it's the card's actual content,
+// not a restatement of anything else on screen.
 function InsightCard({ card, styles }) {
   return (
     <View
@@ -162,7 +170,12 @@ function InsightCard({ card, styles }) {
       style={styles.dashboardInsightCard}
     >
       <View style={styles.dashboardInsightHeader}>
-        <AppText style={styles.dashboardInsightLabel}>{card.label}</AppText>
+        <View style={styles.dashboardInsightLabelRow}>
+          <View
+            style={[styles.toneDot, styles[`toneDot_${getToneColorKey(card.tone)}`]]}
+          />
+          <AppText style={styles.dashboardInsightLabel}>{card.label}</AppText>
+        </View>
         <AppText style={styles.dashboardInsightTone}>
           {getToneLabel(card.tone)}
         </AppText>
@@ -172,22 +185,43 @@ function InsightCard({ card, styles }) {
   );
 }
 
-function ComparisonCard({ comparison, label, styles }) {
+// Improving/declining get a directional chevron instead of spelling the
+// word out (Phase 13 text-density pass), matching KeyMetricsGrid's trend
+// indicator on the main Analytics screen. Stable/building keep a short
+// word - there's no natural "flat" arrow, same reasoning KeyMetricsGrid
+// uses for its own stable/no-data case.
+function ComparisonCard({ colors, comparison, label, styles }) {
   const summary = comparison.available
     ? comparison.summary
     : "Needs more scheduled data";
+  const direction = comparison.direction;
+  const directionIcon =
+    direction === "improving"
+      ? "chevron-up"
+      : direction === "declining"
+        ? "chevron-down"
+        : null;
 
   return (
     <View
-      accessibilityLabel={`${label}. ${comparison.rate} percent. ${summary}.`}
+      accessibilityLabel={`${label}. ${comparison.rate} percent. ${getDirectionLabel(direction)}. ${summary}.`}
       accessible
       style={styles.comparisonCard}
     >
       <View style={styles.comparisonTopRow}>
         <AppText style={styles.comparisonLabel}>{label}</AppText>
-        <AppText style={styles.comparisonDirection}>
-          {getDirectionLabel(comparison.direction)}
-        </AppText>
+        {directionIcon ? (
+          <AppIcon
+            color={colors.text}
+            name={directionIcon}
+            size={14}
+            strokeWidth={2.4}
+          />
+        ) : (
+          <AppText style={styles.comparisonDirection}>
+            {getDirectionLabel(direction)}
+          </AppText>
+        )}
       </View>
       <AppText style={styles.comparisonValue}>{comparison.rate}%</AppText>
       <AppText style={styles.comparisonSummary}>{summary}</AppText>
@@ -195,6 +229,11 @@ function ComparisonCard({ comparison, label, styles }) {
   );
 }
 
+// Adds a thin completion-rate bar to each ranked habit, matching
+// HabitPerformanceList's bar convention for the same conceptual data
+// (completion rate) on the main Analytics screen - visual consistency
+// across the two rather than this card being the one place that data
+// shows up as text only (Phase 13 text-density pass).
 function HabitRankingCard({ emptyText, habits, label, styles }) {
   return (
     <View style={styles.rankingCard}>
@@ -221,12 +260,28 @@ function HabitRankingCard({ emptyText, habits, label, styles }) {
               <AppText numberOfLines={1} style={styles.rankingMeta}>
                 {habit.completionRate}% · {habit.currentStreak} streak
               </AppText>
+              <View style={styles.rankingTrack}>
+                <View
+                  style={[
+                    styles.rankingFill,
+                    { width: `${clampPercentage(habit.completionRate)}%` },
+                  ]}
+                />
+              </View>
             </View>
           </Pressable>
         ))
       )}
     </View>
   );
+}
+
+function clampPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
 }
 
 function getDirectionLabel(direction) {
@@ -255,6 +310,20 @@ function getToneLabel(tone) {
   }
 
   return "Info";
+}
+
+// Same three-way bucketing as getToneLabel, used to pick the tone dot's
+// color (toneDot_positive/toneDot_attention/toneDot_neutral below).
+function getToneColorKey(tone) {
+  if (tone === "positive" || tone === "improving") {
+    return "positive";
+  }
+
+  if (tone === "attention" || tone === "declining") {
+    return "attention";
+  }
+
+  return "neutral";
 }
 
 function createStyles(colors, { isSmallScreen }) {
@@ -366,6 +435,28 @@ function createStyles(colors, { isSmallScreen }) {
       gap: v2Spacing.sm,
       justifyContent: "space-between",
       marginBottom: v2Spacing.xs,
+    },
+    dashboardInsightLabelRow: {
+      alignItems: "center",
+      flex: 1,
+      flexDirection: "row",
+      gap: v2Spacing.xs,
+      minWidth: 0,
+    },
+    toneDot: {
+      borderRadius: v2Radius.pill,
+      flexShrink: 0,
+      height: 8,
+      width: 8,
+    },
+    toneDot_positive: {
+      backgroundColor: colors.success,
+    },
+    toneDot_attention: {
+      backgroundColor: colors.warning,
+    },
+    toneDot_neutral: {
+      backgroundColor: colors.muted,
     },
     dashboardInsightLabel: {
       color: colors.text,
@@ -493,6 +584,18 @@ function createStyles(colors, { isSmallScreen }) {
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
       marginTop: 2,
+    },
+    rankingTrack: {
+      backgroundColor: colors.surface,
+      borderRadius: v2Radius.pill,
+      height: 4,
+      marginTop: v2Spacing.xs,
+      overflow: "hidden",
+    },
+    rankingFill: {
+      backgroundColor: colors.text,
+      borderRadius: v2Radius.pill,
+      height: "100%",
     },
     dashboardEmptyText: {
       backgroundColor: colors.card,

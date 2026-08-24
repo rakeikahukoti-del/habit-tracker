@@ -33,9 +33,14 @@ export default function HeroMetric({
           ]}
         />
       </View>
+      {/* Shrunk from "{completedCount} of {possibleCount} possible
+          completions" (Phase 13 text-density pass) - the bar right above
+          already shows this ratio visually; kept as a compact count
+          rather than dropped entirely since the bar has no absolute
+          numbers on it at all, and "9/20" is real information the fill
+          percentage alone doesn't carry. */}
       <AppText style={styles.heroContext}>
-        {completedCount} of {possibleCount} possible
-        completions
+        {completedCount}/{possibleCount} completions
       </AppText>
     </View>
   );
