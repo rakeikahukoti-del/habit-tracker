@@ -25,25 +25,41 @@ export default function ProgressDots({ days, compact = false }) {
       )}
 
       <View style={styles.container}>
-        {days.map((day) => (
-          <View
-            accessible
-            accessibilityLabel={`${day.label}, ${day.completed ? "completed" : "not completed"}${day.dateKey === todayKey ? ", today" : ""}`}
-            key={day.dateKey}
-            style={styles.day}
-          >
+        {days.map((day) => {
+          // `scheduled` is only present on the schedule-aware variant
+          // (getScheduleAwareWeeklyProgress) - callers still passing plain
+          // getWeeklyProgress days (HabitCard, HabitPerformanceList) never
+          // set it, so `unscheduled` is false for them and rendering is
+          // unchanged. Kept in the row (not dropped) so day-of-week
+          // alignment stays intact - just muted/dashed instead of solid.
+          const unscheduled = day.scheduled === false;
+          const completed = day.completed && !unscheduled;
+
+          return (
             <View
-              style={[
-                styles.dot,
-                day.completed && styles.dotCompleted,
-                day.dateKey === todayKey && styles.dotToday,
-              ]}
-            />
-            <AppText style={[styles.label, day.completed && styles.labelCompleted]}>
-              {day.label}
-            </AppText>
-          </View>
-        ))}
+              accessible
+              accessibilityLabel={
+                unscheduled
+                  ? `${day.label}, not scheduled${day.dateKey === todayKey ? ", today" : ""}`
+                  : `${day.label}, ${day.completed ? "completed" : "not completed"}${day.dateKey === todayKey ? ", today" : ""}`
+              }
+              key={day.dateKey}
+              style={[styles.day, unscheduled && styles.dayUnscheduled]}
+            >
+              <View
+                style={[
+                  styles.dot,
+                  completed && styles.dotCompleted,
+                  unscheduled && styles.dotUnscheduled,
+                  day.dateKey === todayKey && styles.dotToday,
+                ]}
+              />
+              <AppText style={[styles.label, completed && styles.labelCompleted]}>
+                {day.label}
+              </AppText>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -83,6 +99,9 @@ function createStyles(colors) {
       gap: 5,
       minWidth: 22,
     },
+    dayUnscheduled: {
+      opacity: 0.45,
+    },
     dot: {
       backgroundColor: colors.inputBackground,
       borderColor: colors.dotEmpty,
@@ -94,6 +113,11 @@ function createStyles(colors) {
     dotCompleted: {
       backgroundColor: colors.accent,
       borderColor: colors.accent,
+    },
+    dotUnscheduled: {
+      backgroundColor: "transparent",
+      borderColor: colors.dotEmpty,
+      borderStyle: "dashed",
     },
     dotToday: {
       borderColor: colors.primary,

@@ -1,135 +1,75 @@
-import { useMemo } from "react";
-import { StyleSheet, View } from "react-native";
-import { AppText } from "../ui";
-import { useTheme } from "../../context/ThemeContext";
-import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
+import HabitStatCard from "./HabitStatCard";
 
-export default function HabitWeekCard({ isSmallScreen, pattern }) {
-  const { colors } = useTheme();
-  const styles = useMemo(
-    () => createStyles(colors, { isSmallScreen }),
-    [colors, isSmallScreen]
-  );
+// Merged HabitConsistencyCard + HabitWeekCard onto the shared HabitStatCard
+// template (Phase 13 Initiative 2) - the two were near-identical (label /
+// big bold value / top-right pill / two label-value rows), down to each
+// file independently defining its own identically-named HabitWeekRow
+// sub-component. Headline is pattern.summaryLabel ("5 of 7 scheduled
+// completed") rather than the old Consistency card's 30-day completion
+// rate, since that rate is already the very next section up on this
+// screen (HabitHeroSection) - repeating it as this card's headline too
+// would just be a second copy of the same number one section apart.
+//
+// Also resolves Phase 12 Finding E: HabitConsistencyCard's old pill read
+// strength.trend, a *rolling* 7-vs-previous-7-day comparison
+// (getTrendComparison); HabitWeekCard's "Compared with last week" row read
+// pattern.comparison, a *calendar* week-to-date comparison
+// (getWeekToDateDays) - same question, two different windows, with no
+// guarantee they'd agree. Only the calendar version survives here, matching
+// WeeklyReviewCard's convention on the Progress screen. getTrendComparison
+// itself is untouched - utils/insightsDashboard.js's getInsightsDashboard
+// still calls it directly for the aggregate "rollingTrend" InsightsDashboardSection
+// relies on, and getHabitStrength (this screen's `strength` prop) still
+// computes trend as part of its normal return shape for any other consumer;
+// this card just stops reading that one field.
+//
+// "Last 7 days" (strength.weeklyRate, schedule-filtered) is kept as its own
+// row - a rolling-window rate is a different data point from the
+// week-to-date comparison above it, not a duplicate of it.
+export default function HabitWeekCard({ isSmallScreen, pattern, strength }) {
+  const comparisonValue = pattern.comparison.available
+    ? pattern.comparison.label
+    : "Needs more data";
+  const rows = [
+    { key: "comparison", label: "Compared with last week", value: comparisonValue },
+  ];
 
-  return (
-    <View
-      accessibilityLabel={`This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${pattern.comparison.label}. ${pattern.nextScheduled.label}.`}
-      accessible
-      style={styles.habitWeekCard}
-    >
-      <View style={styles.habitWeekHeader}>
-        <View style={styles.habitWeekMain}>
-          <AppText style={styles.habitWeekLabel}>Scheduled completed</AppText>
-          <AppText style={styles.habitWeekValue}>{pattern.summaryLabel}</AppText>
-        </View>
-        <View style={styles.habitWeekRatePill}>
-          <AppText style={styles.habitWeekRateText}>
-            {pattern.completionRateLabel}
-          </AppText>
-        </View>
-      </View>
-      <View style={styles.habitWeekRows}>
-        <HabitWeekRow
-          label="Compared with last week"
-          styles={styles}
-          value={
-            pattern.comparison.available
-              ? pattern.comparison.label
-              : "Needs more data"
-          }
-        />
-        <HabitWeekRow
-          label="Next scheduled"
-          styles={styles}
-          value={pattern.nextScheduled.label}
-        />
-      </View>
-    </View>
-  );
-}
+  if (strength) {
+    rows.push({
+      key: "weekly-rate",
+      label: "Last 7 days",
+      value: `${strength.weeklyRate}%`,
+    });
+  }
 
-function HabitWeekRow({ label, styles, value }) {
-  return (
-    <View style={styles.habitWeekRow}>
-      <AppText style={styles.habitWeekRowLabel}>{label}</AppText>
-      <AppText style={styles.habitWeekRowValue}>{value}</AppText>
-    </View>
-  );
-}
-
-function createStyles(colors, { isSmallScreen }) {
-  return StyleSheet.create({
-    habitWeekCard: {
-      backgroundColor: colors.card,
-      borderRadius: v2Radius.large,
-      padding: v2Spacing.lg,
-    },
-    habitWeekHeader: {
-      alignItems: "flex-start",
-      flexDirection: "row",
-      gap: v2Spacing.md,
-      justifyContent: "space-between",
-    },
-    habitWeekMain: {
-      flex: 1,
-      minWidth: 0,
-    },
-    habitWeekLabel: {
-      color: colors.primary,
-      fontSize: v2Typography.caption.fontSize,
-      fontWeight: v2FontWeight.bold,
-      marginBottom: 4,
-      textTransform: "uppercase",
-    },
-    habitWeekValue: {
-      color: colors.text,
-      fontSize: isSmallScreen ? 28 : 32,
-      fontWeight: v2FontWeight.bold,
-      lineHeight: isSmallScreen ? 34 : 38,
-    },
-    habitWeekRatePill: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: v2Radius.pill,
-      borderWidth: 1,
-      flexShrink: 0,
-      minHeight: 34,
-      justifyContent: "center",
-      paddingHorizontal: v2Spacing.md,
-    },
-    habitWeekRateText: {
-      color: colors.text,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.bold,
-    },
-    habitWeekRows: {
-      borderTopColor: colors.border,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      gap: v2Spacing.sm,
-      marginTop: v2Spacing.lg,
-      paddingTop: v2Spacing.md,
-    },
-    habitWeekRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: v2Spacing.xs,
-      justifyContent: "space-between",
-    },
-    habitWeekRowLabel: {
-      color: colors.muted,
-      flex: 1,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.medium,
-      minWidth: 130,
-    },
-    habitWeekRowValue: {
-      color: colors.text,
-      flex: 1,
-      fontSize: v2Typography.label.fontSize,
-      fontWeight: v2FontWeight.bold,
-      lineHeight: 18,
-      minWidth: 130,
-      textAlign: "right",
-    },
+  rows.push({
+    key: "next-scheduled",
+    label: "Next scheduled",
+    value: pattern.nextScheduled.label,
   });
+
+  if (strength) {
+    rows.push({
+      key: "ranking-data",
+      label: "Ranking data",
+      value: strength.hasSufficientData
+        ? `${strength.possibleCount} scheduled days`
+        : "Still building",
+    });
+  }
+
+  const accessibilityLabel = strength
+    ? `This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${comparisonValue}. Last 7 days ${strength.weeklyRate} percent. ${pattern.nextScheduled.label}.`
+    : `This week. ${pattern.summaryLabel} scheduled days completed. ${pattern.completionRateLabel}. ${comparisonValue}. ${pattern.nextScheduled.label}.`;
+
+  return (
+    <HabitStatCard
+      accessibilityLabel={accessibilityLabel}
+      isSmallScreen={isSmallScreen}
+      label="Scheduled completed"
+      pill={pattern.completionRateLabel}
+      rows={rows}
+      value={pattern.summaryLabel}
+    />
+  );
 }
