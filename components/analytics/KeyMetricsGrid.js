@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { AppText } from "../ui";
+import { AppIcon, AppText } from "../ui";
 import { useTheme } from "../../context/ThemeContext";
 import { v2FontWeight, v2Radius, v2Spacing, v2Typography } from "../../src/design";
 import { getMetricAccessibilityLabel } from "../../utils/analyticsPresentation";
@@ -15,9 +15,15 @@ export default function KeyMetricsGrid({ analytics, isSmallScreen }) {
   return (
     <View style={styles.metricGrid}>
       <MetricBlock
+        colors={colors}
         label="Completion"
         value={`${analytics.completionRate}%`}
-        helper={formatTrendDelta(analytics.trendDelta)}
+        // The full "+12% vs previous period" sentence still reaches
+        // screen readers via accessibilityLabel below - only the visible
+        // rendering shrank to an icon + short delta (Phase 13 text-density
+        // pass).
+        helper={formatTrendDeltaForAccessibility(analytics.trendDelta)}
+        indicator={getTrendIndicator(analytics.trendDelta)}
         styles={styles}
       />
       <MetricBlock
@@ -39,7 +45,7 @@ export default function KeyMetricsGrid({ analytics, isSmallScreen }) {
   );
 }
 
-function MetricBlock({ helper, label, styles, value }) {
+function MetricBlock({ colors, helper, indicator, label, styles, value }) {
   return (
     <View
       accessibilityLabel={getMetricAccessibilityLabel(label, value, helper)}
@@ -55,12 +61,26 @@ function MetricBlock({ helper, label, styles, value }) {
         {value}
       </AppText>
       <AppText style={styles.metricLabel}>{label}</AppText>
-      {helper ? <AppText style={styles.metricHelper}>{helper}</AppText> : null}
+      {indicator ? (
+        <View style={styles.metricIndicator}>
+          {indicator.icon ? (
+            <AppIcon
+              color={colors.muted}
+              name={indicator.icon}
+              size={12}
+              strokeWidth={2.4}
+            />
+          ) : null}
+          <AppText style={styles.metricHelper}>{indicator.text}</AppText>
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function formatTrendDelta(delta) {
+// Full sentence, kept only for the accessibility label - the visible UI
+// uses getTrendIndicator's short text + icon instead.
+function formatTrendDeltaForAccessibility(delta) {
   if (!Number.isFinite(delta)) {
     return "Not enough data to compare";
   }
@@ -74,6 +94,26 @@ function formatTrendDelta(delta) {
   }
 
   return `${delta}% vs previous period`;
+}
+
+// Compact visual: a chevron (reusing the same up/down glyph AppIcon
+// already uses for expand/collapse elsewhere) plus a short delta, instead
+// of a full sentence. No icon for the stable/insufficient-data cases -
+// there's no meaningful direction to point.
+function getTrendIndicator(delta) {
+  if (!Number.isFinite(delta)) {
+    return { icon: null, text: "No comparison yet" };
+  }
+
+  if (Math.abs(delta) < 5) {
+    return { icon: null, text: "Stable" };
+  }
+
+  if (delta > 0) {
+    return { icon: "chevron-up", text: `+${delta}%` };
+  }
+
+  return { icon: "chevron-down", text: `${delta}%` };
 }
 
 function createStyles(colors, { isSmallScreen }) {
@@ -103,11 +143,16 @@ function createStyles(colors, { isSmallScreen }) {
       fontWeight: v2FontWeight.medium,
       marginTop: v2Spacing.sm,
     },
+    metricIndicator: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: 3,
+      marginTop: 3,
+    },
     metricHelper: {
       color: colors.muted,
       fontSize: v2Typography.caption.fontSize,
       fontWeight: v2FontWeight.medium,
-      marginTop: 3,
     },
   });
 }

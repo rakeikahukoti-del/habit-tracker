@@ -32,6 +32,11 @@ function HabitPerformanceRow({ item, styles }) {
 
   return (
     <Pressable
+      // trendLabel is still spoken here even though it's no longer in the
+      // visible meta line below (Phase 13 text-density pass) - dropped as
+      // visible text since it substantially overlapped this row's bar +
+      // ProgressDots, but it's real information with no visual carrying
+      // it in this row, so it stays available to screen readers.
       accessibilityLabel={getHabitPerformanceAccessibilityLabel(
         item,
         trendLabel
@@ -48,8 +53,8 @@ function HabitPerformanceRow({ item, styles }) {
           <AppText numberOfLines={2} style={styles.habitName}>
             {item.habit.name}
           </AppText>
-          <AppText numberOfLines={3} style={styles.habitMeta}>
-            {item.category} · {item.currentStreak} day streak · {trendLabel}
+          <AppText numberOfLines={2} style={styles.habitMeta}>
+            {item.category} · {item.currentStreak} day streak
           </AppText>
         </View>
         <AppText
