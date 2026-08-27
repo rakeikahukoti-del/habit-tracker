@@ -137,12 +137,6 @@ const activityHistory = loadModule("utils/activityHistory.js", (m) =>
 const personalRecords = loadModule("utils/personalRecords.js", (m) =>
   m === "./habitStats" ? habitStats : require(m)
 );
-const yearInReview = loadModule("utils/yearInReview.js", (m) => {
-  if (m === "./activityHistory") return activityHistory;
-  if (m === "./gamification") return gamificationLogic;
-  if (m === "./habitStats") return habitStats;
-  return require(m);
-});
 const insightsDashboard = loadModule("utils/insightsDashboard.js", (m) => {
   if (m === "./habitStats") return habitStats;
   if (m === "./personalRecords") return personalRecords;
@@ -360,24 +354,18 @@ async function run() {
     }, 15);
     console.log(`  Home screen load (storage only):   ${fmt(homeLoadStats)}`);
 
-    // 5/6/7. Year-in-review, Analytics insights, and the year heatmap data
-    //    prep. All three used to carry a real algorithmic issue (see the
-    //    perf-baseline report and its follow-up fix report) - a per-habit
-    //    date cache was getting rebuilt from scratch inside per-day loops
-    //    (activityHistory.js, insightsDashboard.js) or as an eagerly-
-    //    evaluated default parameter on every isHabitScheduledOnDate call
-    //    (habitStats.js's getHabitStartDate, the dominant cost of the
-    //    three) instead of being built once and reused. Fixed - all three
-    //    are now cheap enough to measure at every tier, including extreme.
+    // 5/6. Analytics insights and the year heatmap data prep. Both used to
+    //    carry a real algorithmic issue (see the perf-baseline report and
+    //    its follow-up fix report) - a per-habit date cache was getting
+    //    rebuilt from scratch inside per-day loops (activityHistory.js,
+    //    insightsDashboard.js) or as an eagerly-evaluated default
+    //    parameter on every isHabitScheduledOnDate call (habitStats.js's
+    //    getHabitStartDate, the dominant cost of the two) instead of
+    //    being built once and reused. Fixed - both are now cheap enough
+    //    to measure at every tier, including extreme.
     const gamification = gamificationLogic.normalizeGamificationState();
     const thisYear = new Date().getFullYear();
     const iterations = tier.analyticsIterations;
-
-    const yearReviewStats = await timeManyMs(
-      () => Promise.resolve(yearInReview.getYearInReview(habits, gamification, thisYear)),
-      iterations
-    );
-    console.log(`  Year-in-review data prep:          ${fmt(yearReviewStats)}`);
 
     const insightsStats = await timeManyMs(
       () => Promise.resolve(insightsDashboard.getInsightsDashboard(habits, gamification)),

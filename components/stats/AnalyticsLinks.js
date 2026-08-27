@@ -12,24 +12,6 @@ export default function AnalyticsLinks() {
   return (
     <View style={styles.analyticsLinkWrap}>
       <Pressable
-        accessibilityLabel="Open Year in Review"
-        accessibilityRole="button"
-        hitSlop={4}
-        onPress={() => router.push("/year-review")}
-        style={({ pressed }) => [
-          styles.analyticsLink,
-          pressed && v2PressedStyles.stats,
-        ]}
-      >
-        <AppText style={styles.analyticsLinkText}>Year in Review</AppText>
-        <AppIcon
-          color={colors.primary}
-          name="arrow-right"
-          size={17}
-          strokeWidth={2}
-        />
-      </Pressable>
-      <Pressable
         accessibilityLabel="Open analytics"
         accessibilityRole="button"
         hitSlop={4}
