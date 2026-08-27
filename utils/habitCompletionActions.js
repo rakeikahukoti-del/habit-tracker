@@ -8,7 +8,6 @@ import {
   getHabits,
   uncompleteHabitForToday,
 } from "../storage/habitsStorage";
-import { requestWidgetRefresh } from "../widgets/widgetRefresh";
 import { wasCompletedToday } from "./habitStats";
 
 const habitActionQueues = new Map();
@@ -55,11 +54,6 @@ async function completeHabit(habitId) {
     habits: nextHabits,
   });
 
-  await requestWidgetRefresh("habit-completed", {
-    changed: true,
-    habitId,
-  });
-
   return {
     award,
     changed: true,
@@ -99,11 +93,6 @@ async function undoHabit(habitId) {
   const nextHabits = await getHabits();
   const gamification = await rebuildGamificationFromHabits(nextHabits, {
     includeMessage: false,
-  });
-
-  await requestWidgetRefresh("habit-undone", {
-    changed: true,
-    habitId,
   });
 
   return {

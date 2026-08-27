@@ -461,13 +461,6 @@ const appPreferencesMock = {
     asyncStorageStore["habit-tracker:last-shown-level"] = String(level);
   },
 };
-const widgetRefresh = loadModule("widgets/widgetRefresh.js", (moduleName) => {
-  if (moduleName === "@react-native-async-storage/async-storage") {
-    return { __esModule: true, default: asyncStorageMock };
-  }
-
-  return require(moduleName);
-});
 const habitsStorage = loadModule("storage/habitsStorage.js", (moduleName) => {
   if (moduleName === "@react-native-async-storage/async-storage") {
     return { __esModule: true, default: asyncStorageMock };
@@ -497,10 +490,6 @@ const habitsStorage = loadModule("storage/habitsStorage.js", (moduleName) => {
     return habitStats;
   }
 
-  if (moduleName === "../widgets/widgetRefresh") {
-    return widgetRefresh;
-  }
-
   return require(moduleName);
 });
 const dailyPlanStorage = loadModule("storage/dailyPlanStorage.js", (moduleName) => {
@@ -518,10 +507,6 @@ const dailyPlanStorage = loadModule("storage/dailyPlanStorage.js", (moduleName) 
 
   if (moduleName === "./storageUtils") {
     return storageUtils;
-  }
-
-  if (moduleName === "../widgets/widgetRefresh") {
-    return widgetRefresh;
   }
 
   return require(moduleName);
@@ -545,10 +530,6 @@ const appBackup = loadModule("storage/appBackup.js", (moduleName) => {
 
   if (moduleName === "../utils/themePreferences") {
     return themePreferences;
-  }
-
-  if (moduleName === "../widgets/widgetRefresh") {
-    return widgetRefresh;
   }
 
   if (moduleName === "./appPreferences") {
@@ -582,58 +563,8 @@ const habitCompletionActions = loadModule("utils/habitCompletionActions.js", (mo
     return habitsStorage;
   }
 
-  if (moduleName === "../widgets/widgetRefresh") {
-    return widgetRefresh;
-  }
-
   if (moduleName === "./habitStats") {
     return habitStats;
-  }
-
-  return require(moduleName);
-});
-const widgetDataProvider = loadModule("widgets/widgetDataProvider.js", (moduleName) => {
-  if (moduleName === "../storage/appPreferences") {
-    return appPreferencesStorage;
-  }
-
-  if (moduleName === "../storage/dailyPlanStorage") {
-    return dailyPlanStorage;
-  }
-
-  if (moduleName === "../storage/gamificationStorage") {
-    return gamificationStorage;
-  }
-
-  if (moduleName === "../storage/habitsStorage") {
-    return habitsStorage;
-  }
-
-  if (moduleName === "../utils/dailyPlanning") {
-    return dailyPlanning;
-  }
-
-  if (moduleName === "../utils/gamification") {
-    return gamificationLogic;
-  }
-
-  if (moduleName === "../utils/habitStats") {
-    return habitStats;
-  }
-
-  if (moduleName === "../utils/rankDisplay") {
-    return rankDisplay;
-  }
-
-  return require(moduleName);
-});
-const widgetActions = loadModule("widgets/widgetActions.js", (moduleName) => {
-  if (moduleName === "../utils/habitCompletionActions") {
-    return habitCompletionActions;
-  }
-
-  if (moduleName === "./widgetRefresh") {
-    return widgetRefresh;
   }
 
   return require(moduleName);
@@ -1739,113 +1670,6 @@ test("reward presentation order and announcements remain deterministic", () => {
     ),
     "Achievement unlocked. First Completion. Complete any habit for the first time."
   );
-});
-
-test("widget models render empty, small, medium, and large states from local data", () => {
-  const todayKey = habitStats.getTodayKey();
-  const habits = [
-    {
-      category: "Health",
-      completedDates: [todayKey],
-      createdAt: todayKey,
-      emoji: "🏃",
-      frequency: "Daily",
-      id: "run",
-      name: "Run",
-      order: 1,
-    },
-    {
-      category: "Mind",
-      completedDates: [],
-      createdAt: todayKey,
-      emoji: "📖",
-      frequency: "Daily",
-      id: "read",
-      name: "Read",
-      order: 2,
-    },
-  ];
-  const dailyPlan = { date: todayKey, habitIds: ["read"], version: 1 };
-  const emptyModel = widgetDataProvider.createMomentumWidgetModel({
-    dailyPlan: { date: todayKey, habitIds: [], version: 1 },
-    gamification: { xp: 0 },
-    habits: [],
-    now: new Date(),
-    preferences: { moveCompletedToBottom: false },
-    size: "small",
-  });
-  const smallModel = widgetDataProvider.createMomentumWidgetModel({
-    dailyPlan,
-    gamification: { xp: 450 },
-    habits,
-    now: new Date(),
-    preferences: { moveCompletedToBottom: false },
-    size: "small",
-  });
-  const mediumModel = widgetDataProvider.createMomentumWidgetModel({
-    dailyPlan,
-    gamification: { xp: 450 },
-    habits,
-    now: new Date(),
-    preferences: { moveCompletedToBottom: true },
-    size: "medium",
-  });
-  const largeModel = widgetDataProvider.createMomentumWidgetModel({
-    dailyPlan,
-    gamification: { xp: 450 },
-    habits,
-    now: new Date(),
-    preferences: { moveCompletedToBottom: true },
-    size: "large",
-  });
-
-  assert.strictEqual(emptyModel.empty, true);
-  assert.strictEqual(smallModel.habits.length, 0);
-  assert.strictEqual(smallModel.progress.completionPercentage, 50);
-  assert.strictEqual(mediumModel.habits[0].id, "read");
-  assert.strictEqual(mediumModel.focusHabit.id, "read");
-  assert.strictEqual(mediumModel.rank, "Silver");
-  assert.strictEqual(largeModel.weeklyProgress.length, 7);
-  assert.ok(/50% complete/.test(mediumModel.accessibilityLabel));
-});
-
-test("widget quick actions use shared completion logic and request refresh", async () => {
-  resetStorage();
-
-  const todayKey = habitStats.getTodayKey();
-
-  await habitsStorage.saveHabits([
-    {
-      category: "Health",
-      completedDates: [],
-      createdAt: todayKey,
-      frequency: "Daily",
-      id: "hydrate",
-      name: "Hydrate",
-      order: 1,
-    },
-  ]);
-  await gamificationStorage.rebuildGamificationFromHabits([], {
-    includeMessage: false,
-  });
-
-  const completeResult = await widgetActions.completeHabitFromWidget("hydrate");
-  const completedHabits = await habitsStorage.getHabits();
-  const completeRefresh = await widgetRefresh.getLastWidgetRefreshRequest();
-
-  assert.strictEqual(completeResult.changed, true);
-  assert.strictEqual(completedHabits[0].completedDates.includes(todayKey), true);
-  assert.strictEqual(completeResult.xp, 35);
-  assert.strictEqual(completeRefresh.reason, "habit-completed");
-  assert.strictEqual(completeRefresh.metadata.habitId, "hydrate");
-
-  const undoResult = await widgetActions.undoHabitFromWidget("hydrate");
-  const undoneHabits = await habitsStorage.getHabits();
-  const undoRefresh = await widgetRefresh.getLastWidgetRefreshRequest();
-
-  assert.strictEqual(undoResult.changed, true);
-  assert.strictEqual(undoneHabits[0].completedDates.includes(todayKey), false);
-  assert.strictEqual(undoRefresh.reason, "habit-undone");
 });
 
 test("rapid completion and undo requests are serialized per habit", async () => {
