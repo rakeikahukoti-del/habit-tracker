@@ -166,10 +166,6 @@ const gamificationStorage = loadModule("storage/gamificationStorage.js", (m) => 
   if (m === "./storageUtils") return storageUtils;
   return require(m);
 });
-const widgetRefresh = loadModule("widgets/widgetRefresh.js", (m) => {
-  if (m === "@react-native-async-storage/async-storage") return asyncStorageProvider;
-  return require(m);
-});
 const habitsStorage = loadModule("storage/habitsStorage.js", (m) => {
   if (m === "@react-native-async-storage/async-storage") return asyncStorageProvider;
   if (m === "../constants/habitOptions") return habitOptions;
@@ -178,7 +174,6 @@ const habitsStorage = loadModule("storage/habitsStorage.js", (m) => {
   if (m === "./storageUtils") return storageUtils;
   if (m === "../notifications/habitNotifications") return habitNotifications;
   if (m === "../utils/habitStats") return habitStats;
-  if (m === "../widgets/widgetRefresh") return widgetRefresh;
   return require(m);
 });
 const dailyPlanStorage = loadModule("storage/dailyPlanStorage.js", (m) => {
@@ -186,13 +181,11 @@ const dailyPlanStorage = loadModule("storage/dailyPlanStorage.js", (m) => {
   if (m === "../utils/habitStats") return habitStats;
   if (m === "../utils/dailyPlanning") return dailyPlanning;
   if (m === "./storageUtils") return storageUtils;
-  if (m === "../widgets/widgetRefresh") return widgetRefresh;
   return require(m);
 });
 const habitCompletionActions = loadModule("utils/habitCompletionActions.js", (m) => {
   if (m === "../storage/gamificationStorage") return gamificationStorage;
   if (m === "../storage/habitsStorage") return habitsStorage;
-  if (m === "../widgets/widgetRefresh") return widgetRefresh;
   if (m === "./habitStats") return habitStats;
   return require(m);
 });
@@ -332,7 +325,7 @@ async function run() {
     // 3. Full "complete a habit" round trip - the real call chain:
     //    getHabits -> completeHabitForToday (getHabits+saveHabits) ->
     //    getHabits again -> getGamification -> awardHabitCompletion
-    //    (getGamification+saveGamification) -> requestWidgetRefresh.
+    //    (getGamification+saveGamification).
     //    Undo the completion between runs so each sample does real work
     //    rather than hitting the "already completed" early return.
     const completionSamples = [];
